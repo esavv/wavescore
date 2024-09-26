@@ -31,6 +31,7 @@ def main():
         video_name = os.path.splitext(base_name)[0]
 
         base_path = "data/heats/heat_" + video_name + "/"
+        # Create a new rides directory, assumes it doesn't already exist
         os.mkdir(base_path + "rides")
 
         # Loop through each row in the CSV
@@ -38,8 +39,12 @@ def main():
             start_time = row['start']
             end_time = row['end']
 
+            ride_path = base_path + f"rides/ride_{index}"
+            # Create a new directory for each individual ride (these will later contain maneuver labels + frame sequences for training)
+            os.mkdir(ride_path)
+
             # Define the output filename for each clip
-            output_path = base_path + "rides/" + video_name + f"_{index + 1}.mp4"
+            output_path = ride_path + "/" + video_name + f"_{index}.mp4"
 
             # Construct the ffmpeg command
             command = [
@@ -53,7 +58,7 @@ def main():
             ]
 
             # Print the command (for debugging)
-            print(f"Processing clip {index + 1}: {start_time} to {end_time} -> {output_path}")
+            print(f"Processing clip {index}: {start_time} to {end_time} -> {output_path}")
 
             # Run the ffmpeg command
             subprocess.run(command, check=True)
