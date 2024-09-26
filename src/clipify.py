@@ -13,8 +13,8 @@ def main():
     parser = argparse.ArgumentParser(description="Process video clips based on start and end timestamps from a CSV file.")
     
     # Add arguments for the input video and CSV file
-    #  - The 'input_video' argument should be a file in the /videos directory, and should be of the format 'videos/123.mp4'
-    #  - The 'csv_file' argument should be a file in the /clip_times directory, and should be of the format 'clip_times/123_times.csv'
+    #  - The 'input_video' argument should be a file in the /data/heats directory, and should be of the format 'data/heats/heat_vid01/vid01.mp4'
+    #  - The 'csv_file' argument should be a file in the /data/heats directory, and should be of the format 'data/heats/heat_vid01/ride_times_vid01.csv'
     parser.add_argument('input_video', type=str, help="The input video file to process")
     parser.add_argument('csv_file', type=str, help="The CSV file containing start and end timestamps")
 
@@ -30,13 +30,16 @@ def main():
         base_name = os.path.basename(args.input_video)
         video_name = os.path.splitext(base_name)[0]
 
+        base_path = "data/heats/heat_" + video_name + "/"
+        os.mkdir(base_path + "rides")
+
         # Loop through each row in the CSV
         for index, row in enumerate(reader):
             start_time = row['start']
             end_time = row['end']
 
             # Define the output filename for each clip
-            output_path = "clips/" + video_name + f"_{index + 1}.mp4"
+            output_path = base_path + "rides/" + video_name + f"_{index + 1}.mp4"
 
             # Construct the ffmpeg command
             command = [
