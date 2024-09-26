@@ -9,5 +9,5 @@
  - Ensure the target video is in the /videos directory
  - Add a csv to the /clip_times directory that contains the start & end timestamps for each clip desired
  - From the main /surfjudge directory, run this command:
-   > python3 src/clipify.py videos/target.mp4 clip_times/target_times.csv
+   > python3 src/clipify.py data/heats/heat_vid01/vid01.mp4 data/heats/heat_vid01/ride_times_vid01.csv
  - This runs a python script that outputs the desired clips to the /clips directory
