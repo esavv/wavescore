@@ -59,7 +59,7 @@ def main():
 
             # Print the command (for debugging)
             print(f"Processing clip {index}: {start_time} to {end_time} -> {output_path}")
-
+    
             # Run the ffmpeg command
             subprocess.run(command, check=True)
 
