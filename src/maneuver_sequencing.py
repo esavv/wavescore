@@ -4,6 +4,8 @@
 #  - Resolve note 20241018_1
 #  - Add error checking
 #  - Remove hardcoding & allow for command-line arguments
+#       Specifically, this script should be runnable from the project directory (or anywhere) and
+#       simply accept a heat video ID and be able to navigate & create all the required directories
 
 # Note 20241018_1: We're using 1-second sequences that allow us to more granularly capture maneuvers, and
 #   support the use of start & end timestamps for each manuever. However, this might cause the model

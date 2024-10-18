@@ -1,2 +1,2 @@
-timestamp,maneuver_id
-0:06,G
+start,end,maneuver_id
+0:06,0:07,G
