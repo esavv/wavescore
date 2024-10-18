@@ -1,5 +1,5 @@
-timestamp,maneuver_id
-0:08,E
-0:18,B
-0:23,C
-0:25,C
+start,end,maneuver_id
+0:07,0:09,E
+0:16,0:19,B
+0:22,0:23,C
+0:24,0:25,C
