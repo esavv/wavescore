@@ -1,14 +1,15 @@
 # Naively assumes execution from the /data/heats/heat_1Zj_jAPToxI/rides/ride_0 directory
 # Some things to do next here:
 #  - Instead of doing this for ride_0, loop through all of the rides in /rides/
+#  - Consider requiring human labels to have a start & end time for each maneuver,
+#        since a maneuver might last multiple sequences
+#  - Consider making sequences 1 second long instead of 2 seconds
 #  - Add error checking
 #  - Remove hardcoding & allow for command-line arguments
-import cv2
-import math
-import os
+import cv2, math, os
 import pandas as pd
 vid_name = '1Zj_jAPToxI_0'
-vid_file = vid_name + '.mp4'
+vid_file   = vid_name + '.mp4'
 human_file = vid_name + '_human_labels.csv'
 
 # helper function to convert 'MM:SS' to seconds
@@ -53,6 +54,7 @@ for sq in range(total_sequences):
     else:
         maneuver_type = 'Z'
     
+    # create the sequence label
     seq_labels.append([f"seq_{sq}", maneuver_type])
 
     # extract each frame in the sequence & save it
