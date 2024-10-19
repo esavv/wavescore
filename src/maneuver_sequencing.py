@@ -1,16 +1,32 @@
-# Naively assumes execution from the /data/heats/heat_1Zj_jAPToxI/rides/ directory
+# Assumes execution from the /surfjudge parent project directory. Example execution:
+#  > python3 src/maneuver_sequencing.py 1Zj_jAPToxI
+#
 # Some things to do next here:
 #  - Add error checking
-#  - Remove hardcoding & allow for command-line arguments
-#       Specifically, this script should be runnable from the project directory (or anywhere) and
-#       simply accept a heat video ID and be able to navigate & create all the required directories
-
-import cv2, math, os
+import cv2, math, os, sys
 import pandas as pd
+
+# assert video ID command-line argument is provided
+if len(sys.argv) < 2:
+    print("Error: Video ID not provided.")
+    sys.exit()
+vid_id = sys.argv[1]
+# vid_id = '1Zj_jAPToxI'
 current_dir = os.getcwd()
-rides = [d for d in os.listdir(current_dir) if os.path.isdir(os.path.join(current_dir, d))]
+
+# assert that the /data/heats/heat_1Zj_jAPToxI directory exists
+heat_path = os.path.join(current_dir, 'data/heats/heat_' + vid_id)
+if not os.path.exists(heat_path):
+    print('Heat directory doesn\'t exist: ' + 'heat_' + vid_id)
+    sys.exit()
+# assert that the /rides/ directory exists
+rides_path = os.path.join(heat_path, 'rides')
+if not os.path.exists(rides_path):
+    print('Rides directory doesn\'t exist for heat ' + vid_id)
+    sys.exit()
+
+rides = [d for d in os.listdir(rides_path) if os.path.isdir(os.path.join(rides_path, d))]
 rides.sort()
-vid_id = '1Zj_jAPToxI'
 
 # helper function to convert 'MM:SS' to seconds
 def timestamp_to_seconds(timestamp):
@@ -23,7 +39,7 @@ for ride in rides:
     ride_no =  ride.split('_')[1]  
 
     # check if the video and human labels files are present
-    ride_path = os.path.join(current_dir, ride)
+    ride_path = os.path.join(rides_path, ride)
     mp4_file = os.path.join(ride_path, vid_id + "_" + ride_no + ".mp4")
     csv_file = os.path.join(ride_path, vid_id + "_" + ride_no + "_human_labels.csv")
     mp4_exists = os.path.exists(mp4_file)
