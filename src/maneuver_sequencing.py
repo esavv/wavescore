@@ -11,7 +11,6 @@ if len(sys.argv) < 2:
     print("Error: Video ID not provided.")
     sys.exit()
 vid_id = sys.argv[1]
-# vid_id = '1Zj_jAPToxI'
 current_dir = os.getcwd()
 
 # assert that the /data/heats/heat_1Zj_jAPToxI directory exists
