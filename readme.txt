@@ -1,3 +1,13 @@
+# Things to work on next as of 2024/10/19:
+ - We can now clip full surf heats into individual rides, and process individual rides into
+  maneuver-labeled sequences of frames that are ready to be fed into a model
+ - It might help to finish labeling maneuvers for all rides in our first video
+ - We should start building a model that can take the frame sequences & labels as input
+ - We should train the model on as little data as possible and get it to label a video,
+    even if it gets everything wrong
+ - We should build a very simple iPhone app interface and figure out how to connect it to
+    the model
+
 ## How to download a YouTube video using yt-dlp:
  > yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI
 
