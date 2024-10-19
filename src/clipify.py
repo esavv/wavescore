@@ -1,70 +1,72 @@
 # This program converts videos of full surfing heats into clips of individual
 # waves ridden, expecting as input both the heat video and a csv denoting the
 # start & end times of each ridden wave 
-import argparse
-import csv
-import os
-import subprocess
 
-# Main function
-# This function is expected to be executed from the parent /surfjudge/ directory
-def main():
-    # Create the argument parser
-    parser = argparse.ArgumentParser(description="Process video clips based on start and end timestamps from a CSV file.")
-    
-    # Add arguments for the input video and CSV file
-    #  - The 'input_video' argument should be a file in the /data/heats directory, and should be of the format 'data/heats/heat_vid01/vid01.mp4'
-    #  - The 'csv_file' argument should be a file in the /data/heats directory, and should be of the format 'data/heats/heat_vid01/ride_times_vid01.csv'
-    parser.add_argument('input_video', type=str, help="The input video file to process")
-    parser.add_argument('csv_file', type=str, help="The CSV file containing start and end timestamps")
+# Suppose we're making clips of video 123.mp4. This script expects the following
+# things to exist:
+#  > Directory: data/heats/heat_123
+#  > File:      data/heats/heat_123/123.mp4
+#  > File:      data/heats/heat_123/ride_times_123.csv
+import csv, os, subprocess, sys
 
-    # Parse the command-line arguments
-    args = parser.parse_args()
+# assert video ID command-line argument is provided
+if len(sys.argv) < 2:
+    print("Error: Video ID not provided.")
+    sys.exit()
+vid_id = sys.argv[1]
+current_dir = os.getcwd()
 
-    # Process the clips
+# assert that the /data/heats/heat_1Zj_jAPToxI directory exists
+heat_path = os.path.join(current_dir, 'data/heats/heat_' + vid_id)
+if not os.path.exists(heat_path):
+    print('Heat directory doesn\'t exist: ' + 'heat_' + vid_id)
+    sys.exit()
 
-    # Open the CSV file and read the start and end times
-    with open(args.csv_file, mode='r') as file:
-        reader = csv.DictReader(file)
+# assert that the video & csv files exist
+mp4_file = os.path.join(heat_path, vid_id + ".mp4")
+csv_file = os.path.join(heat_path, "ride_times_" + vid_id + ".csv")
+if not os.path.exists(mp4_file):
+    print('Video file doesn\'t exist: ' + vid_id + ".mp4")
+    sys.exit()
+if not os.path.exists(csv_file):
+    print('Clips csv file doesn\'t exist: ' + "ride_times_" + vid_id + ".csv")
+    sys.exit()
 
-        base_name = os.path.basename(args.input_video)
-        video_name = os.path.splitext(base_name)[0]
+# Process the clips
+with open(csv_file, mode='r') as file:
+    reader = csv.DictReader(file)
 
-        base_path = "data/heats/heat_" + video_name + "/"
-        # Create a new rides directory, assumes it doesn't already exist
-        os.mkdir(base_path + "rides")
+    # Create a new rides directory
+    rides_path = os.path.join(heat_path, 'rides')
+    os.makedirs(rides_path, exist_ok=True)
 
-        # Loop through each row in the CSV
-        for index, row in enumerate(reader):
-            start_time = row['start']
-            end_time = row['end']
+    # Loop through each row in the CSV
+    for index, row in enumerate(reader):
+        start_time = row['start']
+        end_time = row['end']
 
-            ride_path = base_path + f"rides/ride_{index}"
-            # Create a new directory for each individual ride (these will later contain maneuver labels + frame sequences for training)
-            os.mkdir(ride_path)
+        # Create a new directory for each individual ride (these will later contain maneuver labels + frame sequences for training)
+        ride_path = os.path.join(rides_path, f"ride_{index}")
+        os.makedirs(ride_path, exist_ok=True)
 
-            # Define the output filename for each clip
-            output_path = ride_path + "/" + video_name + f"_{index}.mp4"
+        # Define the output filename for each clip
+        clip_path = os.path.join(ride_path, vid_id + f"_{index}.mp4")
 
-            # Construct the ffmpeg command
-            command = [
-                "ffmpeg",
-                "-i", args.input_video,
-                "-ss", start_time,
-                "-to", end_time,
-                "-c:v", "libx264",
-                "-c:a", "aac",
-                output_path
-            ]
+        # Construct the ffmpeg command
+        command = [
+            "ffmpeg",
+            "-i", mp4_file,
+            "-ss", start_time,
+            "-to", end_time,
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            clip_path
+        ]
 
-            # Print the command (for debugging)
-            print(f"Processing clip {index}: {start_time} to {end_time} -> {output_path}")
-    
-            # Run the ffmpeg command
-            subprocess.run(command, check=True)
+        # Print the command (for debugging)
+        print(f"Processing clip {index}: {start_time} to {end_time} -> {clip_path}")
 
-    print("All clips processed.")
+        # Run the ffmpeg command
+        subprocess.run(command, check=True)
 
-# Entry point of the script
-if __name__ == "__main__":
-    main()
+print("All clips processed.")
