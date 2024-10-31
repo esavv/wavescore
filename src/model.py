@@ -7,7 +7,7 @@ class SurfManeuverModel(nn.Module):
         super(SurfManeuverModel, self).__init__()
         
         # Pretrained CNN for feature extraction
-        cnn = models.resnet18(pretrained=True)
+        cnn = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
         self.feature_extractor = nn.Sequential(*list(cnn.children())[:-1])  # Remove the final classification layer
         cnn_out_dim = cnn.fc.in_features
 
