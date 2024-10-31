@@ -2,6 +2,7 @@ import os
 import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
+import torch
 
 class SurfManeuverDataset(Dataset):
     def __init__(self, root_dir, transform=None):
@@ -63,6 +64,20 @@ class SurfManeuverDataset(Dataset):
             if self.transform:
                 image = self.transform(image)
             frames.append(image)
-        
+
+        # Pad or truncate frames
+        frames = pad_sequence(frames)
+
         # Stack frames into a tensor with shape (num_frames, channels, height, width)
         return frames, label
+    
+def pad_sequence(frames, max_length=60):
+    num_frames = len(frames)
+    if num_frames < max_length:
+        # Pad with zero tensors to reach max_length
+        padding = [torch.zeros_like(frames[0]) for _ in range(max_length - num_frames)]
+        frames = frames + padding
+    else:
+        # Truncate to max_length if too long
+        frames = frames[:max_length]
+    return torch.stack(frames)
