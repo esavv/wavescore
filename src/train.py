@@ -55,4 +55,4 @@ est = pytz.timezone('US/Eastern')
 now = datetime.now(est)
 timestamp = now.strftime("%Y%m%d_%H%M")
 
-torch.save(model.state_dict(), "models/surf_maneuver_model_" + timestamp + ".pth")
+torch.save(model.state_dict(), "../models/surf_maneuver_model_" + timestamp + ".pth")
