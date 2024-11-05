@@ -1,10 +1,10 @@
 id,name
-A,Bottom turn
-B,Cutback
-C,Snap
-D,Roundhouse cutback
-E,360
-F,Floater
-G,Air
-H,Tube ride
-Z,No maneuver
+0,No maneuver
+1,Bottom turn
+2,Cutback
+3,Snap
+4,Roundhouse cutback
+5,360
+6,Floater
+7,Air
+8,Tube ride

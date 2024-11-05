@@ -4,7 +4,7 @@
  - We've finished labeling maneuvers for all rides in our first video
  - We've written initial code to convert our labeled sequences into a dataset to be fed into a model, 
    structure & train a model on this dataset (dataset.py, model.py, train.py)
- - We should test train.py for errors. We currently have an error on line 33 with defining the model.
+ - We should test train.py for errors. We currently have an error on line 42 with training the model.
  - We have a basic script for trialing inference of our model, but it needs some serious work:
     - It needs to receive an input model as a command-line argument
     - It expects that the surf ride clip we're gonna run inference on has already been split into sequences
@@ -13,6 +13,7 @@
     - It should probably receive the target clip (or clip sequences) as a command-line argument
  - We should build a very simple iPhone app interface and figure out how to connect it to
     the model
+ - We should update all src/ scripts to expect execution from the src directory
 
 ## How to download a YouTube video using yt-dlp:
  > yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI

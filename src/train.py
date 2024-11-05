@@ -26,7 +26,15 @@ transform = transforms.Compose([
 print('>  Creating dataset...')
 dataset = SurfManeuverDataset(root_dir="../data/heats", transform=transform)
 print('>  Creating dataloader...')
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, collate_fn=lambda x: (torch.stack([torch.stack(item[0]) for item in x]), torch.tensor([item[1] for item in x])))
+dataloader = DataLoader(
+    dataset,
+    batch_size=batch_size,
+    shuffle=True,
+    collate_fn=lambda x: (
+        torch.stack([item[0] for item in x]),  # Only one torch.stack here to batch tensors
+        torch.tensor([item[1] for item in x])
+    )
+)
 
 # Model, loss function, and optimizer
 print('>  Defining the model...')
