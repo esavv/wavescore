@@ -89,12 +89,12 @@ for ride in rides:
             # determine if this sequence contains or overlaps with a maneuver based on timestamps
             maneuvers_in_seq = labels_df[(labels_df['start'] < end_time) & (labels_df['end'] > start_time)]
             if len(maneuvers_in_seq) > 0:
-                maneuver_type = maneuvers_in_seq.iloc[0]['maneuver_id']  # Use first maneuver in case of overlap
+                maneuver_id = maneuvers_in_seq.iloc[0]['maneuver_id']  # Use first maneuver in case of overlap
             else:
-                maneuver_type = 'Z'
+                maneuver_id = 0
             
             # create the sequence label
-            seq_labels.append([f"seq_{sq}", maneuver_type])
+            seq_labels.append([f"seq_{sq}", maneuver_id])
 
             # extract each frame in the sequence & save it
             frame_count = 0
