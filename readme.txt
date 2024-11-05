@@ -1,10 +1,11 @@
-# Things to work on next as of 2024/10/31:
+# Things to work on next as of 2024/11/05:
  - We can now clip full surf heats into individual rides, and process individual rides into
   maneuver-labeled sequences of frames that are ready to be fed into a model
  - We've finished labeling maneuvers for all rides in our first video
  - We've written initial code to convert our labeled sequences into a dataset to be fed into a model, 
    structure & train a model on this dataset (dataset.py, model.py, train.py)
- - We should test train.py for errors. We currently have an error on line 42 with training the model.
+ - We should test train.py for errors. Training is currently taking too long, so we should reduce
+      the size & count of training images as well as reduce model hyperparameters
  - We have a basic script for trialing inference of our model, but it needs some serious work:
     - It needs to receive an input model as a command-line argument
     - It expects that the surf ride clip we're gonna run inference on has already been split into sequences
