@@ -46,7 +46,7 @@ class SurfManeuverDataset(Dataset):
 
                         # Verify the existence of the sequence directory
                         if os.path.isdir(seq_dir):
-                            print(f"  $        Adding sample: {seq_dir} with label {row['label']}")
+                            # print(f"  $        Adding sample: {seq_dir} with label {row['label']}")
                             self.samples.append((seq_dir, row["label"]))
                         else:
                             print(f"  $        Warning: Sequence directory {seq_dir} does not exist.")
@@ -77,7 +77,7 @@ class SurfManeuverDataset(Dataset):
         # Pad or truncate frames
         max_length = 60
         if self.mode == 'dev':
-            max_length = max_length / SKIP_FREQ
+            max_length = max_length // SKIP_FREQ
         frames = pad_sequence(frames, max_length)
 
         # Stack frames into a tensor with shape (num_frames, channels, height, width)

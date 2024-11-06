@@ -3,11 +3,14 @@ import torch.nn as nn
 import torchvision.models as models
 
 class SurfManeuverModel(nn.Module):
-    def __init__(self, hidden_size=128, num_classes=10):  # Set num_classes to the total number of maneuver types
+    def __init__(self, hidden_size=128, num_classes=10, mode='dev'):  # Set num_classes to the total number of maneuver types
         super(SurfManeuverModel, self).__init__()
+        self.mode = mode
         
         # Pretrained CNN for feature extraction
         cnn = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+        if self.mode == 'dev':
+            cnn.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)  # Change input channels to 1 for grayscale
         self.feature_extractor = nn.Sequential(*list(cnn.children())[:-1])  # Remove the final classification layer
         cnn_out_dim = cnn.fc.in_features
 
