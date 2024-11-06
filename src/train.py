@@ -1,4 +1,7 @@
 print('>  Importing modules...')
+import argparse, pytz, time
+from datetime import datetime
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -7,14 +10,22 @@ from torchvision import transforms
 from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
 
-from datetime import datetime
-import pytz, time
+# Set up command-line arguments & configure 'prod' and 'dev' modes (via an environment variable).
+parser = argparse.ArgumentParser(description='Toggle between prod and dev modes.')
+parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set the application mode (prod or dev).')
+args = parser.parse_args()
+mode = args.mode
 
 # Hyperparameters
-print('>  Setting hyperparameters...')
-batch_size = 4
-learning_rate = 0.001
-num_epochs = 10
+print('>  Setting hyperparameters... (mode is: ' + mode + ')')
+if mode == 'prod':
+    batch_size = 4
+    learning_rate = 0.001
+    num_epochs = 10
+elif mode == 'dev':
+    batch_size = 1
+    learning_rate = 0.005
+    num_epochs = 2
 
 # Set device to GPU if available, otherwise use CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -27,7 +38,7 @@ transform = transforms.Compose([
 ])
 
 print('>  Creating dataset...')
-dataset = SurfManeuverDataset(root_dir="../data/heats", transform=transform)
+dataset = SurfManeuverDataset(root_dir="../data/heats", transform=transform, mode=mode)
 print('>  Creating dataloader...')
 dataloader = DataLoader(
     dataset,
