@@ -5,9 +5,10 @@ from torch.utils.data import Dataset
 import torch
 
 class SurfManeuverDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, transform=None, mode='dev'):
         self.root_dir = root_dir
         self.transform = transform
+        self.mode = mode
         
         # Gather sequence directories and labels
         self.samples = []
@@ -56,17 +57,28 @@ class SurfManeuverDataset(Dataset):
     def __getitem__(self, idx):
         seq_dir, label = self.samples[idx]
         frames = []
+        SKIP_FREQ = 10
 
         # Load each frame in the sequence directory
-        for frame_file in sorted(os.listdir(seq_dir)):
+        for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
+            # Skip frames in dev mode to speed up training
+            if self.mode == 'dev' and frame_idx % SKIP_FREQ != 0:
+                continue
+
             frame_path = os.path.join(seq_dir, frame_file)
-            image = Image.open(frame_path).convert("RGB")
+            if self.mode == 'prod':
+                image = Image.open(frame_path).convert("RGB")
+            elif self.mode == 'dev':
+                image = Image.open(frame_path).convert("L")  # "L" mode is for grayscale; reduce image size for faster training in dev mode
             if self.transform:
                 image = self.transform(image)
             frames.append(image)
 
         # Pad or truncate frames
-        frames = pad_sequence(frames)
+        max_length = 60
+        if self.mode == 'dev':
+            max_length = max_length / SKIP_FREQ
+        frames = pad_sequence(frames, max_length)
 
         # Stack frames into a tensor with shape (num_frames, channels, height, width)
         return frames, label
