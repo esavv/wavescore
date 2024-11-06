@@ -24,8 +24,8 @@ if mode == 'prod':
     num_epochs = 10
 elif mode == 'dev':
     batch_size = 1
-    learning_rate = 0.005
-    num_epochs = 2
+    learning_rate = 0.01
+    num_epochs = 1
 
 # Set device to GPU if available, otherwise use CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -54,7 +54,7 @@ start_time = time.time()  # Track the start time of training
 
 # Model, loss function, and optimizer
 print('>  Defining the model...')
-model = SurfManeuverModel(num_classes=10)  # Adjust num_classes as needed
+model = SurfManeuverModel(num_classes=10, mode=mode)  # Adjust num_classes as needed
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -69,24 +69,24 @@ for epoch in range(num_epochs):
         print(f"    >  Processing batch {batch_idx + 1}/{total_batches}")
 
         # Move data to the correct device
-        print(f"      >  Moving data to the correct device")
+        # print(f"      >  Moving data to the correct device")
         frames, labels = frames.to(device), labels.to(device)
         
         # Forward pass
-        print(f"      >  Forward pass outputs")
+        # print(f"      >  Forward pass outputs")
         outputs = model(frames)
-        print(f"      >  Forward pass criterion")
+        # print(f"      >  Forward pass criterion")
         loss = criterion(outputs, labels)
         
         # Backward pass and optimization
-        print(f"      >  Backward pass zero grad")
+        # print(f"      >  Backward pass zero grad")
         optimizer.zero_grad()
-        print(f"      >  Backward pass backward")
+        # print(f"      >  Backward pass backward")
         loss.backward()
-        print(f"      >  Backward pass optimizer step")
+        # print(f"      >  Backward pass optimizer step")
         optimizer.step()
         
-        print(f"      >  Computing running loss")
+        # print(f"      >  Computing running loss")
         running_loss += loss.item()
         # Print loss every N batches for progress feedback
         if (batch_idx + 1) % 10 == 0 or (batch_idx + 1) == total_batches:

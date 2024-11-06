@@ -1,11 +1,10 @@
-# Things to work on next as of 2024/11/05:
+# Things to work on next as of 2024/11/06:
  - We can now clip full surf heats into individual rides, and process individual rides into
   maneuver-labeled sequences of frames that are ready to be fed into a model
  - We've finished labeling maneuvers for all rides in our first video
  - We've written initial code to convert our labeled sequences into a dataset to be fed into a model, 
    structure & train a model on this dataset (dataset.py, model.py, train.py)
- - We should test train.py for errors. Training is currently taking too long, so we should reduce
-      the size & count of training images as well as reduce model hyperparameters
+ - We've gotten train.py to build a model in dev mode, and should focus on getting inference to work now too
  - We have a basic script for trialing inference of our model, but it needs some serious work:
     - It needs to receive an input model as a command-line argument
     - It expects that the surf ride clip we're gonna run inference on has already been split into sequences
@@ -15,6 +14,8 @@
  - We should build a very simple iPhone app interface and figure out how to connect it to
     the model
  - We should update all src/ scripts to expect execution from the src directory
+ - Figure out how to pad images to make them square before the resizing in train.py
+ - Figure out how to get progress bar-like print statements
 
 ## How to download a YouTube video using yt-dlp:
  > yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI
