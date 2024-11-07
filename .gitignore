@@ -1,0 +1,6 @@
+ios-app/surfjudge/surfjudge.xcodeproj/
+data/**/*.mp4
+data/**/*.jpg
+data/**/orig*
+models/
+src/__pycache__/
