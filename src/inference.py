@@ -119,7 +119,6 @@ cap.release()
 # Run inference on each sequence in the new video
 print('Running inference...')
 for sq in range(total_sequences):
-# for seq_name in sorted(os.listdir(seqs_path)):
     seq_name = f'seq_{sq}'
     seq_dir = os.path.join(seqs_path, seq_name)
     if os.path.isdir(seq_dir):
