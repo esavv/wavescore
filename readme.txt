@@ -1,4 +1,15 @@
-# Things to work on next as of 2024/11/07:
+# Things to work on next as of 2024/11/08:
+ - iOS development: Add functionality that, upon user upload, displays a set of manuevers "performed"
+    in the video. This should be a hardcoded set of maneuvers but gets us to figure out both (1) display
+    and (2) what the json/schema the app should expect from our prediction service
+ - Model API: Figure out how to host our python inference code as a Web API using Flask or something
+    similar. User posts a video file to the API service and gets an inference returned
+ - iOS development: Figure out how to get the app to call my inference Web API
+ - We should update all src/ scripts to expect execution from the src directory
+ - Figure out how to pad images to make them square before the resizing in train.py
+ - Figure out how to get progress bar-like print statements
+
+# Things recently completed
  - We can now clip full surf heats into individual rides, and process individual rides into
   maneuver-labeled sequences of frames that are ready to be fed into a model
  - We've finished labeling maneuvers for all rides in our first video
@@ -9,11 +20,8 @@
       (this is just one of the clips used in training, so not ideal). It doesn't work very well, it predicts
       "no maneuver" for every sequence in the video, even though several maneuvers are performed. But it at
       least makes predictions.
- - We should build a very simple iPhone app interface and figure out how to connect it to
-    the model. We created a boilerplate project in Xcode and now need to start adding functionality.
- - We should update all src/ scripts to expect execution from the src directory
- - Figure out how to pad images to make them square before the resizing in train.py
- - Figure out how to get progress bar-like print statements
+ - We have a boilerplate iOS app, we modified it to allow the user to upload a video, we gave it an app
+      icon, and we figured out how to deploy and test it to my physical iPhone
 
 ## How to download a YouTube video using yt-dlp:
  > yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI
