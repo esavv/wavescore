@@ -4,3 +4,4 @@ data/**/*.jpg
 data/**/orig*
 models/
 src/__pycache__/
+img/*
