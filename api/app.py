@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-import os
 
 app = Flask(__name__)
 
@@ -14,17 +13,10 @@ def upload_video():
     #     return jsonify({"error": "No selected file"}), 400
 
     # Dummy response with hardcoded results
-    result = {
-        "maneuvers": [
-            {"name": "Cutback", "time": "0:03"},
-            {"name": "Cutback", "time": "0:09"},
-            {"name": "Snap", "time": "0:15"}
-        ],
-        "message": "Nice surfing!"
-    }
+    result = "3 maneuvers performed:\n- Cutback (0:03)\n- Cutback (0:09)\n- Snap (0:15)\n"
     
     # Return hardcoded response
-    return jsonify(result)
+    return jsonify({"result": result})
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -7,39 +7,35 @@
 
 import SwiftUI
 import PhotosUI
+import Foundation
 
 struct ContentView: View {
     @State private var selectedVideo: URL?  // State to hold the selected video URL
     @State private var isPickerPresented = false  // State to control the video picker presentation
     @State private var showResults = false  // State to show results after video upload
+    @State private var resultText: String?  // Store the result from the API
 
     var body: some View {
         VStack {
-//            Image(systemName: "globe")
-//                .imageScale(.large)
-//                .foregroundStyle(.tint)
-//            Text("Hello, world!")
             if showResults {
-                // Display the results if showResults is true
-                Text("3 maneuvers performed:")
-                    .font(.headline)
+                // Display the result text (from API response) and hardcoded "Nice surfing!"
+                if let resultText = resultText {
+                    Text(resultText)  // Display the maneuvers and "3 maneuvers performed"
+                        .font(.body)
+                        .padding()
+                    
+                    Text("Nice surfing!")  // Hardcoded message in iOS app
+                        .font(.subheadline)
+                        .padding()
+                    
+                    Button("Upload Another Video") {
+                        // Reset the state to allow uploading a new video
+                        showResults = false
+                        selectedVideo = nil
+                        isPickerPresented = true  // Open video picker again
+                    }
                     .padding()
-                
-                VStack(alignment: .leading) {
-                    Text("- Cutback (0:03)")
-                    Text("- Cutback (0:09)")
-                    Text("- Snap (0:15)")
-                    Text("\nNice surfing!")
                 }
-                .padding()
-                
-                Button("Upload Another Video") {
-                    // Reset the state to allow uploading a new video
-                    showResults = false
-                    selectedVideo = nil
-                    isPickerPresented = true  // Open video picker again
-                }
-                .padding()
             } else {
                 // Show the video upload button if showResults is false
                 Button("Upload Surf Video") {
@@ -51,6 +47,14 @@ struct ContentView: View {
                         print("Selected Video URL: \(selectedVideo?.absoluteString ?? "No video selected")")
                         // Simulate results after video is uploaded
                         showResults = true
+                        if let videoURL = selectedVideo {
+                            uploadVideoToAPI(videoURL: videoURL) { result in
+                                // Handle the result returned by the API
+                                if let result = result {
+                                    resultText = result  // Set the resultText state
+                                }
+                            }
+                        }
                     }
                 }
                 
@@ -111,4 +115,60 @@ struct VideoPicker: UIViewControllerRepresentable {
             }
         }
     }
+}
+
+struct APIResponse: Codable {
+    let result: String
+}
+
+func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
+    let url = URL(string: "http://192.168.1.151:5000/upload_video")!  // Replace with your server's URL
+    // let url = URL(string: "http://127.0.0.1:5000/upload_video")!  // Replace with your server's URL
+    
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    
+    // Create multipart form data body to send the video file
+    let boundary = "Boundary-\(UUID().uuidString)"
+    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+    
+    var body = Data()
+    body.append("--\(boundary)\r\n".data(using: .utf8)!)
+    body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(videoURL.lastPathComponent)\"\r\n".data(using: .utf8)!)
+    body.append("Content-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
+    do {
+        let videoData = try Data(contentsOf: videoURL)
+        body.append(videoData)
+        body.append("\r\n".data(using: .utf8)!)
+    } catch {
+        print("Error reading video data: \(error.localizedDescription)")
+        completion(nil)  // Call completion with nil in case of error
+        return
+    }
+    body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+    
+    request.httpBody = body
+    
+    // Make the network request
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error: \(error)")
+            completion(nil)  // Call completion with nil in case of error
+            return
+        }
+        guard let data = data else {
+            completion(nil)  // Call completion with nil in case of error
+            return
+        }
+        
+        do {
+            // Parse the JSON response
+            let apiResponse = try JSONDecoder().decode(APIResponse.self, from: data)
+            completion(apiResponse.result)  // Return the result via the completion handler
+        } catch {
+            print("Failed to decode response: \(error)")
+            completion(nil)  // Call completion with nil in case of decode error
+        }
+    }
+    task.resume()
 }
