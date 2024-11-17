@@ -53,3 +53,11 @@
     a human-labeled CSV file containing the start & end times of each maneuver performed
     in the ride, as well as the corresponding maneuver ID (see data/maneuver_taxonomy.csv)
  - From the main /surfjudge directory, run this command:
+    > python3 src/maneuver_sequencing.py 123
+ - This runs a script that outputs frame sequences for each ride in, for example, .../ride_0/seqs
+    and outputs sequence labels in, for example, .../ride_0/123_0_seq_labels.csv
+
+## When testing Flask API locally and calling it remotely via ngrok:
+ - If there are issues calling localhost:5000 but not 127.0.0.1:5000, it's because Apple AirPlay
+   Receiver is listening on port 5000. Disable this to test: System Settings > General >
+   AirDrop & Handoff > AirPlay Receiver (requires password to change)
