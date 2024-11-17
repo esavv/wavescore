@@ -1,6 +1,9 @@
-# Things to work on next as of 2024/11/12:
+# Things to work on next as of 2024/11/17:
  - Model API pre-work & iOS connection: Get a dummy API service running that outputs hardcoded maneuvers
-      & connect it to our iOS app. Then, try to deploy it to the cloud.
+      & connect it to our iOS app. Update the service to not require a video, and don't POST a video from
+      the iOS app just to verify that the service does work.
+ - iOS app: Troubleshoot the issue with the app getting access to the user's videos
+ - Model API: Try to deploy it to the cloud.
  - Model API pre-work: Update the dummy API to actuall inspect the video and, say, report the video
       length. Maybe also report a random news headline to demonstrate internet connectivity.
  - Model API: Figure out how to host our python inference code as a Web API using Flask or something
