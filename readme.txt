@@ -53,6 +53,3 @@
     a human-labeled CSV file containing the start & end times of each maneuver performed
     in the ride, as well as the corresponding maneuver ID (see data/maneuver_taxonomy.csv)
  - From the main /surfjudge directory, run this command:
-   > python3 src/maneuver_sequencing.py 123
- - This runs a script that outputs frame sequences for each ride in, for example, .../ride_0/seqs
-    and outputs sequence labels in, for example, .../ride_0/123_0_seq_labels.csv
