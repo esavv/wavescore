@@ -8,6 +8,7 @@
 import SwiftUI
 import PhotosUI
 import Foundation
+import AVFoundation
 
 struct ContentView: View {
     @State private var selectedVideo: URL?  // State to hold the selected video URL
@@ -45,17 +46,25 @@ struct ContentView: View {
                     VideoPicker(selectedVideo: $selectedVideo) {
                         // Do something with the selected video, like running inference
                         print("Selected Video URL: \(selectedVideo?.absoluteString ?? "No video selected")")
-                        // Simulate results after video is uploaded
-                        showResults = true
-                            if let videoURL = selectedVideo {
-                            uploadVideoToAPI() { result in
-//                            uploadVideoToAPI(videoURL: videoURL) { result in
-                                // Handle the result returned by the API
-                                if let result = result {
-                                    resultText = result  // Set the resultText state
-                                }
+                        // Inspect the video
+                        if let videoURL = selectedVideo {
+                            print("Video file exists: \(fileExists(at: videoURL))")
+                            Task {
+                                await inspectVideoInfo(videoURL: videoURL)
+                                showResults = true
                             }
                         }
+//                        if let videoURL = selectedVideo {
+//                            uploadVideoToAPI() { result in
+////                            uploadVideoToAPI(videoURL: videoURL) { result in
+//                                // Handle the result returned by the API
+//                                if let result = result {
+//                                    resultText = result  // Set the resultText state
+//                                }
+//                            }
+//                        }
+//                        // Simulate results after video is uploaded
+//                        showResults = true
                     }
                 }
                 
@@ -66,6 +75,44 @@ struct ContentView: View {
             }
         }
         .padding()
+    }
+    // Function to inspect video metadata
+    func inspectVideoInfo(videoURL: URL) async {
+        // Create AVAsset instance
+        let asset = AVAsset(url: videoURL)
+        
+        var durationString: String? = "Unknown duration" // Default value in case the loading fails
+        
+        do {
+            // Load the duration asynchronously
+            let duration = try await asset.load(.duration)
+            
+            // Convert the duration to seconds
+            let durationInSeconds = CMTimeGetSeconds(duration)
+            durationString = String(format: "%.2f seconds", durationInSeconds)
+        } catch {
+            print("Error loading duration: \(error.localizedDescription)")
+        }
+        
+        // Retrieve file size using FileManager
+        if let attributes = try? FileManager.default.attributesOfItem(atPath: videoURL.path),
+           let fileSize = attributes[.size] as? NSNumber {
+            let fileSizeString = String(format: "%.2f MB", fileSize.doubleValue / 1_000_000)
+            
+            // Retrieve creation date
+            let creationDate = attributes[.creationDate] as? Date ?? Date()
+            let creationDateFormatter = DateFormatter()
+            creationDateFormatter.dateStyle = .medium
+            creationDateFormatter.timeStyle = .short
+            let creationDateString = creationDateFormatter.string(from: creationDate)
+            
+            // Combine all video information into one string
+            resultText = """
+            Duration: \(durationString ?? "Unknown")
+            File Size: \(fileSizeString)
+            Created: \(creationDateString)
+            """
+        }
     }
 }
 
@@ -104,10 +151,17 @@ struct VideoPicker: UIViewControllerRepresentable {
                     result.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
                         if let url = url {
                             DispatchQueue.main.async {
-                                self.parent.selectedVideo = url
-                                picker.dismiss(animated: true)
-                                self.parent.completion?()  // Call the completion handler if provided
+                                // Move video to a persistent location
+                                if let movedURL = moveVideoToPersistentLocation(from: url) {
+                                    self.parent.selectedVideo = movedURL
+                                    picker.dismiss(animated: true)
+                                    self.parent.completion?()  // Call the completion handler if provided
+                                } else {
+                                    print("Failed to move video to persistent location.")
+                                }
                             }
+                        } else {
+                            print("Error loading file representation: \(error?.localizedDescription ?? "Unknown error")")
                         }
                     }
                 }
@@ -118,8 +172,29 @@ struct VideoPicker: UIViewControllerRepresentable {
     }
 }
 
+func moveVideoToPersistentLocation(from temporaryURL: URL) -> URL? {
+    // Get the Documents directory URL
+    let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    
+    // Create a destination URL for the video
+    let destinationURL = documentsDirectory.appendingPathComponent(temporaryURL.lastPathComponent)
+    
+    do {
+        // Copy the video from the temporary URL to the Documents directory
+        try FileManager.default.copyItem(at: temporaryURL, to: destinationURL)
+        return destinationURL  // Return the new URL for use
+    } catch {
+        print("Error copying video file: \(error)")
+        return nil
+    }
+}
+
 struct APIResponse: Codable {
     let result: String
+}
+
+func fileExists(at url: URL) -> Bool {
+    return FileManager.default.fileExists(atPath: url.path)
 }
 
 func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
