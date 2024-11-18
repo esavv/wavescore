@@ -150,15 +150,15 @@ struct VideoPicker: UIViewControllerRepresentable {
                 if result.itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
                     result.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
                         if let url = url {
-                            DispatchQueue.main.async {
-                                // Move video to a persistent location
-                                if let movedURL = moveVideoToPersistentLocation(from: url) {
+                            // Perform file move synchronously on the main thread
+                            if let movedURL = moveVideoToPersistentLocation(from: url) {
+                                DispatchQueue.main.async {
                                     self.parent.selectedVideo = movedURL
                                     picker.dismiss(animated: true)
                                     self.parent.completion?()  // Call the completion handler if provided
-                                } else {
-                                    print("Failed to move video to persistent location.")
                                 }
+                            } else {
+                                print("Failed to move video to persistent location.")
                             }
                         } else {
                             print("Error loading file representation: \(error?.localizedDescription ?? "Unknown error")")
@@ -179,6 +179,18 @@ func moveVideoToPersistentLocation(from temporaryURL: URL) -> URL? {
     // Create a destination URL for the video
     let destinationURL = documentsDirectory.appendingPathComponent(temporaryURL.lastPathComponent)
     
+    // Always delete the existing video (if any)
+    do {
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            try FileManager.default.removeItem(at: destinationURL)
+            print("Deleted existing video at \(destinationURL.path)")
+        }
+    } catch {
+        print("Error deleting existing video file: \(error)")
+        return nil  // Return nil if deletion fails
+    }
+    
+    // Now proceed with copying the new video
     do {
         // Copy the video from the temporary URL to the Documents directory
         try FileManager.default.copyItem(at: temporaryURL, to: destinationURL)
@@ -189,12 +201,12 @@ func moveVideoToPersistentLocation(from temporaryURL: URL) -> URL? {
     }
 }
 
-struct APIResponse: Codable {
-    let result: String
-}
-
 func fileExists(at url: URL) -> Bool {
     return FileManager.default.fileExists(atPath: url.path)
+}
+
+struct APIResponse: Codable {
+    let result: String
 }
 
 func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
