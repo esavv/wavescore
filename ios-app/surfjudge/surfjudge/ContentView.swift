@@ -50,21 +50,20 @@ struct ContentView: View {
                         if let videoURL = selectedVideo {
                             print("Video file exists: \(fileExists(at: videoURL))")
                             Task {
+                                // Get basic video metadata for display
                                 await inspectVideoInfo(videoURL: videoURL)
+                                // // Call the dummy API with no video for hardcoded text
+                                // uploadVideoToAPI() { result in
+                                // // // Call the API with a video file
+                                // // uploadVideoToAPI(videoURL: videoURL) { result in
+                                //     // Handle the result returned by the API
+                                //     if let result = result {
+                                //         resultText = result  // Set the resultText state
+                                //     }
+                                // }
                                 showResults = true
                             }
                         }
-//                        if let videoURL = selectedVideo {
-//                            uploadVideoToAPI() { result in
-////                            uploadVideoToAPI(videoURL: videoURL) { result in
-//                                // Handle the result returned by the API
-//                                if let result = result {
-//                                    resultText = result  // Set the resultText state
-//                                }
-//                            }
-//                        }
-//                        // Simulate results after video is uploaded
-//                        showResults = true
                     }
                 }
                 
@@ -210,6 +209,7 @@ struct APIResponse: Codable {
 }
 
 func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
+// func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
     let url = URL(string: "https://6cd5-70-23-3-136.ngrok-free.app/upload_video")!  // Replace with your server's URL
 //    let url = URL(string: "http://192.168.1.151:5000/upload_video")!  // Replace with your server's URL
 //    let url = URL(string: "http://127.0.0.1:5000/upload_video")!  // Replace with your server's URL
@@ -217,11 +217,11 @@ func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     
+    // *** Dummy Body Start ****************************************
     // Remove multipart form data (we are not sending the video anymore)
-    let boundary = "Boundary-\(UUID().uuidString)"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     
-    // Send a dummy JSON object or empty body to the API
+    // Non-Video Body: Send a dummy JSON object or empty body to the API
     let jsonBody = ["message": "Testing connection, no video file"]  // Adjust according to your API's expected structure
     do {
         let jsonData = try JSONSerialization.data(withJSONObject: jsonBody, options: [])
@@ -232,7 +232,31 @@ func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
         completion(nil)
         return
     }
-    
+    // *** Dummy Body End ******************************************
+
+    // *** Video Body Start ****************************************
+//    // Replace "Non-Video Body" above with this chunk below for video requests
+//    // Create multipart form data body to send the video file
+//    let boundary = "Boundary-\(UUID().uuidString)"
+//    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+//    
+//    var body = Data()
+//    body.append("--\(boundary)\r\n".data(using: .utf8)!)
+//    body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(videoURL.lastPathComponent)\"\r\n".data(using: .utf8)!)
+//    body.append("Content-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
+//    do {
+//        let videoData = try Data(contentsOf: videoURL)
+//        body.append(videoData)
+//        body.append("\r\n".data(using: .utf8)!)
+//    } catch {
+//        print("Error reading video data: \(error.localizedDescription)")
+//        completion(nil)  // Call completion with nil in case of error
+//        return
+//    }
+//    body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+//    request.httpBody = body
+    // *** Video Body End ******************************************
+
     // Make the network request
     let task = URLSession.shared.dataTask(with: request) { data, response, error in
         if let error = error {
@@ -262,56 +286,3 @@ func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
     }
     task.resume()
 }
-
-
-//func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
-//    let url = URL(string: "http://192.168.1.151:5000/upload_video")!  // Replace with your server's URL
-//    // let url = URL(string: "http://127.0.0.1:5000/upload_video")!  // Replace with your server's URL
-//    
-//    var request = URLRequest(url: url)
-//    request.httpMethod = "POST"
-//    
-//    // Create multipart form data body to send the video file
-//    let boundary = "Boundary-\(UUID().uuidString)"
-//    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-//    
-//    var body = Data()
-//    body.append("--\(boundary)\r\n".data(using: .utf8)!)
-//    body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(videoURL.lastPathComponent)\"\r\n".data(using: .utf8)!)
-//    body.append("Content-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
-//    do {
-//        let videoData = try Data(contentsOf: videoURL)
-//        body.append(videoData)
-//        body.append("\r\n".data(using: .utf8)!)
-//    } catch {
-//        print("Error reading video data: \(error.localizedDescription)")
-//        completion(nil)  // Call completion with nil in case of error
-//        return
-//    }
-//    body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-//    
-//    request.httpBody = body
-//    
-//    // Make the network request
-//    let task = URLSession.shared.dataTask(with: request) { data, response, error in
-//        if let error = error {
-//            print("Error: \(error)")
-//            completion(nil)  // Call completion with nil in case of error
-//            return
-//        }
-//        guard let data = data else {
-//            completion(nil)  // Call completion with nil in case of error
-//            return
-//        }
-//        
-//        do {
-//            // Parse the JSON response
-//            let apiResponse = try JSONDecoder().decode(APIResponse.self, from: data)
-//            completion(apiResponse.result)  // Return the result via the completion handler
-//        } catch {
-//            print("Failed to decode response: \(error)")
-//            completion(nil)  // Call completion with nil in case of decode error
-//        }
-//    }
-//    task.resume()
-//}
