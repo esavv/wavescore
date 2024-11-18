@@ -43,27 +43,25 @@ struct ContentView: View {
                     isPickerPresented = true  // Show the video picker when the button is tapped
                 }
                 .sheet(isPresented: $isPickerPresented) {
-                    VideoPicker(selectedVideo: $selectedVideo) {
-                        // Do something with the selected video, like running inference
+                    VideoPicker(selectedVideo: $selectedVideo, resultText: $resultText) {
                         print("Selected Video URL: \(selectedVideo?.absoluteString ?? "No video selected")")
-                        // Inspect the video
-                        if let videoURL = selectedVideo {
-                            print("Video file exists: \(fileExists(at: videoURL))")
-                            Task {
-                                // Get basic video metadata for display
-                                await inspectVideoInfo(videoURL: videoURL)
-                                // // Call the dummy API with no video for hardcoded text
-                                // uploadVideoToAPI() { result in
-                                // // // Call the API with a video file
-                                // // uploadVideoToAPI(videoURL: videoURL) { result in
-                                //     // Handle the result returned by the API
-                                //     if let result = result {
-                                //         resultText = result  // Set the resultText state
-                                //     }
-                                // }
-                                showResults = true
-                            }
-                        }
+                        showResults = true
+                        // Make an API call
+                        // *** API block start ********************
+//                        if let videoURL = selectedVideo {
+//                            print("Video file exists: \(fileExists(at: videoURL))")
+//                             // Call the dummy API with no video for hardcoded text
+//                             uploadVideoToAPI() { result in
+//                             // // Call the API with a video file
+//                             // uploadVideoToAPI(videoURL: videoURL) { result in
+//                                 // Handle the result returned by the API
+//                                 if let result = result {
+//                                     resultText = result  // Set the resultText state
+//                                 }
+//                             }
+//                            showResults = true
+//                        }
+                        // *** API block end **********************
                     }
                 }
                 
@@ -75,44 +73,6 @@ struct ContentView: View {
         }
         .padding()
     }
-    // Function to inspect video metadata
-    func inspectVideoInfo(videoURL: URL) async {
-        // Create AVAsset instance
-        let asset = AVAsset(url: videoURL)
-        
-        var durationString: String? = "Unknown duration" // Default value in case the loading fails
-        
-        do {
-            // Load the duration asynchronously
-            let duration = try await asset.load(.duration)
-            
-            // Convert the duration to seconds
-            let durationInSeconds = CMTimeGetSeconds(duration)
-            durationString = String(format: "%.2f seconds", durationInSeconds)
-        } catch {
-            print("Error loading duration: \(error.localizedDescription)")
-        }
-        
-        // Retrieve file size using FileManager
-        if let attributes = try? FileManager.default.attributesOfItem(atPath: videoURL.path),
-           let fileSize = attributes[.size] as? NSNumber {
-            let fileSizeString = String(format: "%.2f MB", fileSize.doubleValue / 1_000_000)
-            
-            // Retrieve creation date
-            let creationDate = attributes[.creationDate] as? Date ?? Date()
-            let creationDateFormatter = DateFormatter()
-            creationDateFormatter.dateStyle = .medium
-            creationDateFormatter.timeStyle = .short
-            let creationDateString = creationDateFormatter.string(from: creationDate)
-            
-            // Combine all video information into one string
-            resultText = """
-            Duration: \(durationString ?? "Unknown")
-            File Size: \(fileSizeString)
-            Created: \(creationDateString)
-            """
-        }
-    }
 }
 
 #Preview {
@@ -121,6 +81,7 @@ struct ContentView: View {
 
 struct VideoPicker: UIViewControllerRepresentable {
     @Binding var selectedVideo: URL?  // Binding to hold the selected video URL
+    @Binding var resultText: String?  // Binding to update resultText in ContentView
     var completion: (() -> Void)?  // Completion handler to dismiss the picker
 
     func makeUIViewController(context: Context) -> PHPickerViewController {
@@ -149,6 +110,22 @@ struct VideoPicker: UIViewControllerRepresentable {
                 if result.itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
                     result.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
                         if let url = url {
+                            // Call the async function inside a Task
+                            Task {
+                                await inspectVideoInfo(videoURL: url) { videoMetadata in
+                                    if let videoMetadata = videoMetadata {
+                                        // Update resultText with the retrieved metadata
+                                        DispatchQueue.main.async {
+                                            self.parent.resultText = """
+                                            Duration: \(videoMetadata.duration)
+                                            File Size: \(videoMetadata.fileSize)
+                                            Created: \(videoMetadata.created)
+                                            """
+                                        }
+                                    }
+                                }
+                            }
+
                             // Perform file move synchronously on the main thread
                             if let movedURL = moveVideoToPersistentLocation(from: url) {
                                 DispatchQueue.main.async {
@@ -170,6 +147,47 @@ struct VideoPicker: UIViewControllerRepresentable {
         }
     }
 }
+
+struct VideoMetadata: Codable {
+    let duration: String
+    let fileSize: String
+    let created: String
+}
+
+// Function to inspect video metadata synchronously
+func inspectVideoInfo(videoURL: URL, completion: @escaping (VideoMetadata?) -> Void) {
+    // Create AVAsset instance
+    let asset = AVAsset(url: videoURL)
+    
+    var durationString: String = "Unknown duration"  // Default value if loading fails
+    var fileSizeString: String = "Unknown size"
+    var creationDateString: String = "Unknown date"
+    
+    // Synchronously get the duration of the video
+    let duration = asset.duration
+    let durationInSeconds = CMTimeGetSeconds(duration)
+    if durationInSeconds.isFinite {
+        durationString = String(format: "%.2f seconds", durationInSeconds)
+    }
+    
+    // Retrieve file size using FileManager
+    if let attributes = try? FileManager.default.attributesOfItem(atPath: videoURL.path),
+       let fileSize = attributes[.size] as? NSNumber {
+        fileSizeString = String(format: "%.2f MB", fileSize.doubleValue / 1_000_000)
+        
+        // Retrieve creation date
+        let creationDate = attributes[.creationDate] as? Date ?? Date()
+        let creationDateFormatter = DateFormatter()
+        creationDateFormatter.dateStyle = .medium
+        creationDateFormatter.timeStyle = .short
+        creationDateString = creationDateFormatter.string(from: creationDate)
+    }
+    
+    // Create a VideoMetadata instance and pass it to the completion handler
+    let videoMetadata = VideoMetadata(duration: durationString, fileSize: fileSizeString, created: creationDateString)
+    completion(videoMetadata)
+}
+
 
 func moveVideoToPersistentLocation(from temporaryURL: URL) -> URL? {
     // Get the Documents directory URL
