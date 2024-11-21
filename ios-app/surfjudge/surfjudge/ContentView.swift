@@ -9,6 +9,8 @@ import SwiftUI
 import PhotosUI
 import Foundation
 import AVFoundation
+import Photos
+import CoreLocation
 
 struct ContentView: View {
     @State private var selectedVideo: URL?  // State to hold the selected video URL
@@ -41,18 +43,26 @@ struct ContentView: View {
             } else {
                 // Show the video upload button if showResults is false
                 Button("Upload Surf Video") {
+                    PHPhotoLibrary.requestAuthorization { (status) in
+                        if status == .authorized {
+                            print("Status is authorized")
+                        } else if status == .denied {
+                            print("Status is denied")
+                        } else {
+                            print("Status is something else")
+                        }
+                    }
                     isPickerPresented = true  // Show the video picker when the button is tapped
                 }
                 .sheet(isPresented: $isPickerPresented) {
                     VideoPicker(selectedVideo: $selectedVideo, videoMetadata: $videoMetadata) {
                         print("Selected Video URL: \(selectedVideo?.absoluteString ?? "No video selected")")
                         if let videoMetadata = videoMetadata {
-                            print("Video metadata synced: \(videoMetadata.syncData)")
-                            print("Video metadata async: \(videoMetadata.asyncData)")
                             resultText = """
-                            Duration: \(videoMetadata.asyncData.duration)
-                            File Size: \(videoMetadata.syncData.fileSize)
-                            Created: \(videoMetadata.syncData.created)
+                            Duration: \(videoMetadata.duration)
+                            File Size: \(videoMetadata.fileSize)
+                            Created: \(videoMetadata.created)
+                            Lat/Long: \(videoMetadata.latlon)
                             """
                             showResults = true
                         } else {
@@ -96,7 +106,7 @@ struct VideoPicker: UIViewControllerRepresentable {
     var completion: (() -> Void)?  // Completion handler to dismiss the picker
 
     func makeUIViewController(context: Context) -> PHPickerViewController {
-        var configuration = PHPickerConfiguration()
+        var configuration = PHPickerConfiguration(photoLibrary: PHPhotoLibrary.shared())
         configuration.filter = .videos  // Only allow video selection
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = context.coordinator
@@ -123,20 +133,28 @@ struct VideoPicker: UIViewControllerRepresentable {
                         if let url = url {
                             // Initialize videoMetadata if it's nil
                             if self.parent.videoMetadata == nil {
-                                self.parent.videoMetadata = VideoMetadata(
-                                    syncData: VideoMetadataSync(fileSize: "Unknown", created: "Unknown"),
-                                    asyncData: VideoMetadataAsync(duration: "Unknown")
-                                )
+                                self.parent.videoMetadata = VideoMetadata(fileSize: "Unknown", created: "Unknown", duration: "Unknown", latlon: "Unknown")
                             }
-                            // 1. Call the sync video metadata function
-                            let videoMetadataSync = inspectVideoInfoSync(videoURL: url)
-                            if let videoMetadataSync = videoMetadataSync {
-                                print("Sync Metadata: \(videoMetadataSync)")
-                                // Update sync metadata directly
-                                self.parent.videoMetadata?.syncData = videoMetadataSync
-                                print("Sync Metadata in parent: \(String(describing: self.parent.videoMetadata?.syncData))")
+
+                            // Get the localIdentifier of the video to fetch the PHAsset
+                            let localIdentifier = result.assetIdentifier
+                            if let localIdentifier = localIdentifier {
+                                let assets = PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options: nil)
+                                print("assets: \(assets)")
+
+                                if let phAsset = assets.firstObject {
+                                    print("phAsset: \(phAsset)")
+                                    // 1. Extract sync metadata (duration, creation date, file size, geolocation)
+                                    if let videoMetadata = inspectVideoInfoSync(phAsset: phAsset, videoUrl: url) {
+                                        self.parent.videoMetadata = videoMetadata
+                                    } else {
+                                        print("Error: videoMetadata is nil.")
+                                    }
+                                } else {
+                                    print("Error: phAsset not available.")
+                                }
                             } else {
-                                print("Error: sync metadata is nil.")
+                                print("Error: localIdentifier not available.")
                             }
 
                             // 2. Perform file move synchronously on the main thread
@@ -144,29 +162,11 @@ struct VideoPicker: UIViewControllerRepresentable {
                                 DispatchQueue.main.async {
                                     print("Video successfully moved to: \(movedURL)")
                                     self.parent.selectedVideo = movedURL
+                                    picker.dismiss(animated: true)
+                                    self.parent.completion?()  // Call the completion handler when done
                                 }
                             } else {
                                 print("Failed to move video to persistent location.")
-                            }
-                            
-                            // 3. Call the async video metadata function with the moved video
-                            Task {
-                                // Perform the async video metadata inspection
-                                let videoMetadataAsync = await inspectVideoInfoAsync(videoURL: self.parent.selectedVideo!)
-
-                                // Ensure UI updates are done on the main thread
-                                await MainActor.run {
-                                    if let videoMetadataAsync = videoMetadataAsync {
-                                        print("Async Metadata: \(videoMetadataAsync)")
-                                        // Update async metadata
-                                        self.parent.videoMetadata?.asyncData = videoMetadataAsync
-                                        print("Async Metadata in parent: \(String(describing: self.parent.videoMetadata?.asyncData))")
-                                        picker.dismiss(animated: true)
-                                        self.parent.completion?()  // Call the completion handler when done
-                                    } else {
-                                        print("Error: async metadata is nil.")
-                                    }
-                                }
                             }
                         } else {
                             print("Error loading file representation: \(error?.localizedDescription ?? "Unknown error")")
@@ -180,66 +180,56 @@ struct VideoPicker: UIViewControllerRepresentable {
     }
 }
 
-struct VideoMetadataSync: Codable {
+struct VideoMetadata: Codable {
     let fileSize: String
     let created: String
-}
-
-struct VideoMetadataAsync: Codable {
     let duration: String
-}
-
-struct VideoMetadata: Codable {
-    var syncData: VideoMetadataSync
-    var asyncData: VideoMetadataAsync
+    let latlon: String
 }
 
 // Function to inspect video metadata synchronously
-func inspectVideoInfoSync(videoURL: URL) -> VideoMetadataSync? {
-    print("Inspecting sync metadata for video: \(videoURL.path)")
+func inspectVideoInfoSync(phAsset: PHAsset, videoUrl: URL) -> VideoMetadata? {
+    print("Inspecting sync metadata for video")
     var fileSizeString: String = "Unknown size"
     var creationDateString: String = "Unknown date"
-    
-    // Retrieve file size using FileManager
-    if let attributes = try? FileManager.default.attributesOfItem(atPath: videoURL.path),
-       let fileSize = attributes[.size] as? NSNumber {
-        fileSizeString = String(format: "%.2f MB", fileSize.doubleValue / 1_000_000)
-        
-        // Retrieve creation date
-        let creationDate = attributes[.creationDate] as? Date ?? Date()
+    var durationString: String = "Unknown duration"
+    var latlonString: String = "Unknown lat/long"
+
+    // Get creation date directly from PHAsset
+    if let creationDate = phAsset.creationDate {
         let creationDateFormatter = DateFormatter()
         creationDateFormatter.dateStyle = .medium
         creationDateFormatter.timeStyle = .short
         creationDateString = creationDateFormatter.string(from: creationDate)
+    } else {
+        print("...Error: Creation date not found")
     }
-    
-    print("File size: \(fileSizeString), Creation Date: \(creationDateString)")
-    // Return the VideoMetadataSync instance
-    return VideoMetadataSync(fileSize: fileSizeString, created: creationDateString)
-}
 
-// Function to inspect video metadata asynchronously
-func inspectVideoInfoAsync(videoURL: URL) async -> VideoMetadataAsync? {
-    print("Inspecting async metadata for video: \(videoURL.path)")
-    // Create AVAsset instance
-    let asset = AVAsset(url: videoURL)
-    
-    var durationString: String = "Unknown duration"
-    
-    // Use async to load the duration as it’s now deprecated
+    // If needed, you can get the URL for the video using the localIdentifier
+    let fileManager = FileManager.default
     do {
-        let duration = try await asset.load(.duration)
-        let durationInSeconds = CMTimeGetSeconds(duration)
-        if durationInSeconds.isFinite {
-            durationString = String(format: "%.2f seconds", durationInSeconds)
+        let attributes = try fileManager.attributesOfItem(atPath: videoUrl.path)
+        if let fileSize = attributes[.size] as? NSNumber {
+            fileSizeString = String(format: "%.2f MB", fileSize.doubleValue / 1_000_000)
         }
     } catch {
-        print("Error loading duration: \(error.localizedDescription)")
+        print("...Error: Unable to retrieve file size from temporary URL")
+    }
+    // Retrieve duration directly from PHAsset
+    durationString = String(format: "%.2f seconds", phAsset.duration)
+
+    // Retrieve geolocation data (latitude and longitude) from PHAsset
+    if let location = phAsset.location {
+        let latitude = String(location.coordinate.latitude)
+        let longitude = String(location.coordinate.longitude)
+        latlonString = latitude + ", " + longitude
+    } else {
+        print("...Error: phAsset location not vound")
     }
     
-    print("Duration: \(durationString)")
-    // Return a VideoMetadataAsync instance with the duration
-    return VideoMetadataAsync(duration: durationString)
+    print("File size: \(fileSizeString),\n Creation Date: \(creationDateString),\n Duration is: \(durationString),\n Latlon is: \(latlonString)")
+    // Return the VideoMetadataSync instance
+    return VideoMetadata(fileSize: fileSizeString, created: creationDateString, duration: durationString, latlon: latlonString)
 }
 
 func moveVideoToPersistentLocation(from temporaryURL: URL) -> URL? {
