@@ -145,7 +145,7 @@ struct VideoPicker: UIViewControllerRepresentable {
                                 if let phAsset = assets.firstObject {
                                     print("phAsset: \(phAsset)")
                                     // 1. Extract sync metadata (duration, creation date, file size, geolocation)
-                                    if let videoMetadata = inspectVideoInfoSync(phAsset: phAsset, videoUrl: url) {
+                                    if let videoMetadata = inspectVideoInfo(phAsset: phAsset, videoUrl: url) {
                                         self.parent.videoMetadata = videoMetadata
                                     } else {
                                         print("Error: videoMetadata is nil.")
@@ -188,7 +188,7 @@ struct VideoMetadata: Codable {
 }
 
 // Function to inspect video metadata synchronously
-func inspectVideoInfoSync(phAsset: PHAsset, videoUrl: URL) -> VideoMetadata? {
+func inspectVideoInfo(phAsset: PHAsset, videoUrl: URL) -> VideoMetadata? {
     print("Inspecting sync metadata for video")
     var fileSizeString: String = "Unknown size"
     var creationDateString: String = "Unknown date"
