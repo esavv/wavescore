@@ -57,31 +57,33 @@ struct ContentView: View {
                 .sheet(isPresented: $isPickerPresented) {
                     VideoPicker(selectedVideo: $selectedVideo, videoMetadata: $videoMetadata) {
                         print("Selected Video URL: \(selectedVideo?.absoluteString ?? "No video selected")")
-                        if let videoMetadata = videoMetadata {
-                            resultText = """
-                            Duration: \(videoMetadata.duration)
-                            File Size: \(videoMetadata.fileSize)
-                            Created: \(videoMetadata.created)
-                            Lat/Long: \(videoMetadata.latlon)
-                            """
-                            showResults = true
-                        } else {
-                            print("Error: videoMetadata is nil.")
-                        }                        // Make an API call
-                        // *** API block start ********************
-//                        if let videoURL = selectedVideo {
-//                            print("Video file exists: \(fileExists(at: videoURL))")
-//                             // Call the dummy API with no video for hardcoded text
-//                             uploadVideoToAPI() { result in
-//                             // // Call the API with a video file
-//                             // uploadVideoToAPI(videoURL: videoURL) { result in
-//                                 // Handle the result returned by the API
-//                                 if let result = result {
-//                                     resultText = result  // Set the resultText state
-//                                 }
-//                             }
+//                        if let videoMetadata = videoMetadata {
+//                            resultText = """
+//                            Duration: \(videoMetadata.duration)
+//                            File Size: \(videoMetadata.fileSize)
+//                            Created: \(videoMetadata.created)
+//                            Lat/Long: \(videoMetadata.latlon)
+//                            """
 //                            showResults = true
+//                        } else {
+//                            print("Error: videoMetadata is nil.")
 //                        }
+                        // Make an API call
+                        // *** API block start ********************
+                        if let videoURL = selectedVideo {
+                            print("Video file exists: \(fileExists(at: videoURL))")
+                            print("Calling the API now...")
+//                            // Call the dummy API with no video for hardcoded text
+//                            uploadVideoToAPI() { result in
+                             // Call the API with a video file
+                             uploadVideoToAPI(videoURL: videoURL) { result in
+                                // Handle the result returned by the API
+                                if let result = result {
+                                    resultText = result  // Set the resultText state
+                                }
+                            }
+                            showResults = true
+                        }
                         // *** API block end **********************
                     }
                 }
@@ -269,9 +271,9 @@ struct APIResponse: Codable {
     let result: String
 }
 
-func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
-// func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
-    let url = URL(string: "https://6cd5-70-23-3-136.ngrok-free.app/upload_video")!  // Replace with your server's URL
+//func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
+func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
+    let url = URL(string: "https://e21e-70-23-3-136.ngrok-free.app/upload_video")!  // Replace with your server's URL
 //    let url = URL(string: "http://192.168.1.151:5000/upload_video")!  // Replace with your server's URL
 //    let url = URL(string: "http://127.0.0.1:5000/upload_video")!  // Replace with your server's URL
     
@@ -296,26 +298,26 @@ func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
     // *** Dummy Body End ******************************************
 
     // *** Video Body Start ****************************************
-//    // Replace "Non-Video Body" above with this chunk below for video requests
-//    // Create multipart form data body to send the video file
-//    let boundary = "Boundary-\(UUID().uuidString)"
-//    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-//    
-//    var body = Data()
-//    body.append("--\(boundary)\r\n".data(using: .utf8)!)
-//    body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(videoURL.lastPathComponent)\"\r\n".data(using: .utf8)!)
-//    body.append("Content-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
-//    do {
-//        let videoData = try Data(contentsOf: videoURL)
-//        body.append(videoData)
-//        body.append("\r\n".data(using: .utf8)!)
-//    } catch {
-//        print("Error reading video data: \(error.localizedDescription)")
-//        completion(nil)  // Call completion with nil in case of error
-//        return
-//    }
-//    body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-//    request.httpBody = body
+    // Replace "Non-Video Body" above with this chunk below for video requests
+    // Create multipart form data body to send the video file
+    let boundary = "Boundary-\(UUID().uuidString)"
+    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+    
+    var body = Data()
+    body.append("--\(boundary)\r\n".data(using: .utf8)!)
+    body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(videoURL.lastPathComponent)\"\r\n".data(using: .utf8)!)
+    body.append("Content-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
+    do {
+        let videoData = try Data(contentsOf: videoURL)
+        body.append(videoData)
+        body.append("\r\n".data(using: .utf8)!)
+    } catch {
+        print("Error reading video data: \(error.localizedDescription)")
+        completion(nil)  // Call completion with nil in case of error
+        return
+    }
+    body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+    request.httpBody = body
     // *** Video Body End ******************************************
 
     // Make the network request
