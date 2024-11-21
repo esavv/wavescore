@@ -7,10 +7,10 @@
 
 import SwiftUI
 import PhotosUI
-import Foundation
-import AVFoundation
-import Photos
-import CoreLocation
+//import Foundation
+//import AVFoundation
+//import Photos
+//import CoreLocation
 
 struct ContentView: View {
     @State private var selectedVideo: URL?  // State to hold the selected video URL
@@ -57,26 +57,11 @@ struct ContentView: View {
                 .sheet(isPresented: $isPickerPresented) {
                     VideoPicker(selectedVideo: $selectedVideo, videoMetadata: $videoMetadata) {
                         print("Selected Video URL: \(selectedVideo?.absoluteString ?? "No video selected")")
-//                        if let videoMetadata = videoMetadata {
-//                            resultText = """
-//                            Duration: \(videoMetadata.duration)
-//                            File Size: \(videoMetadata.fileSize)
-//                            Created: \(videoMetadata.created)
-//                            Lat/Long: \(videoMetadata.latlon)
-//                            """
-//                            showResults = true
-//                        } else {
-//                            print("Error: videoMetadata is nil.")
-//                        }
                         // Make an API call
-                        // *** API block start ********************
                         if let videoURL = selectedVideo {
-                            print("Video file exists: \(fileExists(at: videoURL))")
                             print("Calling the API now...")
-//                            // Call the dummy API with no video for hardcoded text
-//                            uploadVideoToAPI() { result in
-                             // Call the API with a video file
-                             uploadVideoToAPI(videoURL: videoURL) { result in
+                            // Call the API with a video file
+                            uploadVideoToAPI(videoURL: videoURL) { result in
                                 // Handle the result returned by the API
                                 if let result = result {
                                     resultText = result  // Set the resultText state
@@ -84,7 +69,6 @@ struct ContentView: View {
                             }
                             showResults = true
                         }
-                        // *** API block end **********************
                     }
                 }
                 
@@ -263,18 +247,12 @@ func moveVideoToPersistentLocation(from temporaryURL: URL) -> URL? {
     }
 }
 
-func fileExists(at url: URL) -> Bool {
-    return FileManager.default.fileExists(atPath: url.path)
-}
-
 struct APIResponse: Codable {
     let result: String
 }
 
-//func uploadVideoToAPI(completion: @escaping (String?) -> Void) {
 func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
-    let url = URL(string: "https://e21e-70-23-3-136.ngrok-free.app/upload_video")!  // Replace with your server's URL
-//    let url = URL(string: "http://192.168.1.151:5000/upload_video")!  // Replace with your server's URL
+    let url = URL(string: "https://2947-70-23-3-136.ngrok-free.app/upload_video")!  // Replace with your server's URL
 //    let url = URL(string: "http://127.0.0.1:5000/upload_video")!  // Replace with your server's URL
     
     var request = URLRequest(url: url)
