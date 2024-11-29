@@ -7,10 +7,6 @@
 
 import SwiftUI
 import PhotosUI
-//import Foundation
-//import AVFoundation
-//import Photos
-//import CoreLocation
 
 struct ContentView: View {
     @State private var selectedVideo: URL?  // State to hold the selected video URL
@@ -252,31 +248,13 @@ struct APIResponse: Codable {
 }
 
 func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
-    let url = URL(string: "https://2947-70-23-3-136.ngrok-free.app/upload_video")!  // Replace with your server's URL
+    let url = URL(string: "https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video")!
+//    let url = URL(string: "https://2947-70-23-3-136.ngrok-free.app/upload_video")!
 //    let url = URL(string: "http://127.0.0.1:5000/upload_video")!  // Replace with your server's URL
     
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     
-    // *** Dummy Body Start ****************************************
-    // Remove multipart form data (we are not sending the video anymore)
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    
-    // Non-Video Body: Send a dummy JSON object or empty body to the API
-    let jsonBody = ["message": "Testing connection, no video file"]  // Adjust according to your API's expected structure
-    do {
-        let jsonData = try JSONSerialization.data(withJSONObject: jsonBody, options: [])
-        request.httpBody = jsonData
-        print("Request: \(request)")  // Print the request details
-    } catch {
-        print("Error creating JSON body: \(error.localizedDescription)")
-        completion(nil)
-        return
-    }
-    // *** Dummy Body End ******************************************
-
-    // *** Video Body Start ****************************************
-    // Replace "Non-Video Body" above with this chunk below for video requests
     // Create multipart form data body to send the video file
     let boundary = "Boundary-\(UUID().uuidString)"
     request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -296,7 +274,6 @@ func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
     }
     body.append("--\(boundary)--\r\n".data(using: .utf8)!)
     request.httpBody = body
-    // *** Video Body End ******************************************
 
     // Make the network request
     let task = URLSession.shared.dataTask(with: request) { data, response, error in
