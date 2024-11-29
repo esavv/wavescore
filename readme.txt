@@ -1,5 +1,6 @@
 # Things to work on next as of 2024/11/29:
  - iOS app: Separate the video picker & API functionality into separate project files
+ - iOS app: Build a loading screen while waiting for API results
  - Model API: Figure out how to host our python inference code in the Flask API. User posts a video file to
       the API service and gets an inference result returned
  - We should update all src/ scripts to expect execution from the src directory
