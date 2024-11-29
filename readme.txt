@@ -61,3 +61,14 @@
  - If there are issues calling localhost:5000 but not 127.0.0.1:5000, it's because Apple AirPlay
    Receiver is listening on port 5000. Disable this to test: System Settings > General >
    AirDrop & Handoff > AirPlay Receiver (requires password to change)
+
+## How to update & deploy Flask API to Heroku
+ - Switch to a development branch & make changes
+ - Push changes to remote origin (on GitHub); merge to main remotely
+ - Switch to main & pull from origin
+ - Use git subtrees to deploy updated API to Heroku:
+   $ git subtree push --prefix api heroku main
+ - Check Heroku logs if needed:
+   $ heroku logs --tail --app surfjudge-api
+ - Call the API from terminal to test:
+   $ curl -X POST https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video -F "file=@data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
