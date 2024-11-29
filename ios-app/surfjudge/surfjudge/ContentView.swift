@@ -8,35 +8,21 @@
 import SwiftUI
 import PhotosUI
 
+enum AppState {
+    case home, results, loading
+}
+
 struct ContentView: View {
-    @State private var selectedVideo: URL?  // State to hold the selected video URL
+    @State private var appState: AppState = .home  // Initial state is 'default'
     @State private var isPickerPresented = false  // State to control the video picker presentation
-    @State private var showResults = false  // State to show results after video upload
-    @State private var resultText: String?  // Store the result from the API
+    @State private var selectedVideo: URL?  // State to hold the selected video URL
     @State private var videoMetadata: VideoMetadata? // Store video metadata from user-uploaded surf video
+    @State private var resultText: String?  // Store the result from the API
 
     var body: some View {
         VStack {
-            if showResults {
-                // Display the result text (from API response) and hardcoded "Nice surfing!"
-                if let resultText = resultText {
-                    Text(resultText)  // Display the maneuvers and "3 maneuvers performed"
-                        .font(.body)
-                        .padding()
-                    
-                    Text("Nice surfing!")  // Hardcoded message in iOS app
-                        .font(.subheadline)
-                        .padding()
-                    
-                    Button("Upload Another Video") {
-                        // Reset the state to allow uploading a new video
-                        showResults = false
-                        selectedVideo = nil
-                        isPickerPresented = true  // Open video picker again
-                    }
-                    .padding()
-                }
-            } else {
+            switch appState {
+            case .home:
                 // Show the video upload button if showResults is false
                 Button("Upload Surf Video") {
                     PHPhotoLibrary.requestAuthorization { (status) in
@@ -53,17 +39,20 @@ struct ContentView: View {
                 .sheet(isPresented: $isPickerPresented) {
                     VideoPicker(selectedVideo: $selectedVideo, videoMetadata: $videoMetadata) {
                         print("Selected Video URL: \(selectedVideo?.absoluteString ?? "No video selected")")
+                        appState = .loading
                         // Make an API call
                         if let videoURL = selectedVideo {
                             print("Calling the API now...")
                             // Call the API with a video file
                             uploadVideoToAPI(videoURL: videoURL) { result in
                                 // Handle the result returned by the API
-                                if let result = result {
-                                    resultText = result  // Set the resultText state
+                                DispatchQueue.main.async {
+                                    if let result = result {
+                                        resultText = result  // Set the resultText state
+                                    }
+                                    appState = .results  // Transition to results state after receiving the response
                                 }
                             }
-                            showResults = true
                         }
                     }
                 }
@@ -72,6 +61,35 @@ struct ContentView: View {
                 if let videoURL = selectedVideo {
                     Text("Selected Video: \(videoURL.lastPathComponent)")
                 }
+                
+            case .results:
+                // Display the result text (from API response) and hardcoded "Nice surfing!"
+                if let resultText = resultText {
+                    Text(resultText)  // Display the maneuvers and "3 maneuvers performed"
+                        .font(.body)
+                        .padding()
+                    
+                    Text("Nice surfing!")  // Hardcoded message in iOS app
+                        .font(.subheadline)
+                        .padding()
+                    
+                    Button("Upload Another Video") {
+                        // Reset the state to allow uploading a new video
+                        appState = .home
+                        selectedVideo = nil
+                        isPickerPresented = true  // Open video picker again
+                    }
+                    .padding()
+                }
+
+            case .loading:
+                // Show loading indicator
+                Text("Analyzing video...")
+                    .font(.headline)
+                    .padding()
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                    .padding()
             }
         }
         .padding()
