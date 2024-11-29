@@ -15,7 +15,7 @@ def upload_video():
     print('Received file: ' + file.filename)
 
     # Save the file temporarily
-    temp_path = f"tmp/{file.filename}"  # or choose a path that works for you
+    temp_path = f"/tmp/{file.filename}"  # or choose a path that works for you
     file.save(temp_path)
     
     # Use OpenCV to get video duration
