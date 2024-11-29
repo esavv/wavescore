@@ -1,13 +1,7 @@
-# Things to work on next as of 2024/11/17:
- - Model API pre-work & iOS connection: Get a dummy API service running that outputs hardcoded maneuvers
-      & connect it to our iOS app. Update the service to not require a video, and don't POST a video from
-      the iOS app just to verify that the service does work.
- - iOS app: Troubleshoot the issue with the app getting access to the user's videos
- - Model API: Try to deploy it to the cloud.
- - Model API pre-work: Update the dummy API to actuall inspect the video and, say, report the video
-      length. Maybe also report a random news headline to demonstrate internet connectivity.
- - Model API: Figure out how to host our python inference code as a Web API using Flask or something
-    similar. User posts a video file to the API service and gets an inference returned
+# Things to work on next as of 2024/11/29:
+ - iOS app: Separate the video picker & API functionality into separate project files
+ - Model API: Figure out how to host our python inference code in the Flask API. User posts a video file to
+      the API service and gets an inference result returned
  - We should update all src/ scripts to expect execution from the src directory
  - Figure out how to pad images to make them square before the resizing in train.py
  - Figure out how to get progress bar-like print statements
@@ -25,9 +19,18 @@
       least makes predictions.
  - We have a boilerplate iOS app, we modified it to allow the user to upload a video, we gave it an app
       icon, and we figured out how to deploy and test it to my physical iPhone
- - iOS development: Add functionality that, upon user upload, displays a set of manuevers "performed"
+ - iOS app: Add functionality that, upon user upload, displays a set of manuevers "performed"
     in the video. This should be a hardcoded set of maneuvers but gets us to figure out both (1) display
     and (2) what the json/schema the app should expect from our prediction service
+ - Model API pre-work & iOS connection: Get a dummy API service running, deployed via Flask, and connect it
+      to the iOS app. The service doesn't require/use video; it just returns the same hardcode set of maneuvers
+      previously set in the iOS app code.
+ - iOS app: The app now explicitly requests access to the user's videos when first installed & run
+ - Model API: Deploy the Flask API to the cloud (via Heroku) and connect it to the iOS app. Configure the API
+      to receive a video
+ - iOS app: Update the iOS app to send the user's selected video. The API returns both a hardcoded set of maneuvers
+      and the video's duration to prove it can actually use the video file. The results are displayed to the user
+      in the app.
 
 ## How to download a YouTube video using yt-dlp:
  > yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI
