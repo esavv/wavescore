@@ -13,7 +13,7 @@ enum AppState {
 }
 
 struct ContentView: View {
-    @State private var appState: AppState = .home  // Initial state is 'default'
+    @State private var appState: AppState = .home  // Initial state is 'home'
     @State private var isPickerPresented = false  // State to control the video picker presentation
     @State private var selectedVideo: URL?  // State to hold the selected video URL
     @State private var videoMetadata: VideoMetadata? // Store video metadata from user-uploaded surf video
