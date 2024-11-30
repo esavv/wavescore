@@ -9,7 +9,7 @@ import SwiftUI
 import PhotosUI
 
 enum AppState {
-    case home, results, loading
+    case home, loading, results
 }
 
 struct ContentView: View {
@@ -61,6 +61,16 @@ struct ContentView: View {
                 if let videoURL = selectedVideo {
                     Text("Selected Video: \(videoURL.lastPathComponent)")
                 }
+
+            case .loading:
+                // Show loading indicator
+                Text("Analyzing video...")
+                    .font(.headline)
+                    .padding()
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                    .padding()
+            }
                 
             case .results:
                 // Display the result text (from API response) and hardcoded "Nice surfing!"
@@ -81,16 +91,6 @@ struct ContentView: View {
                     }
                     .padding()
                 }
-
-            case .loading:
-                // Show loading indicator
-                Text("Analyzing video...")
-                    .font(.headline)
-                    .padding()
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle())
-                    .padding()
-            }
         }
         .padding()
     }

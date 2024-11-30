@@ -1,11 +1,10 @@
 # Things to work on next as of 2024/11/29:
- - iOS app: Separate the video picker & API functionality into separate project files
- - iOS app: Build a loading screen while waiting for API results
  - Model API: Figure out how to host our python inference code in the Flask API. User posts a video file to
       the API service and gets an inference result returned
+ - iOS + API: Build a demo where the API modifies the user's video, annotated with "their" maneuvers, returns
+      the video to the app, the app plays the video and allows the user to save it to their device 
  - We should update all src/ scripts to expect execution from the src directory
  - Figure out how to pad images to make them square before the resizing in train.py
- - Figure out how to get progress bar-like print statements
 
 # Things recently completed
  - We can now clip full surf heats into individual rides, and process individual rides into
@@ -32,6 +31,7 @@
  - iOS app: Update the iOS app to send the user's selected video. The API returns both a hardcoded set of maneuvers
       and the video's duration to prove it can actually use the video file. The results are displayed to the user
       in the app.
+ - iOS app: Build a loading screen while waiting for API results
 
 ## How to download a YouTube video using yt-dlp:
  > yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI
