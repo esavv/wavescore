@@ -1,5 +1,5 @@
 //
-//  ApiService.swift
+//  ModelAPI.swift
 //  surfjudge
 //
 //  Created by Erik Savage on 11/29/24.
