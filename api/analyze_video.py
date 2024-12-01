@@ -1,5 +1,5 @@
 print("Importing packages...")
-import cv2, os, random
+import csv, cv2, os, random
 from google.cloud import vision
 
 print("Setting env variables...")
@@ -51,24 +51,27 @@ video_path4 = "../tmp/pb020236.MOV"
 print("Extracting random frames from the video...")
 frames = extract_random_frames(video_path4, num_frames=5)
 
+keyword_path = './cloud_vision_keywords.csv'
+file = csv.reader(open(keyword_path, 'r'))
+keywords = set([row[0] for row in file])
+
 # List to store all labels from all frames
-all_labels = []
+labels = set()
+ans = "No"
 
 # Step 2: Analyze each extracted frame using Cloud Vision API
 for frame in frames:
     print(f"Analyzing {frame}...")
-    labels = analyze_image(frame)
-    for label in labels:
+    frame_labels = analyze_image(frame)
+    for label in frame_labels:
         # Collect label description and its score
-        all_labels.append((label.description, label.score))
+        if label.score >= 0.8:
+            labels.add(label.description)
+            if label.description in keywords:
+                ans = "Yes"
 
     # Delete the frame after analysis
     os.remove(frame)
     
-# Sort the labels by score in descending order
-sorted_labels = sorted(all_labels, key=lambda x: x[1], reverse=True)
-
-# Print all the labels and their scores in descending order
-print("Collected labels from all frames (sorted by confidence score):")
-for label, score in sorted_labels:
-    print(f" - {label} (confidence: {score:.3f})")
+print("The labels for this video are: " + str(labels))
+print("Is this a surf video: " + ans)
