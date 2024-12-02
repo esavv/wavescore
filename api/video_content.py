@@ -1,9 +1,20 @@
 print("Importing packages...")
-import csv, cv2, os, random
+import base64, csv, cv2, os, random
 from google.cloud import vision
 
 print("Setting env variables...")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./surfjudge-443400-035fd5609c22.json"
+if os.path.exists("./surfjudge-443400-035fd5609c22.json"):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./surfjudge-443400-035fd5609c22.json"
+else:
+    # Decode the Base64 key and write it to a temporary file
+    base64_key = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_B64")
+    if base64_key:
+        with open("service_account_key.json", "wb") as temp_file:
+            temp_file.write(base64.b64decode(base64_key))
+        # Point the library to the temporary file
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "service_account_key.json"
+    else:
+        raise EnvironmentError("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 environment variable")
 
 def is_surf_video(video_path):
     # Step 1: Extract random frames

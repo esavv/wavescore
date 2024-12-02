@@ -10,3 +10,4 @@ tmp/
 .DS_Store
 ios-app/surfjudge/.DS_Store
 api/surfjudge-443400-035fd5609c22.json
+api/service_account_key.json.b64
