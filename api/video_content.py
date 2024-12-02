@@ -6,13 +6,6 @@ print("Setting env variables...")
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./surfjudge-443400-035fd5609c22.json"
 
 def is_surf_video(video_path):
-    # Replace with the path to your video file
-    # video_path1 = "../tmp/IMG_1546.MOV"
-    # video_path2 = "../tmp/IMG_1548.MOV"
-    # video_path3 = "../tmp/pb020235.MOV"
-    # video_path4 = "../tmp/pb020236.MOV"
-    # video_path = video_path1
-
     # Step 1: Extract random frames
     print("Extracting random frames from the video...")
     frames = extract_random_frames(video_path, num_frames=5)
