@@ -12,8 +12,8 @@ struct APIResponse: Codable {
 }
 
 func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
-//    let url = URL(string: "https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video")!
-    let url = URL(string: "https://c74e-70-23-3-136.ngrok-free.app/upload_video")!
+    let url = URL(string: "https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video")!
+//    let url = URL(string: "https://c74e-70-23-3-136.ngrok-free.app/upload_video")!
 //    let url = URL(string: "http://127.0.0.1:5000/upload_video")!  // Replace with your server's URL
     
     var request = URLRequest(url: url)

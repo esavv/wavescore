@@ -64,6 +64,8 @@
 ## When testing Flask API locally and calling it remotely via ngrok:
  - Launch the Flask server:
     $ python3 app.py
+ - Ensure environment variables are set correctly:
+    $ export GOOGLE_APPLICATION_CREDENTIALS_B64=$(cat api/service_account_key.json.b64)
  - Launch the ngrok server:
     $ ngrok http 5000
  - Call the API:
@@ -76,9 +78,11 @@
  - Switch to a development branch & make changes
  - Push changes to remote origin (on GitHub); merge to main remotely
  - Switch to main & pull from origin
+ - Ensure environment variables are set correctly
+    $ heroku config:set GOOGLE_APPLICATION_CREDENTIALS_B64=$(cat api/service_account_key.json.b64)
  - Use git subtrees to deploy updated API to Heroku:
-   $ git subtree push --prefix api heroku main
+    $ git subtree push --prefix api heroku main
  - Check Heroku logs if needed:
-   $ heroku logs --tail --app surfjudge-api
+    $ heroku logs --tail --app surfjudge-api
  - Call the API from terminal to test:
-   $ curl -X POST https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video -F "file=@data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
+    $ curl -X POST https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video -F "file=@data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
