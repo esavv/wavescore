@@ -62,6 +62,12 @@
     and outputs sequence labels in, for example, .../ride_0/123_0_seq_labels.csv
 
 ## When testing Flask API locally and calling it remotely via ngrok:
+ - Launch the Flask server:
+    $ python3 app.py
+ - Launch the ngrok server:
+    $ ngrok http 5000
+ - Call the API:
+    $ curl -X POST https://7c64-70-23-3-136.ngrok-free.app/upload_video -F "file=@tmp/IMG_1546.MOV"
  - If there are issues calling localhost:5000 but not 127.0.0.1:5000, it's because Apple AirPlay
    Receiver is listening on port 5000. Disable this to test: System Settings > General >
    AirDrop & Handoff > AirPlay Receiver (requires password to change)

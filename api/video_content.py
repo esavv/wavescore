@@ -5,6 +5,39 @@ from google.cloud import vision
 print("Setting env variables...")
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./surfjudge-443400-035fd5609c22.json"
 
+def is_surf_video(video_path):
+    # Replace with the path to your video file
+    # video_path1 = "../tmp/IMG_1546.MOV"
+    # video_path2 = "../tmp/IMG_1548.MOV"
+    # video_path3 = "../tmp/pb020235.MOV"
+    # video_path4 = "../tmp/pb020236.MOV"
+    # video_path = video_path1
+
+    # Step 1: Extract random frames
+    print("Extracting random frames from the video...")
+    frames = extract_random_frames(video_path, num_frames=5)
+
+    keyword_path = './cloud_vision_keywords.csv'
+    file = csv.reader(open(keyword_path, 'r'))
+    keywords = set([row[0] for row in file])
+
+    result = False
+    # Step 2: Analyze each extracted frame using Cloud Vision API
+    for frame in frames:
+        print(f"Analyzing {frame}...")
+        frame_labels = analyze_image(frame)
+        for label in frame_labels:
+            # Collect label description and its score
+            if label.score >= 0.8:
+                if label.description in keywords:
+                    print("Found relevant label: " + label.description)
+                    result = True
+
+        # Delete the frame after analysis
+        os.remove(frame)
+
+    return result
+
 # Function to extract 5 random frames from a video
 def extract_random_frames(video_path, num_frames=5):
     frames = []
@@ -40,38 +73,3 @@ def analyze_image(image_path):
     labels = response.label_annotations
     
     return labels
-
-# Replace with the path to your video file
-video_path1 = "../tmp/IMG_1546.MOV"
-video_path2 = "../tmp/IMG_1548.MOV"
-video_path3 = "../tmp/pb020235.MOV"
-video_path4 = "../tmp/pb020236.MOV"
-
-# Step 1: Extract random frames
-print("Extracting random frames from the video...")
-frames = extract_random_frames(video_path4, num_frames=5)
-
-keyword_path = './cloud_vision_keywords.csv'
-file = csv.reader(open(keyword_path, 'r'))
-keywords = set([row[0] for row in file])
-
-# List to store all labels from all frames
-labels = set()
-ans = "No"
-
-# Step 2: Analyze each extracted frame using Cloud Vision API
-for frame in frames:
-    print(f"Analyzing {frame}...")
-    frame_labels = analyze_image(frame)
-    for label in frame_labels:
-        # Collect label description and its score
-        if label.score >= 0.8:
-            labels.add(label.description)
-            if label.description in keywords:
-                ans = "Yes"
-
-    # Delete the frame after analysis
-    os.remove(frame)
-    
-print("The labels for this video are: " + str(labels))
-print("Is this a surf video: " + ans)
