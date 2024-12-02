@@ -4,6 +4,7 @@ data/**/*.jpg
 data/**/orig*
 models/
 src/__pycache__/
+api/__pycache__/
 img/
 tmp/
 .DS_Store

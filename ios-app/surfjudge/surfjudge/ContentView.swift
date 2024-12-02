@@ -70,17 +70,12 @@ struct ContentView: View {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle())
                     .padding()
-            }
                 
             case .results:
                 // Display the result text (from API response) and hardcoded "Nice surfing!"
                 if let resultText = resultText {
                     Text(resultText)  // Display the maneuvers and "3 maneuvers performed"
                         .font(.body)
-                        .padding()
-                    
-                    Text("Nice surfing!")  // Hardcoded message in iOS app
-                        .font(.subheadline)
                         .padding()
                     
                     Button("Upload Another Video") {
@@ -91,6 +86,7 @@ struct ContentView: View {
                     }
                     .padding()
                 }
+            }
         }
         .padding()
     }
