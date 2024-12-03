@@ -39,15 +39,15 @@ yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI
 ```
 
 ### Clip a shorter video from a longer video and save it
-This assumes we're in the parent /surfjudge directory & naively saves it there.
+This assumes we're in the parent `/surfjudge` directory & naively saves it there.
 ```bash  
 ffmpeg -i data/heats/heat_1Zj_jAPToxI/1Zj_jAPToxI.mp4 -ss 00:00:17 -to 00:00:46 -c:v libx264 -c:a aac 1Zj_jAPToxI_1.mp4
 ```
 
 ### Convert a longer surfing video into a sequence of ride clips
-   - Suppose we have video 123.mp4. First, ensure it exists at this path: `/surfjudge/data/heats/heat_123/123.mp4`
-   - Add a csv to the /heat_123 directory called 'ride_times_123.csv' that contains the start & end timestamps for each ride to be clipped
-   - From the main /surfjudge directory, run this command:
+   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `/surfjudge/data/heats/heat_123/123.mp4`
+   - Add a csv to the `/heat_123` directory called `ride_times_123.csv` that contains the start & end timestamps for each ride to be clipped
+   - From the main `/surfjudge` directory, run this command:
 ```bash  
 python3 src/clipify.py 123 
 ```
@@ -55,7 +55,7 @@ python3 src/clipify.py 123
 
 ### Convert a sequence of ride clips into labeled sequences of frames
 This labeled sequence is intended to be fed into a model that will learn surf maneuvers from an input video.
-   - Suppose we have video 123.mp4 that has ride clips in `/data/heats/heat_123/rides/`
+   - Suppose we have video `123.mp4` that has ride clips in `/data/heats/heat_123/rides/`
    - Ensure that each ride directory, in addition to the ride clip (e.g. `ride_0/123_0.mp4`) has a human-labeled CSV file containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `data/maneuver_taxonomy.csv`)
    - From the main /surfjudge directory, run this command:
 ```bash
@@ -80,7 +80,7 @@ ngrok http 5000
 ```bash  
 curl -X POST https://7c64-70-23-3-136.ngrok-free.app/upload_video -F "file=@tmp/IMG_1546.MOV"
 ```
-   - If there are issues calling localhost:5000 but not 127.0.0.1:5000, it's because Apple AirPlay Receiver is listening on port 5000. Disable this to test: System Settings > General > AirDrop & Handoff > AirPlay Receiver (requires password to change)
+   - If there are issues calling `localhost:5000` but not `127.0.0.1:5000`, it's because Apple AirPlay Receiver is listening on port 5000. While testing, disable it by navigating to: System Settings > General > AirDrop & Handoff > AirPlay Receiver (requires password to change)
 
 ### Update & deploy Flask API to Heroku
    - Switch to a development branch & make changes
