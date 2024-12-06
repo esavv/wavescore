@@ -29,7 +29,7 @@ def annotate_video(input_path, analysis):
         text = maneuver['name']
 
         # Create a TextClip for each maneuver
-        txt_clip = (TextClip(text=text, font='Arial', font_size=40, color='white')
+        txt_clip = (TextClip(text=text, font='DejaVuSans', font_size=40, color='white')
                     .with_position(('center', clip.h * 0.85))
                     .with_duration(end_time - start_time)
                     .with_start(start_time))
@@ -38,7 +38,7 @@ def annotate_video(input_path, analysis):
 
     # Create a TextClip for the predicted score (overlay it in the last 2 seconds)
     score_text = f"Predicted Score: {analysis['score']}"
-    score_clip = (TextClip(text=score_text, font='Arial', font_size=40, color='white')
+    score_clip = (TextClip(text=score_text, font='DejaVuSans', font_size=40, color='white')
                   .with_position(('center', 50))
                   .with_duration(2)  # Last 2 seconds of the video
                   .with_start(clip.duration - 2))  # Start 2 seconds before the end
