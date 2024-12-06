@@ -4,14 +4,18 @@ from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 import boto3, os, csv
 from botocore.exceptions import NoCredentialsError
 
-def annotate_video(input_path, analysis):
+print("Setting env variables...")
+if os.path.exists("./wavescore_accessKeys.csv"):
     with open('./wavescore_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
         reader = csv.DictReader(file)
         for row in reader:
             os.environ['AWS_ACCESS_KEY_ID'] = row['Access key ID']
             os.environ['AWS_SECRET_ACCESS_KEY'] = row['Secret access key']
             break  # Assuming there is only one row, exit the loop after setting the variables
+#else:
+    # TODO: We need a more sustainable solution here
 
+def annotate_video(input_path, analysis):
     # Load the video
     clip = VideoFileClip(input_path)
 
