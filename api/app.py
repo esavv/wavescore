@@ -1,5 +1,5 @@
-import os, cv2
-import video_content
+import os
+import video_content, video_overlay
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -16,29 +16,38 @@ def upload_video():
     print('Received file: ' + file.filename)
 
     # Save the file temporarily
-    temp_path = f"/tmp/{file.filename}"  # or choose a path that works for you
-    file.save(temp_path)
+    video_path = f"/tmp/{file.filename}"  # or choose a path that works for you
+    file.save(video_path)
 
     print("Checking whether this is a surf video...")
-    is_surf = video_content.is_surf_video(temp_path)
+    is_surf = video_content.is_surf_video(video_path)
     
     if is_surf:
-        # Use OpenCV to get video duration
-        cap = cv2.VideoCapture(temp_path)
-        if not cap.isOpened():
-            return jsonify({"error": "Failed to open video file"}), 500
-        
-        # Calculate the video duration
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        duration = round(total_frames / fps, 1)
-        # Dummy response with hardcoded results
-        result = f"3 maneuvers performed:\n- Cutback (0:03)\n- Cutback (0:09)\n- Snap (0:15)\n\nVid length: {duration} seconds\n\nNice surfing!"
-    else:
-        result = "Video does not seem to be a surf video.\nTry something else!"
+        maneuvers = [
+            {'name': '360', 'start_time': 3.0, 'end_time': 5.0},
+            {'name': 'Snap', 'start_time': 6.0, 'end_time': 8.0},
+            {'name': 'Snap', 'start_time': 10.0, 'end_time': 11.0},
+            {'name': 'Cutback', 'start_time': 14.0, 'end_time': 15.0},
+            {'name': 'Cutback', 'start_time': 17.0, 'end_time': 18.0},
+            {'name': 'Cutback', 'start_time': 20.0, 'end_time': 21.0},
+            {'name': 'Cutback', 'start_time': 23.0, 'end_time': 24.0}
+        ]
+        analysis = {'maneuvers': maneuvers, 'score': 8.5}
+        annotated_url = video_overlay.annotate_video(video_path, analysis)
 
+        # Return the annotated video to the client
+        result = {
+            "status": "success",
+            "message": "Nice surfing!",
+            "video_url": annotated_url
+        }
+    else:
+        result = {
+            "status": "error",
+            "message": "Video does not seem to be a surf video. Please try another video."
+        }
     # Delete the temporary file after extracting metadata
-    os.remove(temp_path)
+    os.remove(video_path)
     
     # Return hardcoded response
     return jsonify({"result": result})
