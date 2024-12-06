@@ -8,13 +8,14 @@
 import SwiftUI
 
 struct APIResponse: Codable {
-    let result: String
+    let status: String  // "success" or "error"
+    let message: String // Descriptive message
+    let video_url: String? // Optional URL for annotated video (only present on success)
 }
 
-func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
-    let url = URL(string: "https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video")!
-//    let url = URL(string: "https://c74e-70-23-3-136.ngrok-free.app/upload_video")!
-//    let url = URL(string: "http://127.0.0.1:5000/upload_video")!  // Replace with your server's URL
+func uploadVideoToAPI(videoURL: URL, completion: @escaping (APIResponse?) -> Void) {
+//    let url = URL(string: "https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video")!
+    let url = URL(string: "https://22b1-70-23-3-136.ngrok-free.app/upload_video")!
     
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -60,7 +61,7 @@ func uploadVideoToAPI(videoURL: URL, completion: @escaping (String?) -> Void) {
         do {
             // Parse the JSON response (e.g., return a hardcoded message from the API)
             let apiResponse = try JSONDecoder().decode(APIResponse.self, from: data)
-            completion(apiResponse.result)  // Return the result via the completion handler
+            completion(apiResponse)  // Return the result via the completion handler
         } catch {
             print("Failed to decode response: \(error)")
             completion(nil)  // Call completion with nil in case of decode error

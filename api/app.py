@@ -50,7 +50,7 @@ def upload_video():
     os.remove(video_path)
     
     # Return hardcoded response
-    return jsonify({"result": result})
+    return jsonify(result)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
