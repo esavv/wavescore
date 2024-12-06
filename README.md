@@ -89,6 +89,8 @@ curl -X POST https://7c64-70-23-3-136.ngrok-free.app/upload_video -F "file=@tmp/
    - Ensure environment variables are set correctly
 ```bash
 heroku config:set GOOGLE_APPLICATION_CREDENTIALS_B64=$(cat api/service_account_key.json.b64)
+heroku config:set AWS_ACCESS_KEY_ID=[INSERT_KEY_HERE]
+heroku config:set AWS_SECRET_ACCESS_KEY=[INSERT_KEY_HERE]
 ```
    - Use git subtrees to deploy updated API to Heroku:
 ```bash
