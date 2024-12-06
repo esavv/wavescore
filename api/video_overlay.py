@@ -1,10 +1,19 @@
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.VideoClip import TextClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
+import boto3, os, csv
+from botocore.exceptions import NoCredentialsError
 
-def annotate_video(input_video_path, output_video_path, analysis):
+def annotate_video(input_path, analysis):
+    with open('./wavescore_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            os.environ['AWS_ACCESS_KEY_ID'] = row['Access key ID']
+            os.environ['AWS_SECRET_ACCESS_KEY'] = row['Secret access key']
+            break  # Assuming there is only one row, exit the loop after setting the variables
+
     # Load the video
-    clip = VideoFileClip(input_video_path)
+    clip = VideoFileClip(input_path)
 
     # Create a list of text clips to overlay on the video
     text_clips = []
@@ -36,21 +45,43 @@ def annotate_video(input_video_path, output_video_path, analysis):
     video = CompositeVideoClip([clip] + text_clips)
 
     # Write the result to a file
+    input_name = os.path.splitext(os.path.basename(input_path))[0]
+    input_ext = os.path.splitext(input_path)[1]
+    output_name = input_name + "_annotated" + input_ext
+    output_video_path = "/tmp/" + output_name
     video.write_videofile(output_video_path, codec='libx264')
 
-# Example usage
-maneuvers = [
-    {'name': '360', 'start_time': 3.0, 'end_time': 5.0},
-    {'name': 'Snap', 'start_time': 6.0, 'end_time': 8.0},
-    {'name': 'Snap', 'start_time': 10.0, 'end_time': 11.0},
-    {'name': 'Cutback', 'start_time': 14.0, 'end_time': 15.0},
-    {'name': 'Cutback', 'start_time': 17.0, 'end_time': 18.0},
-    {'name': 'Cutback', 'start_time': 20.0, 'end_time': 21.0},
-    {'name': 'Cutback', 'start_time': 23.0, 'end_time': 24.0}
-]
-score = 8.5
-analysis = {'maneuvers': maneuvers, 'score': score}
+    print('Uploading video to AWS...')
+    s3 = boto3.client('s3')  # Ensure AWS credentials are set in your environment or AWS credentials file
+    bucket_name = 'wavescorevideos'
 
-input_video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-output_video_path = "1Zj_jAPToxI_6_annotated.mp4"
-annotate_video(input_video_path, output_video_path, analysis)
+    try:
+        # Upload the file to S3
+        s3.upload_file(output_video_path, bucket_name, output_name)
+        print(f"File uploaded successfully! You can download it from:")
+        video_url = f"https://{bucket_name}.s3.amazonaws.com/{output_name}"
+        print(video_url)
+        print('Deleting local video at: ' + output_video_path)
+        os.remove(output_video_path)
+    except FileNotFoundError:
+        print(f"File not found: {output_video_path}")
+    except NoCredentialsError:
+        print("Credentials not found or not configured correctly.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    return video_url
+
+if __name__ == "__main__":
+    maneuvers = [
+        {'name': '360', 'start_time': 3.0, 'end_time': 5.0},
+        {'name': 'Snap', 'start_time': 6.0, 'end_time': 8.0},
+        {'name': 'Snap', 'start_time': 10.0, 'end_time': 11.0},
+        {'name': 'Cutback', 'start_time': 14.0, 'end_time': 15.0},
+        {'name': 'Cutback', 'start_time': 17.0, 'end_time': 18.0},
+        {'name': 'Cutback', 'start_time': 20.0, 'end_time': 21.0},
+        {'name': 'Cutback', 'start_time': 23.0, 'end_time': 24.0}
+    ]
+    analysis = {'maneuvers': maneuvers, 'score': 8.5}
+    input_path = '../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4'
+    annotate_video(input_path, analysis)
