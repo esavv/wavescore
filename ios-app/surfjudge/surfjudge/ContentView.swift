@@ -17,7 +17,7 @@ struct ContentView: View {
     @State private var isPickerPresented = false  // State to control the video picker presentation
     @State private var selectedVideo: URL?  // State to hold the selected video URL
     @State private var videoMetadata: VideoMetadata? // Store video metadata from user-uploaded surf video
-    @State private var resultText: String?  // Store the result from the API
+    @State private var apiResponse: APIResponse?  // Store the API response
 
     var body: some View {
         VStack {
@@ -44,12 +44,10 @@ struct ContentView: View {
                         if let videoURL = selectedVideo {
                             print("Calling the API now...")
                             // Call the API with a video file
-                            uploadVideoToAPI(videoURL: videoURL) { result in
+                            uploadVideoToAPI(videoURL: videoURL) { response in
                                 // Handle the result returned by the API
                                 DispatchQueue.main.async {
-                                    if let result = result {
-                                        resultText = result  // Set the resultText state
-                                    }
+                                    apiResponse = response  // Set the resultText state
                                     appState = .results  // Transition to results state after receiving the response
                                 }
                             }
@@ -73,19 +71,46 @@ struct ContentView: View {
                 
             case .results:
                 // Display the result text (from API response) and hardcoded "Nice surfing!"
-                if let resultText = resultText {
-                    Text(resultText)  // Display the maneuvers and "3 maneuvers performed"
-                        .font(.body)
-                        .padding()
-                    
-                    Button("Upload Another Video") {
-                        // Reset the state to allow uploading a new video
-                        appState = .home
-                        selectedVideo = nil
-                        isPickerPresented = true  // Open video picker again
+                if let response = apiResponse {
+                    if response.status == "success" {
+                        if let videoURL = response.video_url {
+                            Text("Annotated Video URL:")
+                                .font(.body)
+                            Text("\(videoURL)")
+                                .font(.body)
+                                .foregroundColor(.blue)
+                                .underline()
+                                .onTapGesture {
+                                    if let url = URL(string: videoURL) {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }
+                                .padding()
+                        }
+                        Text(response.message)
+                            .font(.body)
+                            .padding()
+                    } else {
+                        // Error case: Show only the error message
+                        Text("\(response.message)")
+                            .font(.body)
+                            .foregroundColor(.red)
+                            .padding()
                     }
-                    .padding()
+
+                } else {
+                    Text("Something went wrong. Please try again.")
+                        .font(.body)
+                        .foregroundColor(.red)
+                        .padding()
                 }
+                Button("Upload Another Video") {
+                    // Reset the state to allow uploading a new video
+                    appState = .home
+                    selectedVideo = nil
+                    isPickerPresented = true  // Open video picker again
+                }
+                .padding()
             }
         }
         .padding()
