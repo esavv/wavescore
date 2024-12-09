@@ -1,13 +1,13 @@
 //
-//  surfjudgeUITestsLaunchTests.swift
-//  surfjudgeUITests
+//  wavescoreUITestsLaunchTests.swift
+//  wavescoreUITests
 //
 //  Created by Erik Savage on 11/8/24.
 //
 
 import XCTest
 
-final class surfjudgeUITestsLaunchTests: XCTestCase {
+final class wavescoreUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
