@@ -1,6 +1,6 @@
 //
 //  VideoPicker.swift
-//  surfjudge
+//  wavescore
 //
 //  Created by Erik Savage on 11/29/24.
 //

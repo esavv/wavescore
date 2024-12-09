@@ -1,6 +1,6 @@
 //
-//  surfjudgeApp.swift
-//  surfjudge
+//  wavescoreApp.swift
+//  wavescore
 //
 //  Created by Erik Savage on 11/8/24.
 //
