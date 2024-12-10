@@ -1,4 +1,4 @@
-# SurfJudge
+# WaveScore
 
 ## Overview
 
