@@ -6,7 +6,7 @@
 
 ## Demo
 
-TODO
+[Watch it here!](https://www.youtube.com/shorts/CNARgUQ5YtU)
 
 ## Roadmap
 
