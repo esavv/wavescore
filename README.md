@@ -11,25 +11,33 @@ TODO
 ## Roadmap
 
 ### Things to Work on Next
-Last updated: 2024/11/29
-   - Model API: Figure out how to host our python inference code in the Flask API. User posts a video file to the API service and gets an inference result returned
-   - iOS + API: Build a demo where the API modifies the user's video, annotated with "their" maneuvers, returns the video to the app, the app plays the video and allows the user to save it to their device 
-   - We should update all src/ scripts to expect execution from the src directory
-   - Figure out how to pad images to make them square before the resizing in train.py
+Last updated: 2024/12/10
+   - Record demo recording and embed in this readme
+   - Get current 2-part model inference running on API and returning results to iOS app
+   - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
+   - Migrate data from directory system to postgres + blob storage (S3)
+   - Get interim analysis results (checking if surf video, analyzing, annotating video...). Consider switching API to SSE
+   - Host model training & inference in the cloud
+   - Pad video frames to make them square before the resizing in train.py
+   - Build 2nd part of 2-part model: Infer wave score from maneuvers performed
+   - iOS code cleanup: Refactor toast & other logic in ContentView
+   - API code cleanup: Clearer naming for API keys and move them to dedicated subdirectory
 
 ### Things Recently Completed
-   - We can now clip full surf heats into individual rides, and process individual rides into maneuver-labeled sequences of frames that are ready to be fed into a model
-   - We've finished labeling maneuvers for all rides in our first video
-   - We've written initial code to convert our labeled sequences into a dataset to be fed into a model, structure & train a model on this dataset (dataset.py, model.py, train.py)
-   - We've gotten train.py to build a model in dev mode, and should focus on getting inference to work now too
-   - We have a basic inference script (inference.py) working and it can run inference on a target video (this is just one of the clips used in training, so not ideal). It doesn't work very well, it predicts "no maneuver" for every sequence in the video, even though several maneuvers are performed. But it at least makes predictions.
-   - We have a boilerplate iOS app, we modified it to allow the user to upload a video, we gave it an app icon, and we figured out how to deploy and test it to my physical iPhone
-   - iOS app: Add functionality that, upon user upload, displays a set of manuevers "performed" in the video. This should be a hardcoded set of maneuvers but gets us to figure out both (1) display and (2) what the json/schema the app should expect from our prediction service
-   - Model API pre-work & iOS connection: Get a dummy API service running, deployed via Flask, and connect it to the iOS app. The service doesn't require/use video; it just returns the same hardcode set of maneuvers previously set in the iOS app code.
-   - iOS app: The app now explicitly requests access to the user's videos when first installed & run
-   - Model API: Deploy the Flask API to the cloud (via Heroku) and connect it to the iOS app. Configure the API to receive a video
-   - iOS app: Update the iOS app to send the user's selected video. The API returns both a hardcoded set of maneuvers and the video's duration to prove it can actually use the video file. The results are displayed to the user in the app.
-   - iOS app: Build a loading screen while waiting for API results
+   - [2024/12/06] iOS + API: Demo where the API annotates the user's video file with hardcoded maneuvers, returns the video to the app, the app plays the video and allows the user to save it to their device
+   - [2024/12/02] iOS + API: Check whether uploaded video is actually a surf video
+   - [2024/11/29] iOS app: Display a loading screen while waiting for API results
+   - [2024/11/29] Model API: Flask API deployed to the cloud (via Heroku) and connected to the iOS app. Configure the API to receive a video
+   - [2024/11/21] iOS app: App sends the user's selected video to the API, which returns both hardcoded maneuvers and the video's duration to prove it can actually use the video file. Results are displayed to the user in the app.
+   - [2024/11/20] iOS app: Explicitly request access to the user's videos when first installed & run
+   - [2024/11/17] Model API pre-work & iOS connection: Dummy API service running locally, deployed via Flask, and connected to the iOS app. The service doesn't require/use video; it just returns the same hardcoded set of maneuvers previously set in the iOS app code.
+   - [2024/11/12] iOS app: Upon user's video upload, display a set of manuevers "performed" in the video. This is a hardcoded set of maneuvers for now
+   - [2024/11/08] Boilerplate iOS app modified to allow the user to upload a video, it has an app icon, and we can deploy and test it to my physical iPhone
+   - [2024/11/06] Basic inference script (inference.py) works and can run inference on a target video (this is just one of the clips used in training, so not ideal). It doesn't work very well, it predicts "no maneuver" for every sequence in the video, even though several maneuvers are performed. But it at least makes predictions.
+   - [2024/11/06] Build a model in dev mode (train.py)
+   - Convert labeled frame sequences into a dataset to be fed into a model, structure & train a model on this dataset (dataset.py, model.py, train.py)
+   - Label maneuvers for all rides in our first video
+   - Clip full surf heats into individual rides, and process individual rides into maneuver-labeled sequences of frames that are ready to be fed into a model
 
 ## Admin Documentation
 
