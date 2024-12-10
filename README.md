@@ -12,7 +12,6 @@
 
 ### Things to Work on Next
 Last updated: 2024/12/10
-   - Record demo recording and embed in this readme
    - Get current 2-part model inference running on API and returning results to iOS app
    - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
    - Migrate data from directory system to postgres + blob storage (S3)
