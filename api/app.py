@@ -1,11 +1,52 @@
 import os
-import video_content, video_overlay
+import video_content, video_overlay, inference
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
 @app.route('/upload_video', methods=['POST'])
 def upload_video():
+    # Check if the video file is part of the request
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    print('Received file: ' + file.filename)
+
+    # Save the file temporarily
+    video_path = f"/tmp/{file.filename}"  # or choose a path that works for you
+    file.save(video_path)
+
+    print("Checking whether this is a surf video...")
+    is_surf = video_content.is_surf_video(video_path)
+    
+    if is_surf:
+        model_path = "models/surf_maneuver_model_20241106_1324.pth"
+        maneuvers = inference.run_inference(video_path, model_path)
+        analysis = {'maneuvers': maneuvers, 'score': 8.5}
+        annotated_url = video_overlay.annotate_video(video_path, analysis)
+
+        # Return the annotated video to the client
+        result = {
+            "status": "success",
+            "message": "Nice surfing!",
+            "video_url": annotated_url
+        }
+    else:
+        result = {
+            "status": "error",
+            "message": "Video does not seem to be a surf video. Please try another video."
+        }
+    # Delete the temporary file after extracting metadata
+    os.remove(video_path)
+    
+    # Return hardcoded response
+    return jsonify(result)
+
+@app.route('/upload_video_hardcode', methods=['POST'])
+def upload_video_hardcode():
     # Check if the video file is part of the request
     if 'file' not in request.files:
         return jsonify({"error": "No file part"}), 400
