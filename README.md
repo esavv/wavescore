@@ -13,6 +13,10 @@
 ### Things to Work on Next
 Last updated: 2024/12/10
    - Get current 2-part model inference running on API and returning results to iOS app
+      - Move/copy inference.py, the model, and maneuver_taxonomy.csv to the API directory
+      - Update the API (create a new service?) to run inference and return inference results in JSON
+      - Verify the API works locally
+      - Update the API to feed the inference results to create the video overlay
    - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
    - Migrate data from directory system to postgres + blob storage (S3)
    - Get interim analysis results (checking if surf video, analyzing, annotating video...). Consider switching API to SSE
