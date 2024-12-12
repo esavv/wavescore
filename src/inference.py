@@ -15,53 +15,6 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-def pad_sequence(frames, max_length=60):
-    num_frames = len(frames)
-    if num_frames < max_length:
-        # Pad with zero tensors to reach max_length
-        padding = [torch.zeros_like(frames[0]) for _ in range(max_length - num_frames)]
-        frames = frames + padding
-    else:
-        # Truncate to max_length if too long
-        frames = frames[:max_length]
-    return torch.stack(frames).unsqueeze(0) # Shape (1, num_frames, channels, height, width)
-
-def load_sequence(seq_dir, mode='dev'):
-    """Load frames from a sequence directory and apply transforms."""
-    frames = []
-    SKIP_FREQ = 10
-
-    # Load each frame in the sequence directory
-    for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
-        # Skip frames in dev mode to speed up training
-        if mode == 'dev' and frame_idx % SKIP_FREQ != 0:
-            continue
-
-        frame_path = os.path.join(seq_dir, frame_file)
-        if mode == 'prod':
-            image = Image.open(frame_path).convert("RGB")
-        elif mode == 'dev':
-            image = Image.open(frame_path).convert("L")  # "L" mode is for grayscale; reduce image size for faster training in dev mode
-        image = transform(image)
-        frames.append(image)
-
-    # Pad or truncate frames
-    max_length = 60
-    if mode == 'dev':
-        max_length = max_length // SKIP_FREQ
-    frames = pad_sequence(frames, max_length)
-    
-    return frames
-
-def infer_sequence(model, seq_dir, mode='dev'):
-    """Run inference on a single sequence."""
-    sequence = load_sequence(seq_dir, mode=mode)
-    sequence = sequence.to(device)
-    with torch.no_grad():
-        output = model(sequence)
-        predicted_class = output.argmax(dim=1).item()
-    return predicted_class
-
 def run_inference(video_path, model_path, mode='dev'):
     # Load the video target for inference
     print('Loading target video...')
@@ -141,6 +94,53 @@ def run_inference(video_path, model_path, mode='dev'):
                 maneuvers.append({'name': name, 'start_time': start_time, 'end_time': end_time})
             print(f"  Predicted maneuver for sequence {sq}: {maneuver_id}")
     return maneuvers
+
+def infer_sequence(model, seq_dir, mode='dev'):
+    """Run inference on a single sequence."""
+    sequence = load_sequence(seq_dir, mode=mode)
+    sequence = sequence.to(device)
+    with torch.no_grad():
+        output = model(sequence)
+        predicted_class = output.argmax(dim=1).item()
+    return predicted_class
+
+def load_sequence(seq_dir, mode='dev'):
+    """Load frames from a sequence directory and apply transforms."""
+    frames = []
+    SKIP_FREQ = 10
+
+    # Load each frame in the sequence directory
+    for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
+        # Skip frames in dev mode to speed up training
+        if mode == 'dev' and frame_idx % SKIP_FREQ != 0:
+            continue
+
+        frame_path = os.path.join(seq_dir, frame_file)
+        if mode == 'prod':
+            image = Image.open(frame_path).convert("RGB")
+        elif mode == 'dev':
+            image = Image.open(frame_path).convert("L")  # "L" mode is for grayscale; reduce image size for faster training in dev mode
+        image = transform(image)
+        frames.append(image)
+
+    # Pad or truncate frames
+    max_length = 60
+    if mode == 'dev':
+        max_length = max_length // SKIP_FREQ
+    frames = pad_sequence(frames, max_length)
+    
+    return frames
+
+def pad_sequence(frames, max_length=60):
+    num_frames = len(frames)
+    if num_frames < max_length:
+        # Pad with zero tensors to reach max_length
+        padding = [torch.zeros_like(frames[0]) for _ in range(max_length - num_frames)]
+        frames = frames + padding
+    else:
+        # Truncate to max_length if too long
+        frames = frames[:max_length]
+    return torch.stack(frames).unsqueeze(0) # Shape (1, num_frames, channels, height, width)
 
 if __name__ == "__main__":
     # Set up command-line arguments & configure 'prod' and 'dev' modes (via an environment variable).
