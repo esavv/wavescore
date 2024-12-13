@@ -4,7 +4,7 @@ from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 import boto3, os, csv
 from botocore.exceptions import NoCredentialsError
 
-print("Setting env variables...")
+print("video_overlay: Setting env variables...")
 if os.path.exists("./wavescore_accessKeys.csv"):
     with open('./wavescore_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
         reader = csv.DictReader(file)

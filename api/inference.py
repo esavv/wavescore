@@ -6,7 +6,7 @@ import argparse, csv, cv2, math, os, shutil
 from datetime import timedelta
 
 # Set device to GPU if available, otherwise use CPU
-print('Configuring device & model tranforms...')
+print('inference: Configuring device & model tranforms...')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define transformations (same as used in training)

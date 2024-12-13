@@ -1,8 +1,7 @@
-print("Importing packages...")
 import base64, csv, cv2, os, random
 from google.cloud import vision
 
-print("Setting env variables...")
+print("video_content: Setting env variables...")
 if os.path.exists("./surfjudge-443400-035fd5609c22.json"):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./surfjudge-443400-035fd5609c22.json"
 else:
