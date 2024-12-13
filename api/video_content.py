@@ -2,16 +2,16 @@ import base64, csv, cv2, os, random
 from google.cloud import vision
 
 print("video_content: Setting env variables...")
-if os.path.exists("./surfjudge-443400-035fd5609c22.json"):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./surfjudge-443400-035fd5609c22.json"
+if os.path.exists("./keys/google_cloud_account_key.json"):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./keys/google_cloud_account_key.json"
 else:
     # Decode the Base64 key and write it to a temporary file
     base64_key = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_B64")
     if base64_key:
-        with open("service_account_key.json", "wb") as temp_file:
+        with open("./keys/google_cloud_account_key.json", "wb") as temp_file:
             temp_file.write(base64.b64decode(base64_key))
         # Point the library to the temporary file
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "service_account_key.json"
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./keys/google_cloud_account_key.json"
     else:
         raise EnvironmentError("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 environment variable")
 
@@ -20,7 +20,7 @@ def is_surf_video(video_path):
     print("Extracting random frames from the video...")
     frames = extract_random_frames(video_path, num_frames=5)
 
-    keyword_path = './cloud_vision_keywords.csv'
+    keyword_path = './google_cloud_vision_keywords.csv'
     file = csv.reader(open(keyword_path, 'r'))
     keywords = set([row[0] for row in file])
 

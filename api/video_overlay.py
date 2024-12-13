@@ -5,8 +5,8 @@ import boto3, os, csv
 from botocore.exceptions import NoCredentialsError
 
 print("video_overlay: Setting env variables...")
-if os.path.exists("./wavescore_accessKeys.csv"):
-    with open('./wavescore_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
+if os.path.exists("./keys/aws_s3_accessKeys.csv"):
+    with open('./keys/aws_s3_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
         reader = csv.DictReader(file)
         for row in reader:
             os.environ['AWS_ACCESS_KEY_ID'] = row['Access key ID']

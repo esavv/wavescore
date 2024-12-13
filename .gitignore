@@ -1,8 +1,6 @@
 .DS_Store
 api/__pycache__/
-api/service_account_key.json.b64
-api/surfjudge-443400-035fd5609c22.json
-api/wavescore_accessKeys.csv
+api/keys/
 data/**/*.jpg
 data/**/*.mp4
 data/**/orig*

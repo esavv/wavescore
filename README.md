@@ -23,7 +23,6 @@ Last updated: 2024/12/13
    - Pad video frames to make them square before the resizing in train.py
    - Build 2nd part of 2-part model: Infer wave score from maneuvers performed
    - iOS code cleanup: Refactor toast & other logic in ContentView
-   - API code cleanup: Clearer naming for API keys and move them to dedicated subdirectory
 
 ### Things Recently Completed
    - [2024/12/06] iOS + API: Demo where the API annotates the user's video file with hardcoded maneuvers, returns the video to the app, the app plays the video and allows the user to save it to their device
