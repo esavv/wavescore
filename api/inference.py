@@ -3,7 +3,6 @@ from torchvision import transforms
 from model import SurfManeuverModel
 from PIL import Image
 import argparse, csv, cv2, math, os, shutil
-from datetime import timedelta
 
 # Set device to GPU if available, otherwise use CPU
 print('inference: Configuring device & model tranforms...')
@@ -79,8 +78,6 @@ def run_inference(video_path, model_path, mode='dev'):
 
             start_time = sq * sequence_duration
             end_time = start_time + sequence_duration
-            # start_time = str(timedelta(seconds=start_time))[-5:]
-            # end_time = str(timedelta(seconds=end_time))[-5:]
 
             # hardcoding to get interesting results
             if sq == 2:
