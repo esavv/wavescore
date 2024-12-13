@@ -79,8 +79,8 @@ def run_inference(video_path, model_path, mode='dev'):
 
             start_time = sq * sequence_duration
             end_time = start_time + sequence_duration
-            start_time = str(timedelta(seconds=start_time))[-5:]
-            end_time = str(timedelta(seconds=end_time))[-5:]
+            # start_time = str(timedelta(seconds=start_time))[-5:]
+            # end_time = str(timedelta(seconds=end_time))[-5:]
 
             # hardcoding to get interesting results
             if sq == 2:
