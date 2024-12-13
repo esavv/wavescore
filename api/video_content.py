@@ -1,8 +1,7 @@
-print("Importing packages...")
 import base64, csv, cv2, os, random
 from google.cloud import vision
 
-print("Setting env variables...")
+print("video_content: Setting env variables...")
 if os.path.exists("./surfjudge-443400-035fd5609c22.json"):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./surfjudge-443400-035fd5609c22.json"
 else:
@@ -28,13 +27,13 @@ def is_surf_video(video_path):
     result = False
     # Step 2: Analyze each extracted frame using Cloud Vision API
     for frame in frames:
-        print(f"Analyzing {frame}...")
+        print(f"  Analyzing {frame}...")
         frame_labels = analyze_image(frame)
         for label in frame_labels:
             # Collect label description and its score
             if label.score >= 0.8:
                 if label.description in keywords:
-                    print("Found relevant label: " + label.description)
+                    print("    Found relevant label: " + label.description)
                     result = True
 
         # Delete the frame after analysis

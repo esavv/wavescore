@@ -11,12 +11,12 @@
 ## Roadmap
 
 ### Things to Work on Next
-Last updated: 2024/12/10
+Last updated: 2024/12/12
    - Get current 2-part model inference running on API and returning results to iOS app
-      - Move/copy inference.py, the model, and maneuver_taxonomy.csv to the API directory
-      - Update the API (create a new service?) to run inference and return inference results in JSON
-      - Verify the API works locally
-      - Update the API to feed the inference results to create the video overlay
+      - Fix request timeout error (check Notes for error log)
+      - Figure out how to deploy the inference API to Heroku
+   - Refactor inference.run_inference() to move frame sequencing into a dedicated function. Consider sharing this with maneuver_sequencing.py
+   - Investigate whether it's bad that our 2-part model runs inference on a single frame sequence at a time, even though we trained it to learn relationships across/betweens sequences
    - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
    - Migrate data from directory system to postgres + blob storage (S3)
    - Get interim analysis results (checking if surf video, analyzing, annotating video...). Consider switching API to SSE

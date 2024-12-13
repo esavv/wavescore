@@ -3,3 +3,5 @@ opencv-python==4.10.0.84
 google-cloud-vision
 moviepy
 boto3
+torch
+torchvision

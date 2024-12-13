@@ -2,11 +2,11 @@ import torch
 from torchvision import transforms
 from model import SurfManeuverModel
 from PIL import Image
-import argparse, csv, cv2, math, os
+import argparse, csv, cv2, math, os, shutil
 from datetime import timedelta
 
 # Set device to GPU if available, otherwise use CPU
-print('Configuring device & model tranforms...')
+print('inference: Configuring device & model tranforms...')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Define transformations (same as used in training)
@@ -79,8 +79,8 @@ def run_inference(video_path, model_path, mode='dev'):
 
             start_time = sq * sequence_duration
             end_time = start_time + sequence_duration
-            start_time = str(timedelta(seconds=start_time))[-5:]
-            end_time = str(timedelta(seconds=end_time))[-5:]
+            # start_time = str(timedelta(seconds=start_time))[-5:]
+            # end_time = str(timedelta(seconds=end_time))[-5:]
 
             # hardcoding to get interesting results
             if sq == 2:
@@ -93,6 +93,10 @@ def run_inference(video_path, model_path, mode='dev'):
             if maneuver_id != 0:
                 maneuvers.append({'name': name, 'start_time': start_time, 'end_time': end_time})
             print(f"  Predicted maneuver for sequence {sq}: {maneuver_id}")
+
+    # clean things up
+    shutil.rmtree(seqs_path)
+
     return maneuvers
 
 def infer_sequence(model, seq_dir, mode='dev'):
@@ -151,7 +155,7 @@ if __name__ == "__main__":
 
     mode = args.mode
     video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-    model_path = "../models/surf_maneuver_model_20241106_1324.pth"
+    model_path = "models/surf_maneuver_model_20241106_1324.pth"
 
     maneuvers = run_inference(video_path, model_path, mode)
     print("Prediction dict: " + str(maneuvers))

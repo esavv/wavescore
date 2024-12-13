@@ -4,7 +4,7 @@ from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 import boto3, os, csv
 from botocore.exceptions import NoCredentialsError
 
-print("Setting env variables...")
+print("video_overlay: Setting env variables...")
 if os.path.exists("./wavescore_accessKeys.csv"):
     with open('./wavescore_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
         reader = csv.DictReader(file)
@@ -23,13 +23,15 @@ def annotate_video(input_path, analysis):
     text_clips = []
 
     # Overlay maneuvers
+    # font='DejaVuSans'
+    font='Arial'
     for maneuver in analysis['maneuvers']:
         start_time = maneuver['start_time']
         end_time = maneuver['end_time']
         text = maneuver['name']
 
         # Create a TextClip for each maneuver
-        txt_clip = (TextClip(text=text, font='DejaVuSans', font_size=40, color='white')
+        txt_clip = (TextClip(text=text, font=font, font_size=40, color='white')
                     .with_position(('center', clip.h * 0.85))
                     .with_duration(end_time - start_time)
                     .with_start(start_time))
@@ -38,7 +40,7 @@ def annotate_video(input_path, analysis):
 
     # Create a TextClip for the predicted score (overlay it in the last 2 seconds)
     score_text = f"Predicted Score: {analysis['score']}"
-    score_clip = (TextClip(text=score_text, font='DejaVuSans', font_size=40, color='white')
+    score_clip = (TextClip(text=score_text, font=font, font_size=40, color='white')
                   .with_position(('center', 50))
                   .with_duration(2)  # Last 2 seconds of the video
                   .with_start(clip.duration - 2))  # Start 2 seconds before the end
