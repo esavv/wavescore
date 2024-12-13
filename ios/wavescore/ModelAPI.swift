@@ -15,7 +15,7 @@ struct APIResponse: Codable {
 
 func uploadVideoToAPI(videoURL: URL, completion: @escaping (APIResponse?) -> Void) {
     let url = URL(string: "https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video")!
-//    let url = URL(string: "https://e8d2-70-23-3-136.ngrok-free.app/upload_video")!
+//    let url = URL(string: "https://5b98-70-23-3-136.ngrok-free.app/upload_video")!
     
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -40,8 +40,14 @@ func uploadVideoToAPI(videoURL: URL, completion: @escaping (APIResponse?) -> Voi
     body.append("--\(boundary)--\r\n".data(using: .utf8)!)
     request.httpBody = body
 
+    // Configure a custom URLSession with extended timeout
+    let config = URLSessionConfiguration.default
+    config.timeoutIntervalForRequest = 180 // 3 minutes
+    config.timeoutIntervalForResource = 180
+    let session = URLSession(configuration: config)
+
     // Make the network request
-    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+    let task = session.dataTask(with: request) { data, response, error in
         if let error = error {
             print("Error: \(error)")
             completion(nil)  // Call completion with nil in case of error
