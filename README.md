@@ -11,9 +11,11 @@
 ## Roadmap
 
 ### Things to Work on Next
-Last updated: 2024/12/13
+Last updated: 2024/12/17
    - Get current 2-part model inference running on API and returning results to iOS app
-      - Figure out how to deploy the inference API to Heroku
+      - Figure out how to deploy the inference API to Heroku: Upload the model to S3 and download the model to Heroku post-deployment
+      - Raise appropriate errors in api/video_content and api/video_overlay if key files are missing
+      - Remove the Google Cloud base64 account key if no longer necessary
    - Refactor inference.run_inference() to move frame sequencing into a dedicated function. Consider sharing this with maneuver_sequencing.py
    - Investigate whether it's bad that our 2-part model runs inference on a single frame sequence at a time, even though we trained it to learn relationships across/betweens sequences
    - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
@@ -95,11 +97,14 @@ curl -X POST https://7c64-70-23-3-136.ngrok-free.app/upload_video -F "file=@tmp/
    - Switch to a development branch & make changes
    - Push changes to remote origin (on GitHub); merge to main remotely
    - Switch to main & pull from origin
-   - Ensure environment variables are set correctly
+   - Create temporary branch heroku-main:
 ```bash
-heroku config:set GOOGLE_APPLICATION_CREDENTIALS_B64=$(cat api/service_account_key.json.b64)
-heroku config:set AWS_ACCESS_KEY_ID=[INSERT_KEY_HERE]
-heroku config:set AWS_SECRET_ACCESS_KEY=[INSERT_KEY_HERE]
+git checkout -b heroku-main
+```
+   - Un-ignore API files in .gitignore needed for deployment (remove these lines):
+```
+api/keys/
+api/models/
 ```
    - Use git subtrees to deploy updated API to Heroku:
 ```bash
@@ -113,6 +118,22 @@ heroku logs --tail --app wavescore-api
 ```bash
 curl -X POST https://wavescore-api-71248b819ca4.herokuapp.com/upload_video -F "file=@data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
 ```
+   - Before switching back to main locally, re-ignore unignored files:
+```bash
+git rm --cached api/keys/*
+git rm --cached api/models/*
+```
+   - Before switching back to main locally, re-add ignored files to .gitignore:
+```
+api/keys/
+api/models/
+```
+   - Switch back to main & delete the temp heroku branch
+```bash
+git checkout main
+git branch -D heroku-main
+```
+
 
 ## Acknowledgments
 
