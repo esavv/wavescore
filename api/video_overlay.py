@@ -13,7 +13,8 @@ if os.path.exists("./keys/aws_s3_accessKeys.csv"):
             os.environ['AWS_SECRET_ACCESS_KEY'] = row['Secret access key']
             break  # Assuming there is only one row, exit the loop after setting the variables
 #else:
-    # TODO: We need a more sustainable solution here
+    #TODO: raise an appropriate error
+    #raise EnvironmentError("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 environment variable")
 
 def annotate_video(input_path, analysis):
     # Load the video
