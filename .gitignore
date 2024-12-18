@@ -1,12 +1,12 @@
 .DS_Store
 api/__pycache__/
 api/keys/
+api/models/
 data/**/*.jpg
 data/**/*.mp4
 data/**/orig*
 img/
 ios/wavescore.xcodeproj/
 ios/wavescore/.DS_Store
-models/
 src/__pycache__/
 tmp/
