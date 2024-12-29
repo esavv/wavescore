@@ -23,10 +23,16 @@ def upload_video():
     is_surf = video_content.is_surf_video(video_path)
     
     if is_surf:
-        model_path = "models/surf_maneuver_model_20241106_1324.pth"
-        maneuvers = inference.run_inference(video_path, model_path)
+        # model_url = "https://wavescorevideos.s3.us-east-1.amazonaws.com/surf_maneuver_model_20241106_1324.pth"
+        s3_bucket_name = "wavescorevideos"
+        model_filename = "surf_maneuver_model_20241106_1324.pth"
+
+        # Run inference
+        maneuvers = inference.run_inference(video_path, s3_bucket_name, model_filename)
+
+        # Annotate the user video with inference results
         analysis = {'maneuvers': maneuvers, 'score': 8.5}
-        annotated_url = video_overlay.annotate_video(video_path, analysis)
+        annotated_url = video_overlay.annotate_video(video_path, s3_bucket_name, analysis)
 
         # Return the annotated video to the client
         result = {

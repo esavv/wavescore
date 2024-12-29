@@ -15,7 +15,7 @@ struct APIResponse: Codable {
 
 func uploadVideoToAPI(videoURL: URL, completion: @escaping (APIResponse?) -> Void) {
     let url = URL(string: "https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video")!
-//    let url = URL(string: "https://5b98-70-23-3-136.ngrok-free.app/upload_video")!
+//    let url = URL(string: "https://8433-70-23-3-136.ngrok-free.app/upload_video")!
     
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
