@@ -106,6 +106,11 @@ git checkout -b heroku-main
 api/keys/
 api/models/
 ```
+   - Add & commit the changes to the heroku-main branch
+```bash
+git add .gitignore
+git commit -m 'Prep for Heroku deployment'
+```
    - Use git subtrees to deploy updated API to Heroku:
 ```bash
 git subtree push --prefix api heroku main
@@ -127,6 +132,11 @@ git rm --cached api/models/*
 ```
 api/keys/
 api/models/
+```
+   - Add & commit the changes to the heroku-main branch
+```bash
+git add -A
+git commit -m 'Post-deployment return to main'
 ```
    - Switch back to main & delete the temp heroku branch
 ```bash
