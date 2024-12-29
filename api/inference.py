@@ -3,6 +3,20 @@ from torchvision import transforms
 from model import SurfManeuverModel
 from PIL import Image
 import argparse, csv, cv2, math, os, shutil
+import boto3
+from botocore.exceptions import NoCredentialsError
+
+print("inference: Setting env variables...")
+if os.path.exists("./keys/aws_s3_accessKeys.csv"):
+    with open('./keys/aws_s3_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            os.environ['AWS_ACCESS_KEY_ID'] = row['Access key ID']
+            os.environ['AWS_SECRET_ACCESS_KEY'] = row['Secret access key']
+            break  # Assuming there is only one row, exit the loop after setting the variables
+#else:
+    #TODO: raise an appropriate error
+    #raise EnvironmentError("Missing AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables")
 
 # Set device to GPU if available, otherwise use CPU
 print('inference: Configuring device & model tranforms...')
@@ -14,10 +28,33 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-def run_inference(video_path, model_path, mode='dev'):
+def run_inference(video_path, bucket_name, model_filename, mode='dev'):
     # Load the video target for inference
     print('Loading target video...')
     video_dir = os.path.dirname(video_path)
+
+    # If not already there, download the model from S3 to local directory
+    # Model URL: 
+    print('Retrieving the model...')
+    model_dir = "./models/"
+    os.makedirs(model_dir, exist_ok=True)
+    model_path = os.path.join(model_dir, model_filename)
+
+    if not os.path.exists(model_path):
+        print("  Downloading model from S3...")
+        s3 = boto3.client("s3")
+        try:
+            # Download the model file from S3
+            s3.download_file(bucket_name, model_filename, model_path)
+            print(f"Model downloaded successfully and saved to {model_path}")
+        except NoCredentialsError:
+            print("AWS credentials not found. Please set them in your environment.")
+            raise
+        except Exception as e:
+            print(f"Error downloading model: {e}")
+            raise
+    else:
+        print("  Model already saved locally, continuing...")
 
     # Load the saved model
     print('Loading the model...')

@@ -14,9 +14,9 @@ if os.path.exists("./keys/aws_s3_accessKeys.csv"):
             break  # Assuming there is only one row, exit the loop after setting the variables
 #else:
     #TODO: raise an appropriate error
-    #raise EnvironmentError("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 environment variable")
+    #raise EnvironmentError("Missing AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables")
 
-def annotate_video(input_path, analysis):
+def annotate_video(input_path, bucket_name, analysis):
     # Load the video
     clip = VideoFileClip(input_path)
 
@@ -60,7 +60,6 @@ def annotate_video(input_path, analysis):
 
     print('Uploading video to AWS...')
     s3 = boto3.client('s3')  # Ensure AWS credentials are set in your environment or AWS credentials file
-    bucket_name = 'wavescorevideos'
 
     try:
         # Upload the file to S3
