@@ -11,19 +11,28 @@
 ## Roadmap
 
 ### Things to Work on Next
-Last updated: 2024/12/17
+Last updated: 2024/12/29
    - Get current 2-part model inference running on API and returning results to iOS app
-      - Figure out how to deploy the inference API to Heroku: Upload the model to S3 and download the model to Heroku post-deployment
-      - Raise appropriate errors in api/video_content and api/video_overlay if key files are missing
-      - Remove the Google Cloud base64 account key if no longer necessary
-   - Refactor inference.run_inference() to move frame sequencing into a dedicated function. Consider sharing this with maneuver_sequencing.py
+      - We've spent some time on this. We uploaded the 46MB model to S3 to save slug size on Heroku, only to find that PyTorch & other packages increase our slug size to 3GB+
+      - Some approaches for moving forward:
+         - Find & install a CPU-only version of PyTorch that I can run both locally on my Mac and on Heroku. Might not be officially supported anymore, but [see here](https://stackoverflow.com/questions/51730880/where-do-i-get-a-cpu-only-version-of-pytorch)
+         - Dockerize my application (at least the API code) so I can develop locally on Linux & use a CPU-only version of PyTorch that is officially supported
+         - Abandon deploying my model to Heroku since it doesn't even work yet and it'll likely get so big that the previous approaches are only temporary workarounds. Instead, deploy my model to AWS or similar and expose an API to my Heroku service for calling inference
+      - Attempting the above may be good opportunities to learn Docker & get package/dependency juggling experience, but my time might be better spent on other projects like:
+         - Getting the 2-part model working well locally
+         - Building a 1-part model
+         - Reverting API to hardcoded results; get interim analysis results with SSE
+         - Once models work well, migrate data storage to postgres + blob storage
    - Investigate whether it's bad that our 2-part model runs inference on a single frame sequence at a time, even though we trained it to learn relationships across/betweens sequences
    - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
    - Migrate data from directory system to postgres + blob storage (S3)
    - Get interim analysis results (checking if surf video, analyzing, annotating video...). Consider switching API to SSE
    - Host model training & inference in the cloud
-   - Pad video frames to make them square before the resizing in train.py
    - Build 2nd part of 2-part model: Infer wave score from maneuvers performed
+   - Model optimization: Pad video frames to make them square before the resizing in train.py
+   - Refactoring: Refactor inference.run_inference() to move frame sequencing into a dedicated function. Consider sharing this with maneuver_sequencing.py
+   - API cleanup: Raise appropriate errors in api/video_content and api/video_overlay if key files are missing
+   - API cleanup: Remove the Google Cloud base64 account key if no longer necessary
    - iOS code cleanup: Refactor toast & other logic in ContentView
 
 ### Things Recently Completed
@@ -115,13 +124,18 @@ git commit -m 'Prep for Heroku deployment'
 ```bash
 git subtree push --prefix api heroku main
 ```
+   - If there are issues with slug size, consider clearing Heroku build cache:
+```bash
+heroku plugins:install heroku-builds
+heroku builds:cache:purge -a <your-app-name>
+```
    - Check Heroku logs if needed:
 ```bash
-heroku logs --tail --app wavescore-api
+heroku logs --tail --app surfjudge-api
 ```
    - Call the API from the command line to test:
 ```bash
-curl -X POST https://wavescore-api-71248b819ca4.herokuapp.com/upload_video -F "file=@data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
+curl -X POST https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video -F "file=@data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
 ```
    - Before switching back to main locally, re-ignore unignored files:
 ```bash
