@@ -12,8 +12,6 @@
 
 ### Things to Work on Next
 Last updated: 2025/01/02
-   - Revert API to hardcoded results to continue working with Heroku deployment
-      - Resolve divergent branches issue with Heroku deployment (sad!)
    - Get interim analysis results (checking if surf video, analyzing, annotating video...). Consider switching API to SSE
    - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
    - Get 1st part of 2-part model working well locally
@@ -34,6 +32,7 @@ Last updated: 2025/01/02
    - iOS code cleanup: Refactor toast & other logic in ContentView
 
 ### Things Recently Completed
+   - [2025/01/02] Revert API to hardcoded results after failing to deploy model inference (3GB+ in size) to Heroku
    - [2024/12/06] iOS + API: Demo where the API annotates the user's video file with hardcoded maneuvers, returns the video to the app, the app plays the video and allows the user to save it to their device
    - [2024/12/02] iOS + API: Check whether uploaded video is actually a surf video
    - [2024/11/29] iOS app: Display a loading screen while waiting for API results
@@ -122,6 +121,11 @@ git commit -m 'Prep for Heroku deployment'
 ```bash
 git subtree push --prefix api heroku main
 ```
+   - If there are any issues with divergent branches between local & remote, there's an ugly workaround for now: Reset the remote git repo and then try again:
+```bash
+heroku repo:reset --app surfjudge-api
+```   
+   - The better way to do this probably involves *not* creating a new heroku-main branch every time, but checking out a persistent one and some how fast-forwarding or rebasing it to the lastest commit in our main branch... to be investigated some other time
    - If there are issues with slug size, consider clearing Heroku build cache:
 ```bash
 heroku plugins:install heroku-builds
