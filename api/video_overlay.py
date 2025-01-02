@@ -24,8 +24,8 @@ def annotate_video(input_path, bucket_name, analysis):
     text_clips = []
 
     # Overlay maneuvers
-    # font='DejaVuSans'
-    font='Arial'
+    font='DejaVuSans'
+    # font='Arial'
     for maneuver in analysis['maneuvers']:
         start_time = maneuver['start_time']
         end_time = maneuver['end_time']
