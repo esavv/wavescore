@@ -1,5 +1,6 @@
 import os
-import video_content, video_overlay, inference
+import video_content, video_overlay
+# import inference
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -28,7 +29,8 @@ def upload_video():
         model_filename = "surf_maneuver_model_20241106_1324.pth"
 
         # Run inference
-        maneuvers = inference.run_inference(video_path, s3_bucket_name, model_filename)
+        # maneuvers = inference.run_inference(video_path, s3_bucket_name, model_filename)
+        maneuvers = 'TODO'
 
         # Annotate the user video with inference results
         analysis = {'maneuvers': maneuvers, 'score': 8.5}
