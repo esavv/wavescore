@@ -72,6 +72,7 @@ def upload_video_hardcode():
     is_surf = video_content.is_surf_video(video_path)
     
     if is_surf:
+        s3_bucket_name = "wavescorevideos"
         maneuvers = [
             {'name': '360', 'start_time': 3.0, 'end_time': 5.0},
             {'name': 'Snap', 'start_time': 6.0, 'end_time': 8.0},
@@ -82,7 +83,7 @@ def upload_video_hardcode():
             {'name': 'Cutback', 'start_time': 23.0, 'end_time': 24.0}
         ]
         analysis = {'maneuvers': maneuvers, 'score': 8.5}
-        annotated_url = video_overlay.annotate_video(video_path, analysis)
+        annotated_url = video_overlay.annotate_video(video_path, s3_bucket_name, analysis)
 
         # Return the annotated video to the client
         result = {

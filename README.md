@@ -114,7 +114,7 @@ api/models/
 ```
    - Add & commit the changes to the heroku-main branch
 ```bash
-git add .gitignore
+git add -A
 git commit -m 'Prep for Heroku deployment'
 ```
    - Use git subtrees to deploy updated API to Heroku:
