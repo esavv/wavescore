@@ -124,7 +124,7 @@ git subtree push --prefix api heroku main
    - If there are issues with slug size, consider clearing Heroku build cache:
 ```bash
 heroku plugins:install heroku-builds
-heroku builds:cache:purge -a <your-app-name>
+heroku builds:cache:purge -a surfjudge-api
 ```
    - Check Heroku logs if needed:
 ```bash
