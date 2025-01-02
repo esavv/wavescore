@@ -13,6 +13,7 @@
 ### Things to Work on Next
 Last updated: 2025/01/02
    - Revert API to hardcoded results to continue working with Heroku deployment
+      - Resolve divergent branches issue with Heroku deployment (sad!)
    - Get interim analysis results (checking if surf video, analyzing, annotating video...). Consider switching API to SSE
    - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
    - Get 1st part of 2-part model working well locally
