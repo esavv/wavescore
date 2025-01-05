@@ -19,6 +19,7 @@ def upload_video_hardcode_sse():
     file.save(video_path)
     
     return Response(process_video_stream(video_path), content_type='text/event-stream')
+
 def process_video_stream(video_path):
     yield "data: Starting video processing...\n\n"
     time.sleep(2)
