@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var toastMessage = ""  // The message to show in the toast
     @State private var toastDuration: Double = 2.0  // Duration for the toast to be visible
     @State private var isPlayerReady = false
+    @State private var progressMessage: String = "Analyzing video..."
     
     var body: some View {
         VStack {
@@ -76,7 +77,7 @@ struct ContentView: View {
                 
             case .loading:
                 // Show loading indicator
-                Text("Analyzing video...")
+                Text(progressMessage)
                     .font(.headline)
                     .padding()
                 ProgressView()
