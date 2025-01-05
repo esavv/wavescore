@@ -13,57 +13,55 @@ def upload_video_hardcode_sse():
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
-    
-    return Response(process_video_stream(file), content_type='text/event-stream')
-
-def process_video_stream(file):
     print('Received file: ' + file.filename)
-    yield "data: Starting video processing...\n\n"
-    time.sleep(2)
-
     # Save the file temporarily
     video_path = f"/tmp/{file.filename}"  # or choose a path that works for you
     file.save(video_path)
-    try:
-        print("Checking whether this is a surf video...")
-        yield "data: Checking if video is a surf video...\n\n"
-        is_surf = video_content.is_surf_video(video_path)
-        
-        if is_surf:
-            yield "data: Analyzing ride...\n\n"
-            time.sleep(2)
-            s3_bucket_name = "wavescorevideos"
-            maneuvers = [
-                {'name': '360', 'start_time': 3.0, 'end_time': 5.0},
-                {'name': 'Snap', 'start_time': 6.0, 'end_time': 8.0},
-                {'name': 'Snap', 'start_time': 10.0, 'end_time': 11.0},
-                {'name': 'Cutback', 'start_time': 14.0, 'end_time': 15.0},
-                {'name': 'Cutback', 'start_time': 17.0, 'end_time': 18.0},
-                {'name': 'Cutback', 'start_time': 20.0, 'end_time': 21.0},
-                {'name': 'Cutback', 'start_time': 23.0, 'end_time': 24.0}
-            ]
-            analysis = {'maneuvers': maneuvers, 'score': 8.5}
+    
+    return Response(process_video_stream(video_path), content_type='text/event-stream')
+def process_video_stream(video_path):
+    yield "data: Starting video processing...\n\n"
+    time.sleep(2)
 
-            yield "data: Annotating video with results...\n\n"
-            annotated_url = video_overlay.annotate_video(video_path, s3_bucket_name, analysis)
+    print("Checking whether this is a surf video...")
+    yield "data: Checking if video is a surf video...\n\n"
+    is_surf = video_content.is_surf_video(video_path)
+    
+    if is_surf:
+        yield "data: Analyzing ride...\n\n"
+        time.sleep(5)
+        s3_bucket_name = "wavescorevideos"
+        maneuvers = [
+            {'name': '360', 'start_time': 3.0, 'end_time': 5.0},
+            {'name': 'Snap', 'start_time': 6.0, 'end_time': 8.0},
+            {'name': 'Snap', 'start_time': 10.0, 'end_time': 11.0},
+            {'name': 'Cutback', 'start_time': 14.0, 'end_time': 15.0},
+            {'name': 'Cutback', 'start_time': 17.0, 'end_time': 18.0},
+            {'name': 'Cutback', 'start_time': 20.0, 'end_time': 21.0},
+            {'name': 'Cutback', 'start_time': 23.0, 'end_time': 24.0}
+        ]
+        analysis = {'maneuvers': maneuvers, 'score': 8.5}
 
-            # Return the annotated video to the client
-            result = {
-                "status": "success",
-                "message": "Nice surfing!",
-                "video_url": annotated_url
-            }
-            yield f"data: {json.dumps(result)}\n\n"
-        else:
-            result = {
-                "status": "error",
-                "message": "Video does not seem to be a surf video. Please try another video."
-            }
-            yield f"data: {json.dumps(result)}\n\n"
-    finally:
-        # Delete the temporary file after extracting metadata
-        if os.path.exists(video_path):
-            os.remove(video_path)
+        yield "data: Annotating video with results...\n\n"
+        annotated_url = video_overlay.annotate_video(video_path, s3_bucket_name, analysis)
+
+        # Return the annotated video to the client
+        result = {
+            "status": "success",
+            "message": "Nice surfing!",
+            "video_url": annotated_url
+        }
+        yield f"data: {json.dumps(result)}\n\n"
+    else:
+        result = {
+            "status": "error",
+            "message": "Video does not seem to be a surf video. Please try another video."
+        }
+        yield f"data: {json.dumps(result)}\n\n"
+
+    # Delete the temporary file after analyzing the video & returning to client
+    if os.path.exists(video_path):
+        os.remove(video_path)
 
 @app.route('/upload_video_hardcode', methods=['POST'])
 def upload_video_hardcode():
