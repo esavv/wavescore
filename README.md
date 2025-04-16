@@ -11,20 +11,21 @@
 ## Roadmap
 
 ### Things to Work on Next
-Last updated: 2025/01/02
+Last updated: 2025/04/16
    - Get interim analysis results (checking if surf video, analyzing, annotating video...). Consider switching API to SSE
-   - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
    - Get 1st part of 2-part model working well locally
       - Get more data, etc
-      - Investigate whether it's bad that our 2-part model runs inference on a single frame sequence at a time, even though we trained it to learn relationships across/betweens sequences
    - Build 2nd part of 2-part model: Infer wave score from maneuvers performed
-   - Migrate data from directory system to postgres + blob storage (S3)
    - Deploy model inference in the cloud (either Heroku or AWS)
       - We spent some time on this on 12/29/24. We uploaded the 46MB model to S3 to save slug size on Heroku, only to find that PyTorch & other packages increase our slug size to 3GB+
       - Some approaches for moving forward:
          - Find & install a CPU-only version of PyTorch that I can run both locally on my Mac and on Heroku. Might not be officially supported anymore, but [see here](https://stackoverflow.com/questions/51730880/where-do-i-get-a-cpu-only-version-of-pytorch)
          - Dockerize my application (at least the API code) so I can develop locally on Linux & use a CPU-only version of PyTorch that is officially supported
          - Abandon deploying my model to Heroku since it doesn't even work yet and it'll likely get so big that the previous approaches are only temporary workarounds. Instead, deploy my model to AWS or similar and expose an API to my Heroku service for calling inference   - Deploy model training in the cloud
+         - Might be overkill to have Heroku run my API and AWS run model training + inference. Maybe just deploy it all to AWS.
+   - Migrate data from directory system to postgres + blob storage (S3)
+   - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
+   - 2-part model: Investigate whether it's bad that our 2-part model runs inference on a single frame sequence at a time, even though we trained it to learn relationships across/betweens sequences
    - Model optimization: Pad video frames to make them square before the resizing in train.py
    - Refactoring: Refactor inference.run_inference() to move frame sequencing into a dedicated function. Consider sharing this with maneuver_sequencing.py
    - API cleanup: Raise appropriate errors in api/video_content and api/video_overlay if key files are missing
