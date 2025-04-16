@@ -21,11 +21,12 @@ def upload_video_hardcode_sse():
     return Response(process_video_stream(video_path), content_type='text/event-stream')
 
 def process_video_stream(video_path):
-    yield "data: Starting video processing...\n\n"
-    time.sleep(2)
-
     print("Checking whether this is a surf video...")
-    yield "data: Checking if video is a surf video...\n\n"
+    result = {
+        "status": "interim",
+        "message": "Checking if video is a surf video..."
+    }
+    yield f"data: {json.dumps(result)}\n\n"
     is_surf = video_content.is_surf_video(video_path)
 
     if isinstance(is_surf, dict) and "error" in is_surf:
@@ -36,7 +37,11 @@ def process_video_stream(video_path):
         }
         yield f"data: {json.dumps(result)}\n\n"
     elif is_surf:
-        yield "data: Analyzing ride...\n\n"
+        result = {
+            "status": "interim",
+            "message": "Analyzing ride..."
+        }
+        yield f"data: {json.dumps(result)}\n\n"
         time.sleep(5)
         s3_bucket_name = "wavescorevideos"
         maneuvers = [
@@ -50,7 +55,11 @@ def process_video_stream(video_path):
         ]
         analysis = {'maneuvers': maneuvers, 'score': 8.5}
 
-        yield "data: Annotating video with results...\n\n"
+        result = {
+            "status": "interim",
+            "message": "Annotating video with analysis..."
+        }
+        yield f"data: {json.dumps(result)}\n\n"
         annotated_url = video_overlay.annotate_video(video_path, s3_bucket_name, analysis)
 
         # Return the annotated video to the client
