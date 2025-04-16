@@ -1,5 +1,6 @@
 import csv, cv2, os, random
 from google.cloud import vision
+from google.api_core.exceptions import GoogleAPICallError, PermissionDenied
 
 print("video_content: Setting env variables...")
 if os.path.exists("./keys/google_cloud_account_key.json"):
@@ -22,6 +23,12 @@ def is_surf_video(video_path):
     for frame in frames:
         print(f"  Analyzing {frame}...")
         frame_labels = analyze_image(frame)
+
+        if isinstance(frame_labels, dict) and "error" in frame_labels:
+            print("  Error with Cloud Vision API, exiting...")
+            result = frame_labels
+            break
+
         for label in frame_labels:
             # Collect label description and its score
             if label.score >= 0.8:
@@ -31,6 +38,10 @@ def is_surf_video(video_path):
 
         # Delete the frame after analysis
         os.remove(frame)
+
+    if isinstance(result, dict) and "error" in result:
+        for frame in frames:
+            os.remove(frame)
 
     return result
 
@@ -65,7 +76,13 @@ def analyze_image(image_path):
     image = vision.Image(content=content)
     
     # Perform label detection
-    response = client.label_detection(image=image)
-    labels = response.label_annotations
-    
-    return labels
+    try:
+        response = client.label_detection(image=image)
+        labels = response.label_annotations
+        return labels
+    except PermissionDenied as e:
+        return {"error": "PermissionDenied", "message": str(e)}
+    except GoogleAPICallError as e:
+        return {"error": "GoogleAPICallError", "message": str(e)}
+    except Exception as e:
+        return {"error": "UnknownError", "message": str(e)}

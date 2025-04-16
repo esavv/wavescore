@@ -27,8 +27,15 @@ def process_video_stream(video_path):
     print("Checking whether this is a surf video...")
     yield "data: Checking if video is a surf video...\n\n"
     is_surf = video_content.is_surf_video(video_path)
-    
-    if is_surf:
+
+    if isinstance(is_surf, dict) and "error" in is_surf:
+        print("Couldn't check if surf video, exiting...")
+        result = {
+            "status": "error",
+            "message": is_surf["error"]
+        }
+        yield f"data: {json.dumps(result)}\n\n"
+    elif is_surf:
         yield "data: Analyzing ride...\n\n"
         time.sleep(5)
         s3_bucket_name = "wavescorevideos"
