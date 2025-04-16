@@ -53,19 +53,24 @@ struct ContentView: View {
                         if let videoURL = selectedVideo {
                             print("Calling the API now...")
                             // Call the API with a video file
-                            uploadVideoToAPI(videoURL: videoURL) { response in
-                                // Handle the result returned by the API
-                                DispatchQueue.main.async {
-                                    apiResponse = response  // Set the resultText state
-                                    appState = .results  // Transition to results state after receiving the response
-                                    // If the API response is successful, download the video locally
-                                    if let videoURLString = response?.video_url, let url = URL(string: videoURLString) {
-                                        downloadVideo(from: url)
-                                    } else {
-                                        isPlayerReady = true
+                            uploadVideoToAPI(
+                                videoURL: videoURL,
+                                onProgress: { message in
+                                    progressMessage = message
+                                },
+                                onComplete: { response in
+                                    DispatchQueue.main.async {
+                                        apiResponse = response  // Set the resultText state
+                                        appState = .results  // Transition to results state after receiving the response
+                                        // If the API response is successful, download the video locally
+                                        if let videoURLString = response?.video_url, let url = URL(string: videoURLString) {
+                                            downloadVideo(from: url)
+                                        } else {
+                                            isPlayerReady = true
+                                        }
                                     }
                                 }
-                            }
+                            )
                         }
                     }
                 }
