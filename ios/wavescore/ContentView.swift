@@ -53,7 +53,8 @@ struct ContentView: View {
                         if let videoURL = selectedVideo {
                             print("Calling the API now...")
                             // Call the API with a video file
-                            uploadVideoToAPI(
+                            let api = ModelAPI()
+                            api.uploadVideoToAPI(
                                 videoURL: videoURL,
                                 onProgress: { message in
                                     progressMessage = message
