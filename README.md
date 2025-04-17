@@ -11,8 +11,7 @@
 ## Roadmap
 
 ### Things to Work on Next
-Last updated: 2025/04/16
-   - Get interim analysis results (checking if surf video, analyzing, annotating video...). Consider switching API to SSE
+Last updated: 2025/04/17
    - Get 1st part of 2-part model working well locally
       - Get more data, etc
    - Build 2nd part of 2-part model: Infer wave score from maneuvers performed
@@ -33,6 +32,7 @@ Last updated: 2025/04/16
    - iOS code cleanup: Refactor toast & other logic in ContentView
 
 ### Things Recently Completed
+   - [2025/04/16] Switch API to SSE to display upload progress to user (checking if surf video, analyzing, annotating video...).
    - [2025/01/02] Revert API to hardcoded results after failing to deploy model inference (3GB+ in size) to Heroku
    - [2024/12/06] iOS + API: Demo where the API annotates the user's video file with hardcoded maneuvers, returns the video to the app, the app plays the video and allows the user to save it to their device
    - [2024/12/02] iOS + API: Check whether uploaded video is actually a surf video
