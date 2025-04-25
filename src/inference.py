@@ -3,17 +3,17 @@ from torchvision import transforms
 from model import SurfManeuverModel
 from PIL import Image
 import argparse, csv, cv2, math, os, shutil
-import boto3
-from botocore.exceptions import NoCredentialsError
+# import boto3
+# from botocore.exceptions import NoCredentialsError
 
-print("inference: Setting env variables...")
-if os.path.exists("./keys/aws_s3_accessKeys.csv"):
-    with open('./keys/aws_s3_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            os.environ['AWS_ACCESS_KEY_ID'] = row['Access key ID']
-            os.environ['AWS_SECRET_ACCESS_KEY'] = row['Secret access key']
-            break  # Assuming there is only one row, exit the loop after setting the variables
+# print("inference: Setting env variables...")
+# if os.path.exists("./keys/aws_s3_accessKeys.csv"):
+#     with open('./keys/aws_s3_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
+#         reader = csv.DictReader(file)
+#         for row in reader:
+#             os.environ['AWS_ACCESS_KEY_ID'] = row['Access key ID']
+#             os.environ['AWS_SECRET_ACCESS_KEY'] = row['Secret access key']
+#             break  # Assuming there is only one row, exit the loop after setting the variables
 #else:
     #TODO: raise an appropriate error
     #raise EnvironmentError("Missing AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables")
@@ -40,21 +40,21 @@ def run_inference(video_path, bucket_name, model_filename, mode='dev'):
     os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, model_filename)
 
-    if not os.path.exists(model_path):
-        print("  Downloading model from S3...")
-        s3 = boto3.client("s3")
-        try:
-            # Download the model file from S3
-            s3.download_file(bucket_name, model_filename, model_path)
-            print(f"Model downloaded successfully and saved to {model_path}")
-        except NoCredentialsError:
-            print("AWS credentials not found. Please set them in your environment.")
-            raise
-        except Exception as e:
-            print(f"Error downloading model: {e}")
-            raise
-    else:
-        print("  Model already saved locally, continuing...")
+    # if not os.path.exists(model_path):
+    #     print("  Downloading model from S3...")
+    #     s3 = boto3.client("s3")
+    #     try:
+    #         # Download the model file from S3
+    #         s3.download_file(bucket_name, model_filename, model_path)
+    #         print(f"Model downloaded successfully and saved to {model_path}")
+    #     except NoCredentialsError:
+    #         print("AWS credentials not found. Please set them in your environment.")
+    #         raise
+    #     except Exception as e:
+    #         print(f"Error downloading model: {e}")
+    #         raise
+    # else:
+    #     print("  Model already saved locally, continuing...")
 
     # Load the saved model
     print('Loading the model...')
@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
     mode = args.mode
     video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-    model_path = "models/surf_maneuver_model_20241106_1324.pth"
+    model_path = "../models/surf_maneuver_model_20241106_1324.pth"
 
     maneuvers = run_inference(video_path, model_path, mode)
     print("Prediction dict: " + str(maneuvers))
