@@ -4,6 +4,7 @@ api/keys/
 api/models/
 data/**/*.jpg
 data/**/*.mp4
+data/**/*.webm
 data/**/orig*
 img/
 ios/wavescore.xcodeproj/
