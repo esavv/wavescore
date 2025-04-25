@@ -51,9 +51,25 @@ Last updated: 2025/04/17
 
 ## Admin Documentation
 
-### Download a YouTube video using yt-dlp
+### Start & manage virtual environments when testing locally
+Create a virtual environment
+```bash
+python3 -m venv venv
+```
+
+Activate the virtual environment
+```bash
+source venv/bin/activate
+```
+
+Deactivate it when done with the current session
+```bash
+deactivate
+```
+
+### Download a YouTube video using yt-dlp, ensure it's a mp4
 ```bash  
-yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI
+yt-dlp -f "mp4" -o "%(id)s.mp4" https://www.youtube.com/watch?v=1Zj_jAPToxI
 ```
 
 ### Clip a shorter video from a longer video and save it
