@@ -1,6 +1,6 @@
 # import inference
 import os, time, json
-import video_content, video_overlay
+import verify_video, modify_video
 from flask import Flask, request, jsonify, Response
 
 app = Flask(__name__)
@@ -27,7 +27,7 @@ def process_video_stream(video_path):
         "message": "Checking if video is a surf video..."
     }
     yield f"data: {json.dumps(result)}\n\n"
-    is_surf = video_content.is_surf_video(video_path)
+    is_surf = verify_video.is_surf_video(video_path)
 
     if isinstance(is_surf, dict) and "error" in is_surf:
         print("Couldn't check if surf video, exiting...")
@@ -60,7 +60,7 @@ def process_video_stream(video_path):
             "message": "Annotating video with analysis..."
         }
         yield f"data: {json.dumps(result)}\n\n"
-        annotated_url = video_overlay.annotate_video(video_path, s3_bucket_name, analysis)
+        annotated_url = modify_video.annotate_video(video_path, s3_bucket_name, analysis)
 
         # Return the annotated video to the client
         result = {
@@ -96,7 +96,7 @@ def upload_video_hardcode():
     file.save(video_path)
 
     print("Checking whether this is a surf video...")
-    is_surf = video_content.is_surf_video(video_path)
+    is_surf = verify_video.is_surf_video(video_path)
     
     if is_surf:
         s3_bucket_name = "wavescorevideos"
@@ -110,7 +110,7 @@ def upload_video_hardcode():
             {'name': 'Cutback', 'start_time': 23.0, 'end_time': 24.0}
         ]
         analysis = {'maneuvers': maneuvers, 'score': 8.5}
-        annotated_url = video_overlay.annotate_video(video_path, s3_bucket_name, analysis)
+        annotated_url = modify_video.annotate_video(video_path, s3_bucket_name, analysis)
 
         # Return the annotated video to the client
         result = {
@@ -145,7 +145,7 @@ def upload_video():
     file.save(video_path)
 
     print("Checking whether this is a surf video...")
-    is_surf = video_content.is_surf_video(video_path)
+    is_surf = verify_video.is_surf_video(video_path)
     
     if is_surf:
         # model_url = "https://wavescorevideos.s3.us-east-1.amazonaws.com/surf_maneuver_model_20241106_1324.pth"
@@ -158,7 +158,7 @@ def upload_video():
 
         # Annotate the user video with inference results
         analysis = {'maneuvers': maneuvers, 'score': 8.5}
-        annotated_url = video_overlay.annotate_video(video_path, s3_bucket_name, analysis)
+        annotated_url = modify_video.annotate_video(video_path, s3_bucket_name, analysis)
 
         # Return the annotated video to the client
         result = {
