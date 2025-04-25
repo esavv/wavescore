@@ -28,7 +28,8 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
-def run_inference(video_path, bucket_name, model_filename, mode='dev'):
+# def run_inference(video_path, bucket_name, model_filename, mode='dev'):
+def run_inference(video_path, model_filename, mode='dev'):
     # Load the video target for inference
     print('Loading target video...')
     video_dir = os.path.dirname(video_path)
@@ -36,7 +37,7 @@ def run_inference(video_path, bucket_name, model_filename, mode='dev'):
     # If not already there, download the model from S3 to local directory
     # Model URL: 
     print('Retrieving the model...')
-    model_dir = "./models/"
+    model_dir = "../models/"
     os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, model_filename)
 
@@ -189,7 +190,7 @@ if __name__ == "__main__":
 
     mode = args.mode
     video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-    model_path = "../models/surf_maneuver_model_20241106_1324.pth"
+    model_path = "surf_maneuver_model_20241106_1324.pth"
 
     maneuvers = run_inference(video_path, model_path, mode)
     print("Prediction dict: " + str(maneuvers))
