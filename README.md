@@ -67,9 +67,9 @@ Deactivate it when done with the current session
 deactivate
 ```
 
-### Download a YouTube video using yt-dlp
+### Download a YouTube video using yt-dlp, ensure it's a mp4
 ```bash  
-yt-dlp https://www.youtube.com/watch?v=1Zj_jAPToxI
+yt-dlp -f "mp4" https://www.youtube.com/watch?v=1Zj_jAPToxI
 ```
 
 ### Clip a shorter video from a longer video and save it
