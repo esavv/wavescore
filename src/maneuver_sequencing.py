@@ -1,6 +1,6 @@
-# Assumes execution from the /wavescore parent project directory.
+# Assumes execution from the /src directory.
 # Usage:
-# src $ python src/maneuver_sequencing.py 1Zj_jAPToxI
+# src $ python maneuver_sequencing.py 1Zj_jAPToxI
 #
 # Some things to do next here:
 #  - Add error checking
@@ -12,10 +12,9 @@ if len(sys.argv) < 2:
     print("Error: Video ID not provided.")
     sys.exit()
 vid_id = sys.argv[1]
-current_dir = os.getcwd()
 
 # assert that the /data/heats/heat_1Zj_jAPToxI directory exists
-heat_path = os.path.join(current_dir, 'data/heats/heat_' + vid_id)
+heat_path = os.path.join('..', 'data', 'heats', 'heat_' + vid_id)
 if not os.path.exists(heat_path):
     print('Heat directory doesn\'t exist: ' + 'heat_' + vid_id)
     sys.exit()
