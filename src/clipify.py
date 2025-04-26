@@ -7,17 +7,19 @@
 #  > Directory: data/heats/heat_123
 #  > File:      data/heats/heat_123/123.mp4
 #  > File:      data/heats/heat_123/ride_times_123.csv
-import csv, os, subprocess, sys
+
+# Usage:
+# src $ python clipify.py 123
+import csv, os, subprocess, sys, re
 
 # assert video ID command-line argument is provided
 if len(sys.argv) < 2:
     print("Error: Video ID not provided.")
     sys.exit()
 vid_id = sys.argv[1]
-current_dir = os.getcwd()
 
 # assert that the /data/heats/heat_1Zj_jAPToxI directory exists
-heat_path = os.path.join(current_dir, 'data/heats/heat_' + vid_id)
+heat_path = '../data/heats/heat_' + vid_id
 if not os.path.exists(heat_path):
     print('Heat directory doesn\'t exist: ' + 'heat_' + vid_id)
     sys.exit()
@@ -49,6 +51,12 @@ with open(csv_file, mode='r') as file:
         ride_path = os.path.join(rides_path, f"ride_{index}")
         os.makedirs(ride_path, exist_ok=True)
 
+        # Create the human labels CSV file
+        labels_path = os.path.join(ride_path, f"{vid_id}_{index}_human_labels.csv")
+        with open(labels_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['start', 'end', 'maneuver_id'])
+
         # Define the output filename for each clip
         clip_path = os.path.join(ride_path, vid_id + f"_{index}.mp4")
 
@@ -60,13 +68,31 @@ with open(csv_file, mode='r') as file:
             "-to", end_time,
             "-c:v", "libx264",
             "-c:a", "aac",
+            "-progress", "pipe:1",  # Output progress to stdout
             clip_path
         ]
 
         # Print the command (for debugging)
         print(f"Processing clip {index}: {start_time} to {end_time} -> {clip_path}")
 
-        # Run the ffmpeg command
-        subprocess.run(command, check=True)
+        # Run the ffmpeg command and capture progress
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        
+        # Parse progress output
+        while True:
+            line = process.stdout.readline()
+            if not line:
+                break
+            if "out_time_ms" in line:
+                # Extract time in seconds
+                time_match = re.search(r"out_time_ms=(\d+)", line)
+                if time_match:
+                    time_ms = int(time_match.group(1))
+                    time_sec = time_ms / 1000000
+                    print(f"\rProgress: {time_sec:.1f}s", end="", flush=True)
+        
+        # Wait for process to complete
+        process.wait()
+        print()  # New line after progress
 
 print("All clips processed.")

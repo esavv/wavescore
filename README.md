@@ -67,10 +67,22 @@ Deactivate it when done with the current session
 deactivate
 ```
 
-### Download a YouTube video using yt-dlp, ensure it's a mp4
+### Download a YouTube video from command line using yt-dlp, ensure it's a mp4
 ```bash  
 yt-dlp -f "mp4" -o "%(id)s.mp4" https://www.youtube.com/watch?v=1Zj_jAPToxI
 ```
+
+### Download only specific subset of a longer YouTube video (from 30:00 to 1:00:00 in this example)
+```bash  
+yt-dlp -f "mp4" -o "%(id)s.mp4" --download-sections "*00:30:00-01:00:00" https://www.youtube.com/watch?v=1Zj_jAPToxI
+```
+
+### Download a YouTube video with script (recommended)
+From the `/wavescore/src` directory, run:
+```bash
+python3 download_youtube.py <video_id>
+```
+This script downloads the video (full or partial) and creates the required directory structure in `/data/heats/heat_<video_id>/` with the video file and a CSV template for ride times.
 
 ### Clip a shorter video from a longer video and save it
 This assumes we're in the parent `/wavescore` directory & naively saves it there.
