@@ -1,4 +1,4 @@
-# This program trains a model to recognize surf maneuvers from sequences of video frames.
+# This script trains a model to recognize surf maneuvers from sequences of video frames.
 # It expects a directory structure created by maneuver_sequencing.py, where each ride
 # has been split into 2-second sequences of frames and labeled with maneuver IDs.
 

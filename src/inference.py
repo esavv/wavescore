@@ -1,4 +1,4 @@
-# This program runs inference on a surf video to detect maneuvers performed in the ride.
+# This script runs inference on a surf video to detect maneuvers performed in the ride.
 # It expects a video file as input and a trained model file in the ../models/ directory.
 
 # Usage:

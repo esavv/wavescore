@@ -1,4 +1,4 @@
-# This program converts videos of full surfing heats into clips of individual
+# This script converts videos of full surfing heats into clips of individual
 # waves ridden, expecting as input both the heat video and a csv denoting the
 # start & end times of each ridden wave 
 
