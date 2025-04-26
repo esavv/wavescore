@@ -1,5 +1,6 @@
-# Assumes execution from the /surfjudge parent project directory. Example execution:
-#  > python3 src/maneuver_sequencing.py 1Zj_jAPToxI
+# Assumes execution from the /wavescore parent project directory.
+# Usage:
+# src $ python src/maneuver_sequencing.py 1Zj_jAPToxI
 #
 # Some things to do next here:
 #  - Add error checking
