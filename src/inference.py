@@ -1,8 +1,14 @@
+# This program runs inference on a surf video to detect maneuvers performed in the ride.
+# It expects a video file as input and a trained model file in the ../models/ directory.
+
+# Usage:
+# src $ python inference.py --mode dev
+
 import torch
 from torchvision import transforms
 from model import SurfManeuverModel
 from PIL import Image
-import argparse, csv, cv2, math, os, shutil
+import argparse, csv, cv2, math, os, shutil, sys
 # import boto3
 # from botocore.exceptions import NoCredentialsError
 
@@ -182,15 +188,37 @@ def pad_sequence(frames, max_length=60):
     return torch.stack(frames).unsqueeze(0) # Shape (1, num_frames, channels, height, width)
 
 if __name__ == "__main__":
-    # Set up command-line arguments & configure 'prod' and 'dev' modes (via an environment variable).
+    # Set up command-line arguments & configure 'prod' and 'dev' modes
     print('Setting up command-line arguments')
     parser = argparse.ArgumentParser(description='Toggle between prod and dev modes.')
     parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set the application mode (prod or dev).')
     args = parser.parse_args()
-
     mode = args.mode
-    video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-    model_path = "surf_maneuver_model_20241106_1324.pth"
 
-    maneuvers = run_inference(video_path, model_path, mode)
+    # List available models
+    model_dir = "../models/"
+    models = sorted([f for f in os.listdir(model_dir) if f.endswith('.pth')])
+    if not models:
+        print("Error: No model files found in ../models/")
+        sys.exit(1)
+
+    print("\nAvailable models:")
+    for i, model in enumerate(models, 1):
+        print(f"{i}. {model}")
+
+    # Get user's model choice
+    while True:
+        try:
+            choice = int(input("\nEnter the number of the model to use: "))
+            if 1 <= choice <= len(models):
+                model_filename = models[choice - 1]
+                break
+            else:
+                print(f"Please enter a number between 1 and {len(models)}")
+        except ValueError:
+            print("Please enter a valid number")
+
+    # Set video path and run inference
+    video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
+    maneuvers = run_inference(video_path, model_filename, mode)
     print("Prediction dict: " + str(maneuvers))
