@@ -1,3 +1,15 @@
+# This program trains a model to recognize surf maneuvers from sequences of video frames.
+# It expects a directory structure created by maneuver_sequencing.py, where each ride
+# has been split into 2-second sequences of frames and labeled with maneuver IDs.
+
+# The model combines a CNN (for frame feature extraction) with an LSTM (to learn
+# temporal relationships between frames). It can run in two modes:
+#  > dev: Uses grayscale images and fewer epochs for faster development
+#  > prod: Uses RGB images and more epochs for better performance
+
+# Usage:
+# src $ python train.py --mode dev
+
 print('>  Importing modules...')
 import argparse, pytz, time
 from datetime import datetime
