@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+# This script downloads a YouTube video and sets up the required directory structure
+# for processing surf rides. It expects a YouTube video ID as input and optionally
+# allows downloading only a specific time range of the video.
+
+# Suppose we're downloading video 123. This script:
+#  > Creates directory: data/heats/heat_123
+#  > Downloads video: data/heats/heat_123/123.mp4
+#  > Creates file: data/heats/heat_123/ride_times_123.csv (with headers only)
+#  > Creates file: data/heats/heat_123/rides/ride_0/123_0_human_labels.csv (with headers only)
+#  > etc. for each ride directory
+
+# Usage:
+# src $ python download_youtube.py 123
 
 import os, subprocess, sys, csv
 
