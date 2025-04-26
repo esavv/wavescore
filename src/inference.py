@@ -119,9 +119,9 @@ def run_inference(video_path, model_filename, mode='dev'):
 
             # hardcoding to get interesting results
             if sq == 2:
-                maneuver_id = 8
-            elif sq == 5:
                 maneuver_id = 6
+            elif sq == 5:
+                maneuver_id = 4
             
             # lookup manuever name
             name = taxonomy.get(maneuver_id, 'Unknown maneuver')
