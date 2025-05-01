@@ -42,14 +42,8 @@ print('>  Setting hyperparameters... (mode is: ' + mode + ')')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Data preparation
-print('>  Setting tranform...')
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize frames to match CNN input size
-    transforms.ToTensor(),
-])
-
 print('>  Creating dataset...')
-dataset = SurfManeuverDataset(root_dir="../data/heats", transform=transform, mode=mode)
+dataset = SurfManeuverDataset(root_dir="../data/heats", transform=None, mode=mode)
 print('>  Creating dataloader...')
 dataloader = DataLoader(
     dataset,
@@ -65,7 +59,7 @@ start_time = time.time()  # Track the start time of training
 
 # Model, loss function, and optimizer
 print('>  Defining the model...')
-model = SurfManeuverModel(mode=mode)  # Adjust num_classes as needed
+model = SurfManeuverModel(mode=mode)
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -98,10 +92,10 @@ for epoch in range(num_epochs):
         optimizer.step()
         
         # print(f"      >  Computing running loss")
-        running_loss += loss.item()
+        running_loss += loss.detach().item()
         # Print loss every N batches for progress feedback
         if (batch_idx + 1) % 10 == 0 or (batch_idx + 1) == total_batches:
-            print(f"    >  Batch {batch_idx + 1}/{total_batches}, Loss: {loss.item():.4f}")
+            print(f"    >  Batch {batch_idx + 1}/{total_batches}, Loss: {loss.detach().item():.4f}")
 
     # Print average loss and time taken for the epoch
     epoch_duration = time.time() - start_time
