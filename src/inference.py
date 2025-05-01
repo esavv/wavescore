@@ -5,7 +5,6 @@
 # src $ python inference.py --mode dev
 
 import torch
-from torchvision import transforms
 from model import SurfManeuverModel
 from utils import sequence_video_frames, load_frames_from_sequence
 import argparse, csv, os, shutil, sys
@@ -27,12 +26,6 @@ import argparse, csv, os, shutil, sys
 # Set device to GPU if available, otherwise use CPU
 print('inference: Configuring device & model transforms...')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Define transformations (same as used in training)
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-])
 
 def run_inference(video_path, model_filename, mode='dev'):
     # Load the video target for inference
@@ -120,7 +113,7 @@ def run_inference(video_path, model_filename, mode='dev'):
 def infer_sequence(model, seq_dir, mode='dev'):
     """Run inference on a single sequence."""
     # Use the shared function from utils.py with batch dimension already added
-    sequence = load_frames_from_sequence(seq_dir, transform, mode, add_batch_dim=True)
+    sequence = load_frames_from_sequence(seq_dir, transform=None, mode=mode, add_batch_dim=True)
     sequence = sequence.to(device)
     with torch.no_grad():
         output = model(sequence)

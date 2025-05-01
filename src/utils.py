@@ -1,6 +1,8 @@
 import cv2, math, os, torch
 import pandas as pd
 from PIL import Image
+import torchvision.transforms.functional as F
+from torchvision import transforms
 
 def sequence_video_frames(video_path, output_dir, sequence_duration=2):
     """
@@ -142,8 +144,15 @@ def load_frames_from_sequence(seq_dir, transform=None, mode='dev', add_batch_dim
 
         frame_path = os.path.join(seq_dir, frame_file)
         image = Image.open(frame_path).convert(COLOR)
+        
+        # Apply transforms
         if transform:
+            # Use transform if provided (useful for backward compatibility)
             image = transform(image)
+        else:
+            # Use our new aspect-ratio preserving transform
+            image = preserve_aspect_ratio_transform(image, target_size=224)
+            
         frames.append(image)
 
     # Pad or truncate frames
@@ -166,3 +175,43 @@ def pad_sequence(frames, max_length=60):
         # Truncate to max_length if too long
         frames = frames[:max_length]
     return torch.stack(frames)
+
+def preserve_aspect_ratio_transform(image, target_size=224):
+    """
+    Resize an image while preserving its aspect ratio, then pad to make it square.
+    
+    Args:
+        image: PIL Image
+        target_size: The size of the output square image
+        
+    Returns:
+        A square tensor of size (target_size, target_size)
+    """
+    # Get original dimensions
+    width, height = image.size
+    
+    # Calculate scaling factor to fit the entire image within target_size
+    # We need to scale based on the larger dimension to ensure the entire image fits
+    scale_factor = target_size / max(width, height)
+    
+    # Calculate new dimensions
+    new_width = int(width * scale_factor)
+    new_height = int(height * scale_factor)
+    
+    # Resize the image while preserving aspect ratio
+    resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+    
+    # Create a square black background
+    new_image = Image.new(resized_image.mode, (target_size, target_size), color=0)
+    
+    # Calculate position to paste the resized image (center it)
+    paste_x = (target_size - new_width) // 2
+    paste_y = (target_size - new_height) // 2
+    
+    # Paste the resized image onto the black background
+    new_image.paste(resized_image, (paste_x, paste_y))
+    
+    # Convert to tensor
+    tensor_image = F.to_tensor(new_image)
+    
+    return tensor_image

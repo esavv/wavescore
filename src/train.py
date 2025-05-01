@@ -42,14 +42,8 @@ print('>  Setting hyperparameters... (mode is: ' + mode + ')')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Data preparation
-print('>  Setting tranform...')
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize frames to match CNN input size
-    transforms.ToTensor(),
-])
-
 print('>  Creating dataset...')
-dataset = SurfManeuverDataset(root_dir="../data/heats", transform=transform, mode=mode)
+dataset = SurfManeuverDataset(root_dir="../data/heats", transform=None, mode=mode)
 print('>  Creating dataloader...')
 dataloader = DataLoader(
     dataset,
