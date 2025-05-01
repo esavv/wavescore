@@ -1,0 +1,4 @@
+# Prod mode inference; full color images and no frame skipping. Run on a model with dev mode hyperparameters
+real	0m16.464s
+user	0m19.930s
+sys	0m4.382s

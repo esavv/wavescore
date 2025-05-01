@@ -114,6 +114,13 @@ python3 src/maneuver_sequencing.py 123
 ```
  - This runs a script that outputs frame sequences for each ride in, for example, `.../ride_0/seqs` and outputs sequence labels in, for example, `.../ride_0/123_0_seq_labels.csv`
 
+### Time model training & inference runs for performance evaluation
+
+```bash
+{ time python train.py --mode dev ; } 2> train_time_$(date +"%Y%m%d_%H%M%S").log
+{ time python inference.py --mode dev ; } 2> inference_time_$(date +"%Y%m%d_%H%M%S").log
+```
+
 ### Test Flask API locally and call it remotely via ngrok
    - Launch the Flask server:
 ```bash  
