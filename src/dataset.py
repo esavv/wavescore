@@ -56,35 +56,42 @@ class SurfManeuverDataset(Dataset):
 
     def __getitem__(self, idx):
         seq_dir, label = self.samples[idx]
-        
-        # Configure mode-specific settings
-        SKIP_FREQ = 10  # skip every 10 frames in dev mode
-        COLOR = "L"     # "L" mode is for grayscale; reduce image size for faster training in dev mode
-        if self.mode == 'prod':
-            SKIP_FREQ = 1
-            COLOR = "RGB"
-        MAX_LENGTH = 60 // SKIP_FREQ
-        
-        # Load each frame in the sequence directory
-        frames = []
-        for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
-            # Skip frames in dev mode to speed up training
-            if frame_idx % SKIP_FREQ != 0:
-                continue
-
-            frame_path = os.path.join(seq_dir, frame_file)
-            image = Image.open(frame_path).convert(COLOR)
-            if self.transform:
-                image = self.transform(image)
-            frames.append(image)
-
-        # Pad or truncate frames
-        frames = pad_sequence(frames, MAX_LENGTH)
-
-        # Stack frames into a tensor with shape (num_frames, channels, height, width)
+        frames = load_frames_from_sequence(seq_dir, self.transform, self.mode)
         return frames, label
+
+def load_frames_from_sequence(seq_dir, transform=None, mode='dev', add_batch_dim=False):
+    """Load and transform frames from a sequence directory based on mode settings."""
+    SKIP_FREQ = 10,  # skip every 10 frames in dev mode
+    COLOR = "L",     # "L" mode is for grayscale in dev mode
+    if mode == 'prod':
+        SKIP_FREQ =  1
+        COLOR = "RGB"
+    MAX_LENGTH = 60 / SKIP_FREQ  # base max sequence length
     
+    # Load each frame in the sequence directory
+    frames = []
+    for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
+        # Skip frames based on mode settings
+        if frame_idx % SKIP_FREQ != 0:
+            continue
+
+        frame_path = os.path.join(seq_dir, frame_file)
+        image = Image.open(frame_path).convert(COLOR)
+        if transform:
+            image = transform(image)
+        frames.append(image)
+
+    # Pad or truncate frames
+    frames = pad_sequence(frames, MAX_LENGTH)
+    
+    # Add batch dimension if needed (for inference)
+    if add_batch_dim:
+        frames = frames.unsqueeze(0)
+        
+    return frames
+
 def pad_sequence(frames, max_length=60):
+    """Pad or truncate a sequence of frames to the specified length."""
     num_frames = len(frames)
     if num_frames < max_length:
         # Pad with zero tensors to reach max_length
