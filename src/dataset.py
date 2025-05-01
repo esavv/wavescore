@@ -56,29 +56,30 @@ class SurfManeuverDataset(Dataset):
 
     def __getitem__(self, idx):
         seq_dir, label = self.samples[idx]
-        frames = []
-        SKIP_FREQ = 10
-
+        
+        # Configure mode-specific settings
+        SKIP_FREQ = 10  # skip every 10 frames in dev mode
+        COLOR = "L"     # "L" mode is for grayscale; reduce image size for faster training in dev mode
+        if self.mode == 'prod':
+            SKIP_FREQ = 1
+            COLOR = "RGB"
+        MAX_LENGTH = 60 // SKIP_FREQ
+        
         # Load each frame in the sequence directory
+        frames = []
         for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
             # Skip frames in dev mode to speed up training
-            if self.mode == 'dev' and frame_idx % SKIP_FREQ != 0:
+            if frame_idx % SKIP_FREQ != 0:
                 continue
 
             frame_path = os.path.join(seq_dir, frame_file)
-            if self.mode == 'prod':
-                image = Image.open(frame_path).convert("RGB")
-            elif self.mode == 'dev':
-                image = Image.open(frame_path).convert("L")  # "L" mode is for grayscale; reduce image size for faster training in dev mode
+            image = Image.open(frame_path).convert(COLOR)
             if self.transform:
                 image = self.transform(image)
             frames.append(image)
 
         # Pad or truncate frames
-        max_length = 60
-        if self.mode == 'dev':
-            max_length = max_length // SKIP_FREQ
-        frames = pad_sequence(frames, max_length)
+        frames = pad_sequence(frames, MAX_LENGTH)
 
         # Stack frames into a tensor with shape (num_frames, channels, height, width)
         return frames, label

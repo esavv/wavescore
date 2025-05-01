@@ -151,29 +151,27 @@ def infer_sequence(model, seq_dir, mode='dev'):
 
 def load_sequence(seq_dir, mode='dev'):
     """Load frames from a sequence directory and apply transforms."""
-    frames = []
-    SKIP_FREQ = 10
+    SKIP_FREQ = 10 # skip every 10 frames in dev mode
+    COLOR = "L"    # "L" mode is for grayscale; reduce image size for faster training in dev mode
+    if mode == 'prod':
+        SKIP_FREQ = 1
+        COLOR = "RGB"
+    MAX_LENGTH = 60 // SKIP_FREQ
 
     # Load each frame in the sequence directory
+    frames = []
     for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
         # Skip frames in dev mode to speed up training
-        if mode == 'dev' and frame_idx % SKIP_FREQ != 0:
+        if frame_idx % SKIP_FREQ != 0:
             continue
 
         frame_path = os.path.join(seq_dir, frame_file)
-        if mode == 'prod':
-            image = Image.open(frame_path).convert("RGB")
-        elif mode == 'dev':
-            image = Image.open(frame_path).convert("L")  # "L" mode is for grayscale; reduce image size for faster training in dev mode
+        image = Image.open(frame_path).convert(COLOR)
         image = transform(image)
         frames.append(image)
 
     # Pad or truncate frames
-    max_length = 60
-    if mode == 'dev':
-        max_length = max_length // SKIP_FREQ
-    frames = pad_sequence(frames, max_length)
-    
+    frames = pad_sequence(frames, MAX_LENGTH)
     return frames
 
 def pad_sequence(frames, max_length=60):
