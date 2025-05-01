@@ -131,7 +131,7 @@ def load_frames_from_sequence(seq_dir, transform=None, mode='dev', add_batch_dim
     if mode == 'prod':
         SKIP_FREQ =  1
         COLOR = "RGB"
-    MAX_LENGTH = 60 / SKIP_FREQ  # base max sequence length
+    MAX_LENGTH = 60 // SKIP_FREQ  # base max sequence length
     
     # Load each frame in the sequence directory
     frames = []
