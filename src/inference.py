@@ -64,7 +64,7 @@ def run_inference(video_path, model_filename, mode='dev'):
 
     # Load the saved model
     print('Loading the model...')
-    model = SurfManeuverModel(num_classes=10)  # Ensure num_classes matches your trained model
+    model = SurfManeuverModel(num_classes=10, mode=mode)  # Ensure num_classes matches your trained model and pass mode
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
@@ -101,10 +101,10 @@ def run_inference(video_path, model_filename, mode='dev'):
             end_time = start_time + sequence_duration
 
             # hardcoding to get interesting results
-            if sq == 2:
-                maneuver_id = 6
-            elif sq == 5:
-                maneuver_id = 4
+            # if sq == 2:
+            #     maneuver_id = 6
+            # elif sq == 5:
+            #     maneuver_id = 4
             
             # lookup manuever name
             name = taxonomy.get(maneuver_id, 'Unknown maneuver')
