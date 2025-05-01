@@ -126,8 +126,8 @@ def label_sequences_from_csv(sequences_metadata, labels_df, output_csv_path=None
 
 def load_frames_from_sequence(seq_dir, transform=None, mode='dev', add_batch_dim=False):
     """Load and transform frames from a sequence directory based on mode settings."""
-    SKIP_FREQ = 10,  # skip every 10 frames in dev mode
-    COLOR = "L",     # "L" mode is for grayscale in dev mode
+    SKIP_FREQ = 10  # skip every 10 frames in dev mode
+    COLOR = "L"     # "L" mode is for grayscale in dev mode
     if mode == 'prod':
         SKIP_FREQ =  1
         COLOR = "RGB"
