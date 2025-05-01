@@ -1,6 +1,4 @@
-import cv2
-import math
-import os
+import cv2, math, os
 import pandas as pd
 
 def sequence_video_frames(video_path, output_dir, sequence_duration=2):
