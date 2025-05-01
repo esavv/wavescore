@@ -1,8 +1,7 @@
 import os
 import pandas as pd
-from PIL import Image
 from torch.utils.data import Dataset
-import torch
+from utils import load_frames_from_sequence
 
 class SurfManeuverDataset(Dataset):
     def __init__(self, root_dir, transform=None, mode='dev'):
@@ -56,40 +55,5 @@ class SurfManeuverDataset(Dataset):
 
     def __getitem__(self, idx):
         seq_dir, label = self.samples[idx]
-        frames = []
-        SKIP_FREQ = 10
-
-        # Load each frame in the sequence directory
-        for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
-            # Skip frames in dev mode to speed up training
-            if self.mode == 'dev' and frame_idx % SKIP_FREQ != 0:
-                continue
-
-            frame_path = os.path.join(seq_dir, frame_file)
-            if self.mode == 'prod':
-                image = Image.open(frame_path).convert("RGB")
-            elif self.mode == 'dev':
-                image = Image.open(frame_path).convert("L")  # "L" mode is for grayscale; reduce image size for faster training in dev mode
-            if self.transform:
-                image = self.transform(image)
-            frames.append(image)
-
-        # Pad or truncate frames
-        max_length = 60
-        if self.mode == 'dev':
-            max_length = max_length // SKIP_FREQ
-        frames = pad_sequence(frames, max_length)
-
-        # Stack frames into a tensor with shape (num_frames, channels, height, width)
+        frames = load_frames_from_sequence(seq_dir, self.transform, self.mode)
         return frames, label
-    
-def pad_sequence(frames, max_length=60):
-    num_frames = len(frames)
-    if num_frames < max_length:
-        # Pad with zero tensors to reach max_length
-        padding = [torch.zeros_like(frames[0]) for _ in range(max_length - num_frames)]
-        frames = frames + padding
-    else:
-        # Truncate to max_length if too long
-        frames = frames[:max_length]
-    return torch.stack(frames)

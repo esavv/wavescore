@@ -28,16 +28,15 @@ parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set 
 args = parser.parse_args()
 mode = args.mode
 
-# Hyperparameters
-print('>  Setting hyperparameters... (mode is: ' + mode + ')')
+# Hyperparameters, defaults for dev mode
+batch_size = 1
+learning_rate = 0.01
+num_epochs = 1
 if mode == 'prod':
     batch_size = 4
     learning_rate = 0.001
     num_epochs = 10
-elif mode == 'dev':
-    batch_size = 1
-    learning_rate = 0.01
-    num_epochs = 1
+print('>  Setting hyperparameters... (mode is: ' + mode + ')')
 
 # Set device to GPU if available, otherwise use CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -67,6 +67,11 @@ Deactivate it when done with the current session
 deactivate
 ```
 
+If the command prompt gets messed up after deactivating
+```bash
+xport PS1="\h:\W \u$ "
+```
+
 ### Download a YouTube video from command line using yt-dlp, ensure it's a mp4
 ```bash  
 yt-dlp -f "mp4" -o "%(id)s.mp4" https://www.youtube.com/watch?v=1Zj_jAPToxI
