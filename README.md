@@ -2,7 +2,7 @@
 
 ## Overview
 
-[Development still in progress] This application will allow users to upload videos of themselves surfing and get their rides scored from 0 to 10 as if they're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
+This application will allow users to upload videos of themselves surfing and get their rides scored from 0 to 10 as if they're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]). Development is still in progress.
 
 ## Demo
 
