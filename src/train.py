@@ -59,7 +59,7 @@ start_time = time.time()  # Track the start time of training
 
 # Model, loss function, and optimizer
 print('>  Defining the model...')
-model = SurfManeuverModel(mode=mode)  # Adjust num_classes as needed
+model = SurfManeuverModel(mode=mode)
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
