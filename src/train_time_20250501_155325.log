@@ -1,0 +1,17 @@
+# Prod mode with these hyperparameters:
+# batch_size = 3
+# learning_rate = 0.002
+# num_epochs = 5
+# Notes:
+# - Also relabeled the first heat with updated maneuver taxonomy
+# - Also fixed the aspect ratio of the images
+# - Also fixed the num_classes in the model to match the new taxonomy
+# - Aaaand it's still not working, inference still predicts no maneuvers
+
+/Users/eriksavage/Documents/wavescore/src/train.py:98: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/native/Scalar.cpp:23.)
+  print(f"    >  Batch {batch_idx + 1}/{total_batches}, Loss: {loss.item():.4f}")
+
+real	57m37.284s
+user	92m30.630s
+sys	30m32.992s

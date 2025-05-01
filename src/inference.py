@@ -36,12 +36,12 @@ def run_inference(video_path, model_filename, mode='dev'):
     # Model URL: 
     print('Retrieving the model...')
     model_dir = "../models/"
-    os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, model_filename)
 
     # if not os.path.exists(model_path):
     #     print("  Downloading model from S3...")
     #     s3 = boto3.client("s3")
+    #     os.makedirs(model_dir, exist_ok=True)
     #     try:
     #         # Download the model file from S3
     #         s3.download_file(bucket_name, model_filename, model_path)

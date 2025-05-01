@@ -92,10 +92,10 @@ for epoch in range(num_epochs):
         optimizer.step()
         
         # print(f"      >  Computing running loss")
-        running_loss += loss.item()
+        running_loss += loss.detach().item()
         # Print loss every N batches for progress feedback
         if (batch_idx + 1) % 10 == 0 or (batch_idx + 1) == total_batches:
-            print(f"    >  Batch {batch_idx + 1}/{total_batches}, Loss: {loss.item():.4f}")
+            print(f"    >  Batch {batch_idx + 1}/{total_batches}, Loss: {loss.detach().item():.4f}")
 
     # Print average loss and time taken for the epoch
     epoch_duration = time.time() - start_time
