@@ -1,0 +1,15 @@
+# Prod mode with these hyperparameters:
+# batch_size = 2
+# learning_rate = 0.005
+# num_epochs = 1
+# Notes:
+# - Surprisingly, this model trained faster than dev mode hyperparameters with full color images and no frame skipping.
+# - Inference still results in no maneuvers detected.
+
+/Users/eriksavage/Documents/wavescore/src/train.py:101: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/native/Scalar.cpp:23.)
+  running_loss += loss.item()
+
+real	10m13.292s
+user	14m42.386s
+sys	4m14.900s

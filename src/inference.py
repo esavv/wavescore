@@ -64,7 +64,7 @@ def run_inference(video_path, model_filename, mode='dev'):
 
     # Load the saved model
     print('Loading the model...')
-    model = SurfManeuverModel(num_classes=10, mode=mode)  # Ensure num_classes matches your trained model and pass mode
+    model = SurfManeuverModel(mode=mode)  # Ensure num_classes matches your trained model and pass mode
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 

@@ -1,0 +1,14 @@
+# Prod mode with these hyperparameters:
+# batch_size = 2
+# learning_rate = 0.005
+# num_epochs = 3
+# Notes:
+# - Inference still results in no maneuvers detected. Note: num_classes is incorrectly set to 10, not 7.
+
+/Users/eriksavage/Documents/wavescore/src/train.py:101: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/native/Scalar.cpp:23.)
+  running_loss += loss.item()
+
+real	32m13.995s
+user	45m45.781s
+sys	13m0.384s

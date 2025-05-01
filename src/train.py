@@ -33,9 +33,9 @@ batch_size = 1
 learning_rate = 0.01
 num_epochs = 1
 if mode == 'prod':
-    batch_size = 4
-    learning_rate = 0.001
-    num_epochs = 10
+    batch_size = 2        # 4
+    learning_rate = 0.005 # 0.001
+    num_epochs = 3        # 10
 print('>  Setting hyperparameters... (mode is: ' + mode + ')')
 
 # Set device to GPU if available, otherwise use CPU
@@ -65,7 +65,7 @@ start_time = time.time()  # Track the start time of training
 
 # Model, loss function, and optimizer
 print('>  Defining the model...')
-model = SurfManeuverModel(num_classes=10, mode=mode)  # Adjust num_classes as needed
+model = SurfManeuverModel(mode=mode)  # Adjust num_classes as needed
 model = model.to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
