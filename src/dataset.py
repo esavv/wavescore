@@ -1,8 +1,7 @@
 import os
 import pandas as pd
-from PIL import Image
 from torch.utils.data import Dataset
-import torch
+from utils import load_frames_from_sequence
 
 class SurfManeuverDataset(Dataset):
     def __init__(self, root_dir, transform=None, mode='dev'):
@@ -58,46 +57,3 @@ class SurfManeuverDataset(Dataset):
         seq_dir, label = self.samples[idx]
         frames = load_frames_from_sequence(seq_dir, self.transform, self.mode)
         return frames, label
-
-def load_frames_from_sequence(seq_dir, transform=None, mode='dev', add_batch_dim=False):
-    """Load and transform frames from a sequence directory based on mode settings."""
-    SKIP_FREQ = 10,  # skip every 10 frames in dev mode
-    COLOR = "L",     # "L" mode is for grayscale in dev mode
-    if mode == 'prod':
-        SKIP_FREQ =  1
-        COLOR = "RGB"
-    MAX_LENGTH = 60 / SKIP_FREQ  # base max sequence length
-    
-    # Load each frame in the sequence directory
-    frames = []
-    for frame_idx, frame_file in enumerate(sorted(os.listdir(seq_dir))):
-        # Skip frames based on mode settings
-        if frame_idx % SKIP_FREQ != 0:
-            continue
-
-        frame_path = os.path.join(seq_dir, frame_file)
-        image = Image.open(frame_path).convert(COLOR)
-        if transform:
-            image = transform(image)
-        frames.append(image)
-
-    # Pad or truncate frames
-    frames = pad_sequence(frames, MAX_LENGTH)
-    
-    # Add batch dimension if needed (for inference)
-    if add_batch_dim:
-        frames = frames.unsqueeze(0)
-        
-    return frames
-
-def pad_sequence(frames, max_length=60):
-    """Pad or truncate a sequence of frames to the specified length."""
-    num_frames = len(frames)
-    if num_frames < max_length:
-        # Pad with zero tensors to reach max_length
-        padding = [torch.zeros_like(frames[0]) for _ in range(max_length - num_frames)]
-        frames = frames + padding
-    else:
-        # Truncate to max_length if too long
-        frames = frames[:max_length]
-    return torch.stack(frames)

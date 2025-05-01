@@ -7,8 +7,7 @@
 import torch
 from torchvision import transforms
 from model import SurfManeuverModel
-from dataset import load_frames_from_sequence
-from utils import sequence_video_frames
+from utils import sequence_video_frames, load_frames_from_sequence
 import argparse, csv, os, shutil, sys
 # import boto3
 # from botocore.exceptions import NoCredentialsError
@@ -120,7 +119,7 @@ def run_inference(video_path, model_filename, mode='dev'):
 
 def infer_sequence(model, seq_dir, mode='dev'):
     """Run inference on a single sequence."""
-    # Use the shared function from dataset.py with batch dimension already added
+    # Use the shared function from utils.py with batch dimension already added
     sequence = load_frames_from_sequence(seq_dir, transform, mode, add_batch_dim=True)
     sequence = sequence.to(device)
     with torch.no_grad():
