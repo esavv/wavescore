@@ -2,7 +2,6 @@ import cv2, math, os, torch
 import pandas as pd
 from PIL import Image
 import torchvision.transforms.functional as F
-from torchvision import transforms
 
 def sequence_video_frames(video_path, output_dir, sequence_duration=2):
     """
