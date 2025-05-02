@@ -14,10 +14,10 @@ if len(sys.argv) < 2:
     sys.exit()
 vid_id = sys.argv[1]
 
-# assert that the /data/heats/heat_1Zj_jAPToxI directory exists
-heat_path = os.path.join('..', 'data', 'heats', 'heat_' + vid_id)
+# assert that the /data/heats/1Zj_jAPToxI directory exists
+heat_path = os.path.join('..', 'data', 'heats', vid_id)
 if not os.path.exists(heat_path):
-    print('Heat directory doesn\'t exist: ' + 'heat_' + vid_id)
+    print('Heat directory doesn\'t exist: ' + vid_id)
     sys.exit()
 # assert that the /rides/ directory exists
 rides_path = os.path.join(heat_path, 'rides')
@@ -30,13 +30,13 @@ rides.sort()
 
 # iterate through each ride
 for ride in rides:
-    # extract the directory # (eg the 0 in ride_0)
-    ride_no = ride.split('_')[1]  
+    # extract the ride number directly (directory name is now just the number)
+    ride_no = ride  
 
     # check if the video and human labels files are present
     ride_path = os.path.join(rides_path, ride)
     mp4_file = os.path.join(ride_path, vid_id + "_" + ride_no + ".mp4")
-    csv_file = os.path.join(ride_path, vid_id + "_" + ride_no + "_human_labels.csv")
+    csv_file = os.path.join(ride_path, "human_labels.csv")
     mp4_exists = os.path.exists(mp4_file)
     csv_exists = os.path.exists(csv_file)
 
@@ -64,7 +64,7 @@ for ride in rides:
         labels_df = pd.read_csv(csv_file)
         
         # Create and save sequence labels
-        labels_file = vid_id + "_" + ride_no + '_seq_labels.csv'
+        labels_file = "seq_labels.csv"
         labels_path = os.path.join(ride_path, labels_file)
         
         # Create labeled sequences

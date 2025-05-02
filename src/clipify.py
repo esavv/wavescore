@@ -4,9 +4,9 @@
 
 # Suppose we're making clips of video 123.mp4. This script expects the following
 # things to exist:
-#  > Directory: data/heats/heat_123
-#  > File:      data/heats/heat_123/123.mp4
-#  > File:      data/heats/heat_123/ride_times_123.csv
+#  > Directory: data/heats/123
+#  > File:      data/heats/123/123.mp4
+#  > File:      data/heats/123/ride_times.csv
 
 # Usage:
 # src $ python clipify.py 123
@@ -18,20 +18,20 @@ if len(sys.argv) < 2:
     sys.exit()
 vid_id = sys.argv[1]
 
-# assert that the /data/heats/heat_1Zj_jAPToxI directory exists
-heat_path = '../data/heats/heat_' + vid_id
+# assert that the /data/heats/1Zj_jAPToxI directory exists
+heat_path = '../data/heats/' + vid_id
 if not os.path.exists(heat_path):
-    print('Heat directory doesn\'t exist: ' + 'heat_' + vid_id)
+    print('Heat directory doesn\'t exist: ' + vid_id)
     sys.exit()
 
 # assert that the video & csv files exist
 mp4_file = os.path.join(heat_path, vid_id + ".mp4")
-csv_file = os.path.join(heat_path, "ride_times_" + vid_id + ".csv")
+csv_file = os.path.join(heat_path, "ride_times.csv")
 if not os.path.exists(mp4_file):
     print('Video file doesn\'t exist: ' + vid_id + ".mp4")
     sys.exit()
 if not os.path.exists(csv_file):
-    print('Clips csv file doesn\'t exist: ' + "ride_times_" + vid_id + ".csv")
+    print('Clips csv file doesn\'t exist: ride_times.csv')
     sys.exit()
 
 # Process the clips
@@ -48,11 +48,11 @@ with open(csv_file, mode='r') as file:
         end_time = row['end']
 
         # Create a new directory for each individual ride (these will later contain maneuver labels + frame sequences for training)
-        ride_path = os.path.join(rides_path, f"ride_{index}")
+        ride_path = os.path.join(rides_path, f"{index}")
         os.makedirs(ride_path, exist_ok=True)
 
         # Create the human labels CSV file
-        labels_path = os.path.join(ride_path, f"{vid_id}_{index}_human_labels.csv")
+        labels_path = os.path.join(ride_path, "human_labels.csv")
         with open(labels_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['start', 'end', 'maneuver_id'])

@@ -69,7 +69,7 @@ deactivate
 
 If the command prompt gets messed up after deactivating
 ```bash
-xport PS1="\h:\W \u$ "
+export PS1="\h:\W \u$ "
 ```
 
 ### Download a YouTube video from command line using yt-dlp, ensure it's a mp4
@@ -96,8 +96,8 @@ ffmpeg -i data/heats/heat_1Zj_jAPToxI/1Zj_jAPToxI.mp4 -ss 00:00:17 -to 00:00:46 
 ```
 
 ### Convert a longer surfing video into a sequence of ride clips
-   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `/wavescore/data/heats/heat_123/123.mp4`
-   - Add a csv to the `/heat_123` directory called `ride_times_123.csv` that contains the start & end timestamps for each ride to be clipped
+   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `/wavescore/data/heats/123/123.mp4`
+   - Add a csv to the `/123` directory called `ride_times.csv` that contains the start & end timestamps for each ride to be clipped
    - From the main `/wavescore` directory, run this command:
 ```bash  
 python3 src/clipify.py 123 
@@ -106,19 +106,20 @@ python3 src/clipify.py 123
 
 ### Convert a sequence of ride clips into labeled sequences of frames
 This labeled sequence is intended to be fed into a model that will learn surf maneuvers from an input video.
-   - Suppose we have video `123.mp4` that has ride clips in `/data/heats/heat_123/rides/`
-   - Ensure that each ride directory, in addition to the ride clip (e.g. `ride_0/123_0.mp4`) has a human-labeled CSV file containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `data/maneuver_taxonomy.csv`)
+   - Suppose we have video `123.mp4` that has ride clips in `/data/heats/123/rides/`
+   - Ensure that each ride directory, in addition to the ride clip (e.g. `0/123_0.mp4`) has a human-labeled CSV file named `human_labels.csv` containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `data/maneuver_taxonomy.csv`)
    - From the main /wavescore directory, run this command:
 ```bash
 python3 src/maneuver_sequencing.py 123
 ```
- - This runs a script that outputs frame sequences for each ride in, for example, `.../ride_0/seqs` and outputs sequence labels in, for example, `.../ride_0/123_0_seq_labels.csv`
+ - This runs a script that outputs frame sequences for each ride in, for example, `.../0/seqs` and outputs sequence labels in, for example, `.../0/seq_labels.csv`
 
 ### Time model training & inference runs for performance evaluation
 
+Run these commands from the `/src` directory:
 ```bash
-{ time python train.py --mode dev ; } 2> train_time_$(date +"%Y%m%d_%H%M%S").log
-{ time python inference.py --mode dev ; } 2> inference_time_$(date +"%Y%m%d_%H%M%S").log
+{ time python train.py --mode dev ; } 2> ../logs/train_time_$(date +"%Y%m%d_%H%M%S").log
+{ time python inference.py --mode dev ; } 2> ../logs/inference_time_$(date +"%Y%m%d_%H%M%S").log
 ```
 
 ### Test Flask API locally and call it remotely via ngrok
