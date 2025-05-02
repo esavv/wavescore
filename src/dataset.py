@@ -28,7 +28,7 @@ class SurfManeuverDataset(Dataset):
             for ride_dir in os.listdir(rides_dir):
                 ride_path = os.path.join(rides_dir, ride_dir)
                 ride_id = ride_dir  # ride_id is now directly the directory name
-                seq_labels_path = os.path.join(ride_path, f"{heat_id}_{ride_id}_seq_labels.csv")
+                seq_labels_path = os.path.join(ride_path, "seq_labels.csv")
                 seqs_dir = os.path.join(ride_path, "seqs")
                 
                 # Debug information for each ride and label path

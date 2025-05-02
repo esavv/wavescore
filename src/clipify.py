@@ -52,7 +52,7 @@ with open(csv_file, mode='r') as file:
         os.makedirs(ride_path, exist_ok=True)
 
         # Create the human labels CSV file
-        labels_path = os.path.join(ride_path, f"{vid_id}_{index}_human_labels.csv")
+        labels_path = os.path.join(ride_path, "human_labels.csv")
         with open(labels_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['start', 'end', 'maneuver_id'])

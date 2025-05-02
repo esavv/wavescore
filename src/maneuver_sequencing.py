@@ -36,7 +36,7 @@ for ride in rides:
     # check if the video and human labels files are present
     ride_path = os.path.join(rides_path, ride)
     mp4_file = os.path.join(ride_path, vid_id + "_" + ride_no + ".mp4")
-    csv_file = os.path.join(ride_path, vid_id + "_" + ride_no + "_human_labels.csv")
+    csv_file = os.path.join(ride_path, "human_labels.csv")
     mp4_exists = os.path.exists(mp4_file)
     csv_exists = os.path.exists(csv_file)
 
@@ -64,7 +64,7 @@ for ride in rides:
         labels_df = pd.read_csv(csv_file)
         
         # Create and save sequence labels
-        labels_file = vid_id + "_" + ride_no + '_seq_labels.csv'
+        labels_file = "seq_labels.csv"
         labels_path = os.path.join(ride_path, labels_file)
         
         # Create labeled sequences

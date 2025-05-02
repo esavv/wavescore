@@ -6,7 +6,7 @@
 #  > Creates directory: data/heats/123
 #  > Downloads video: data/heats/123/123.mp4
 #  > Creates file: data/heats/123/ride_times.csv (with headers only)
-#  > Creates file: data/heats/123/rides/0/123_0_human_labels.csv (with headers only)
+#  > Creates file: data/heats/123/rides/0/human_labels.csv (with headers only)
 #  > etc. for each ride directory
 
 # Usage:

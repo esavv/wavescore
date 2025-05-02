@@ -50,7 +50,7 @@ def create_maneuver_compilations(base_data_dir, output_dir, verbose=False):
         return
     
     # Find all CSV files with sequence labels
-    label_files = glob.glob(f"{base_data_dir}/**/*_seq_labels.csv", recursive=True)
+    label_files = glob.glob(f"{base_data_dir}/**/seq_labels.csv", recursive=True)
     print(f"Found {len(label_files)} sequence label files")
     
     if len(label_files) == 0:
