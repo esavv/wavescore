@@ -96,8 +96,8 @@ ffmpeg -i data/heats/heat_1Zj_jAPToxI/1Zj_jAPToxI.mp4 -ss 00:00:17 -to 00:00:46 
 ```
 
 ### Convert a longer surfing video into a sequence of ride clips
-   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `/wavescore/data/heats/heat_123/123.mp4`
-   - Add a csv to the `/heat_123` directory called `ride_times_123.csv` that contains the start & end timestamps for each ride to be clipped
+   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `/wavescore/data/heats/123/123.mp4`
+   - Add a csv to the `/123` directory called `ride_times.csv` that contains the start & end timestamps for each ride to be clipped
    - From the main `/wavescore` directory, run this command:
 ```bash  
 python3 src/clipify.py 123 

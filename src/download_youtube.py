@@ -3,10 +3,10 @@
 # allows downloading only a specific time range of the video.
 
 # Suppose we're downloading video 123. This script:
-#  > Creates directory: data/heats/heat_123
-#  > Downloads video: data/heats/heat_123/123.mp4
-#  > Creates file: data/heats/heat_123/ride_times_123.csv (with headers only)
-#  > Creates file: data/heats/heat_123/rides/ride_0/123_0_human_labels.csv (with headers only)
+#  > Creates directory: data/heats/123
+#  > Downloads video: data/heats/123/123.mp4
+#  > Creates file: data/heats/123/ride_times.csv (with headers only)
+#  > Creates file: data/heats/123/rides/ride_0/123_0_human_labels.csv (with headers only)
 #  > etc. for each ride directory
 
 # Usage:
@@ -17,11 +17,11 @@ import os, subprocess, sys, csv
 def create_directory_structure(video_id):
     """Create the required directory structure and CSV file."""
     # Create the heat directory
-    heat_dir = os.path.join('..', 'data', 'heats', f'heat_{video_id}')
+    heat_dir = os.path.join('..', 'data', 'heats', f'{video_id}')
     os.makedirs(heat_dir, exist_ok=True)
     
     # Create the CSV file with headers
-    csv_path = os.path.join(heat_dir, f'ride_times_{video_id}.csv')
+    csv_path = os.path.join(heat_dir, 'ride_times.csv')
     with open(csv_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['start', 'end'])
@@ -85,7 +85,7 @@ def main():
     print("\nDirectory structure created:")
     print(f"- Heat directory: {heat_dir}")
     print(f"- Video file: {video_id}.mp4")
-    print(f"- CSV file: ride_times_{video_id}.csv")
+    print(f"- CSV file: ride_times.csv")
 
 if __name__ == "__main__":
     main() 

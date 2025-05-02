@@ -4,9 +4,9 @@
 
 # Suppose we're making clips of video 123.mp4. This script expects the following
 # things to exist:
-#  > Directory: data/heats/heat_123
-#  > File:      data/heats/heat_123/123.mp4
-#  > File:      data/heats/heat_123/ride_times_123.csv
+#  > Directory: data/heats/123
+#  > File:      data/heats/123/123.mp4
+#  > File:      data/heats/123/ride_times.csv
 
 # Usage:
 # src $ python clipify.py 123
@@ -18,20 +18,20 @@ if len(sys.argv) < 2:
     sys.exit()
 vid_id = sys.argv[1]
 
-# assert that the /data/heats/heat_1Zj_jAPToxI directory exists
-heat_path = '../data/heats/heat_' + vid_id
+# assert that the /data/heats/1Zj_jAPToxI directory exists
+heat_path = '../data/heats/' + vid_id
 if not os.path.exists(heat_path):
-    print('Heat directory doesn\'t exist: ' + 'heat_' + vid_id)
+    print('Heat directory doesn\'t exist: ' + vid_id)
     sys.exit()
 
 # assert that the video & csv files exist
 mp4_file = os.path.join(heat_path, vid_id + ".mp4")
-csv_file = os.path.join(heat_path, "ride_times_" + vid_id + ".csv")
+csv_file = os.path.join(heat_path, "ride_times.csv")
 if not os.path.exists(mp4_file):
     print('Video file doesn\'t exist: ' + vid_id + ".mp4")
     sys.exit()
 if not os.path.exists(csv_file):
-    print('Clips csv file doesn\'t exist: ' + "ride_times_" + vid_id + ".csv")
+    print('Clips csv file doesn\'t exist: ride_times.csv')
     sys.exit()
 
 # Process the clips

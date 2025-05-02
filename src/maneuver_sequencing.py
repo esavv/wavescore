@@ -14,10 +14,10 @@ if len(sys.argv) < 2:
     sys.exit()
 vid_id = sys.argv[1]
 
-# assert that the /data/heats/heat_1Zj_jAPToxI directory exists
-heat_path = os.path.join('..', 'data', 'heats', 'heat_' + vid_id)
+# assert that the /data/heats/1Zj_jAPToxI directory exists
+heat_path = os.path.join('..', 'data', 'heats', vid_id)
 if not os.path.exists(heat_path):
-    print('Heat directory doesn\'t exist: ' + 'heat_' + vid_id)
+    print('Heat directory doesn\'t exist: ' + vid_id)
     sys.exit()
 # assert that the /rides/ directory exists
 rides_path = os.path.join(heat_path, 'rides')
