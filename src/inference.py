@@ -8,6 +8,7 @@ import torch
 from model import SurfManeuverModel
 from utils import sequence_video_frames, load_frames_from_sequence
 import argparse, csv, os, shutil, sys
+import numpy as np
 # import boto3
 # from botocore.exceptions import NoCredentialsError
 
@@ -26,6 +27,43 @@ import argparse, csv, os, shutil, sys
 # Set device to GPU if available, otherwise use CPU
 print('inference: Configuring device & model transforms...')
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def verify_input_sequence(sequence, seq_name, mode):
+    """Print statistics about input sequence to verify loading."""
+    print(f"\n=== INPUT SEQUENCE DIAGNOSTICS: {seq_name} ===")
+    print(f"Input sequence shape: {sequence.shape}")
+    print(f"Input sequence dtype: {sequence.dtype}")
+    print(f"Input mode: {mode}")
+    
+    # Check sequence values
+    min_val = sequence.min().item()
+    max_val = sequence.max().item()
+    mean_val = sequence.mean().item()
+    std_val = sequence.std().item()
+    
+    print(f"Input sequence range: [{min_val:.6f}, {max_val:.6f}]")
+    print(f"Input sequence mean: {mean_val:.6f}, std: {std_val:.6f}")
+    
+    # Check if frames have variation
+    if sequence.shape[1] > 1:  # More than one frame
+        frame_diffs = []
+        for i in range(1, min(5, sequence.shape[1])):  # Check first few frames
+            diff = (sequence[0, i] - sequence[0, 0]).abs().mean().item()
+            frame_diffs.append(diff)
+            print(f"Difference between frame 0 and frame {i}: {diff:.6f}")
+        
+        if all(diff < 1e-6 for diff in frame_diffs):
+            print("WARNING: First frames appear to be identical or very similar!")
+    
+    # Check if all values are zeros or very close to zero
+    if max_val < 1e-6:
+        print("WARNING: Sequence appears to be all zeros or very close to zeros!")
+    
+    # Sample stats for a few individual frames
+    num_samples = min(3, sequence.shape[1])
+    for i in range(num_samples):
+        frame = sequence[0, i]
+        print(f"Frame {i} stats - Min: {frame.min().item():.6f}, Max: {frame.max().item():.6f}, Mean: {frame.mean().item():.6f}")
 
 def run_inference(video_path, model_filename, mode='dev'):
     # Load the video target for inference
@@ -60,7 +98,7 @@ def run_inference(video_path, model_filename, mode='dev'):
     model = SurfManeuverModel(mode=mode)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
-
+    
     # Extract frames from the video
     print('Opening the video file & extracting frames...')
     seqs_path = os.path.join(video_dir, 'seqs')
@@ -81,15 +119,20 @@ def run_inference(video_path, model_filename, mode='dev'):
             taxonomy[int(row['id'])] = row['name']
 
     maneuvers = []
+    confidence_data = []
     sequence_duration = sequences_metadata['sequence_duration']
     total_sequences = sequences_metadata['total_sequences']
+    
+    # Initialize hidden state
+    hidden = None
     
     for sq in range(total_sequences):
         seq_name = f'seq_{sq}'
         seq_dir = os.path.join(seqs_path, seq_name)
         if os.path.isdir(seq_dir):
-            maneuver_id = infer_sequence(model, seq_dir, mode=mode)
-
+            # Run inference with state continuity
+            maneuver_id, confidence_scores, hidden = infer_sequence(model, seq_dir, mode=mode, hidden=hidden)
+            
             start_time = sq * sequence_duration
             end_time = start_time + sequence_duration
 
@@ -105,20 +148,55 @@ def run_inference(video_path, model_filename, mode='dev'):
                 maneuvers.append({'name': name, 'start_time': start_time, 'end_time': end_time})
             print(f"  Predicted maneuver for sequence {sq}: {maneuver_id}")
 
+            # Print the confidence scores for all classes
+            print(f"\nSequence {sq} (Time: {start_time:.1f}s - {end_time:.1f}s):")
+            print(f"  Predicted maneuver: {maneuver_id} ({name})")
+            print("  Confidence scores:")
+            for class_id, score in enumerate(confidence_scores):
+                class_name = taxonomy.get(class_id, 'Unknown')
+                print(f"    {class_id} ({class_name}): {score:.4f}" + (" <-- PREDICTED" if class_id == maneuver_id else ""))
+            
+            # Store confidence data for potential visualization
+            confidence_data.append({
+                'sequence': sq,
+                'time_range': f"{start_time:.1f}s - {end_time:.1f}s",
+                'predicted': maneuver_id,
+                'scores': {class_id: float(score) for class_id, score in enumerate(confidence_scores)}
+            })
+
     # clean things up
     shutil.rmtree(seqs_path)
 
-    return maneuvers
+    # Return the results without activation analysis
+    return maneuvers, confidence_data, taxonomy
 
-def infer_sequence(model, seq_dir, mode='dev'):
-    """Run inference on a single sequence."""
+def infer_sequence(model, seq_dir, mode='dev', hidden=None):
+    """Run inference on a single sequence, maintaining LSTM state."""
     # Use the shared function from utils.py with batch dimension already added
     sequence = load_frames_from_sequence(seq_dir, transform=None, mode=mode, add_batch_dim=True)
     sequence = sequence.to(device)
+    
     with torch.no_grad():
-        output = model(sequence)
+        # Debug hidden state before forward pass
+        if hidden is not None:
+            h_0, c_0 = hidden
+            print(f"  [Hidden state before] h_0 norm: {h_0.norm().item():.6f}, c_0 norm: {c_0.norm().item():.6f}")
+        else:
+            print("  [Hidden state before] None (initial sequence)")
+        
+        # Forward pass
+        output, hidden = model(sequence, hidden)
+        
+        # Debug hidden state after forward pass
+        h_n, c_n = hidden
+        print(f"  [Hidden state after] h_n norm: {h_n.norm().item():.6f}, c_n norm: {c_n.norm().item():.6f}")
+        
+        # Apply softmax to get probabilities
+        probabilities = torch.nn.functional.softmax(output, dim=1)
+        confidence_scores = probabilities.squeeze().cpu().numpy()
         predicted_class = output.argmax(dim=1).item()
-    return predicted_class
+        
+    return predicted_class, confidence_scores, hidden
 
 if __name__ == "__main__":
     # Set up command-line arguments & configure 'prod' and 'dev' modes
@@ -153,5 +231,31 @@ if __name__ == "__main__":
 
     # Set video path and run inference
     video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-    maneuvers = run_inference(video_path, model_filename, mode)
-    print("Prediction dict: " + str(maneuvers))
+    maneuvers, confidence_data, taxonomy = run_inference(video_path, model_filename, mode)
+    print("\nPrediction dict: " + str(maneuvers))
+    
+    # Optionally save detailed confidence data to a CSV file
+    save_details = input("\nWould you like to save the detailed confidence scores to a CSV file? (y/n): ")
+    if save_details.lower() == 'y':
+        import pandas as pd
+        
+        # Create a flattened DataFrame
+        rows = []
+        for data in confidence_data:
+            row = {
+                'sequence': data['sequence'],
+                'time_range': data['time_range'],
+                'predicted_class': data['predicted'],
+                'predicted_name': taxonomy.get(data['predicted'], 'Unknown')
+            }
+            # Add each class score as a separate column
+            for class_id, score in data['scores'].items():
+                row[f'score_{class_id}_{taxonomy.get(class_id, "Unknown")}'] = score
+            
+            rows.append(row)
+        
+        # Convert to DataFrame and save
+        df = pd.DataFrame(rows)
+        output_path = os.path.join(os.path.dirname(video_path), 'confidence_scores.csv')
+        df.to_csv(output_path, index=False)
+        print(f"Confidence scores saved to: {output_path}")
