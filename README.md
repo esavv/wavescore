@@ -116,9 +116,10 @@ python3 src/maneuver_sequencing.py 123
 
 ### Time model training & inference runs for performance evaluation
 
+Run these commands from the `/src` directory:
 ```bash
-{ time python train.py --mode dev ; } 2> train_time_$(date +"%Y%m%d_%H%M%S").log
-{ time python inference.py --mode dev ; } 2> inference_time_$(date +"%Y%m%d_%H%M%S").log
+{ time python train.py --mode dev ; } 2> ../logs/train_time_$(date +"%Y%m%d_%H%M%S").log
+{ time python inference.py --mode dev ; } 2> ../logs/inference_time_$(date +"%Y%m%d_%H%M%S").log
 ```
 
 ### Test Flask API locally and call it remotely via ngrok
