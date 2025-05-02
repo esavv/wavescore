@@ -48,7 +48,7 @@ with open(csv_file, mode='r') as file:
         end_time = row['end']
 
         # Create a new directory for each individual ride (these will later contain maneuver labels + frame sequences for training)
-        ride_path = os.path.join(rides_path, f"ride_{index}")
+        ride_path = os.path.join(rides_path, f"{index}")
         os.makedirs(ride_path, exist_ok=True)
 
         # Create the human labels CSV file

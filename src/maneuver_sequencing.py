@@ -30,8 +30,8 @@ rides.sort()
 
 # iterate through each ride
 for ride in rides:
-    # extract the directory # (eg the 0 in ride_0)
-    ride_no = ride.split('_')[1]  
+    # extract the ride number directly (directory name is now just the number)
+    ride_no = ride  
 
     # check if the video and human labels files are present
     ride_path = os.path.join(rides_path, ride)

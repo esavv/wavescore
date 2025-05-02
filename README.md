@@ -106,13 +106,13 @@ python3 src/clipify.py 123
 
 ### Convert a sequence of ride clips into labeled sequences of frames
 This labeled sequence is intended to be fed into a model that will learn surf maneuvers from an input video.
-   - Suppose we have video `123.mp4` that has ride clips in `/data/heats/heat_123/rides/`
-   - Ensure that each ride directory, in addition to the ride clip (e.g. `ride_0/123_0.mp4`) has a human-labeled CSV file containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `data/maneuver_taxonomy.csv`)
+   - Suppose we have video `123.mp4` that has ride clips in `/data/heats/123/rides/`
+   - Ensure that each ride directory, in addition to the ride clip (e.g. `0/123_0.mp4`) has a human-labeled CSV file containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `data/maneuver_taxonomy.csv`)
    - From the main /wavescore directory, run this command:
 ```bash
 python3 src/maneuver_sequencing.py 123
 ```
- - This runs a script that outputs frame sequences for each ride in, for example, `.../ride_0/seqs` and outputs sequence labels in, for example, `.../ride_0/123_0_seq_labels.csv`
+ - This runs a script that outputs frame sequences for each ride in, for example, `.../0/seqs` and outputs sequence labels in, for example, `.../0/123_0_seq_labels.csv`
 
 ### Time model training & inference runs for performance evaluation
 

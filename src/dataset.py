@@ -21,13 +21,13 @@ class SurfManeuverDataset(Dataset):
             if not os.path.isdir(heat_path):
                 continue
 
-            heat_id = heat_dir[len("heat_"):]  # Assuming the heat ID is everything after "heat_" in <heat_dir>
+            heat_id = heat_dir  # heat_id is now the same as the directory name
 
             rides_dir = os.path.join(heat_path, "rides")
             # Iterate through each ride in the heat
             for ride_dir in os.listdir(rides_dir):
                 ride_path = os.path.join(rides_dir, ride_dir)
-                ride_id = ride_dir.split('_')[-1] # Extract ride_id from the ride directory name
+                ride_id = ride_dir  # ride_id is now directly the directory name
                 seq_labels_path = os.path.join(ride_path, f"{heat_id}_{ride_id}_seq_labels.csv")
                 seqs_dir = os.path.join(ride_path, "seqs")
                 
