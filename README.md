@@ -69,7 +69,7 @@ deactivate
 
 If the command prompt gets messed up after deactivating
 ```bash
-xport PS1="\h:\W \u$ "
+export PS1="\h:\W \u$ "
 ```
 
 ### Download a YouTube video from command line using yt-dlp, ensure it's a mp4
