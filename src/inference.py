@@ -123,15 +123,14 @@ def run_inference(video_path, model_filename, mode='dev'):
     sequence_duration = sequences_metadata['sequence_duration']
     total_sequences = sequences_metadata['total_sequences']
     
-    # Initialize hidden state
-    hidden = None
+    # No need to initialize hidden state for 3D CNN
     
     for sq in range(total_sequences):
         seq_name = f'seq_{sq}'
         seq_dir = os.path.join(seqs_path, seq_name)
         if os.path.isdir(seq_dir):
-            # Run inference with state continuity
-            maneuver_id, confidence_scores, hidden = infer_sequence(model, seq_dir, mode=mode, hidden=hidden)
+            # Run inference on each sequence independently
+            maneuver_id, confidence_scores = infer_sequence(model, seq_dir, mode=mode)
             
             start_time = sq * sequence_duration
             end_time = start_time + sequence_duration
@@ -171,32 +170,21 @@ def run_inference(video_path, model_filename, mode='dev'):
     return maneuvers, confidence_data, taxonomy
 
 def infer_sequence(model, seq_dir, mode='dev', hidden=None):
-    """Run inference on a single sequence, maintaining LSTM state."""
+    """Run inference on a single sequence."""
     # Use the shared function from utils.py with batch dimension already added
     sequence = load_frames_from_sequence(seq_dir, transform=None, mode=mode, add_batch_dim=True)
     sequence = sequence.to(device)
     
     with torch.no_grad():
-        # Debug hidden state before forward pass
-        if hidden is not None:
-            h_0, c_0 = hidden
-            print(f"  [Hidden state before] h_0 norm: {h_0.norm().item():.6f}, c_0 norm: {c_0.norm().item():.6f}")
-        else:
-            print("  [Hidden state before] None (initial sequence)")
-        
-        # Forward pass
-        output, hidden = model(sequence, hidden)
-        
-        # Debug hidden state after forward pass
-        h_n, c_n = hidden
-        print(f"  [Hidden state after] h_n norm: {h_n.norm().item():.6f}, c_n norm: {c_n.norm().item():.6f}")
+        # Forward pass (hidden parameter is ignored in the 3D CNN model)
+        output, _ = model(sequence, None)
         
         # Apply softmax to get probabilities
         probabilities = torch.nn.functional.softmax(output, dim=1)
         confidence_scores = probabilities.squeeze().cpu().numpy()
         predicted_class = output.argmax(dim=1).item()
         
-    return predicted_class, confidence_scores, hidden
+    return predicted_class, confidence_scores
 
 if __name__ == "__main__":
     # Set up command-line arguments & configure 'prod' and 'dev' modes
@@ -234,28 +222,4 @@ if __name__ == "__main__":
     maneuvers, confidence_data, taxonomy = run_inference(video_path, model_filename, mode)
     print("\nPrediction dict: " + str(maneuvers))
     
-    # Optionally save detailed confidence data to a CSV file
-    save_details = input("\nWould you like to save the detailed confidence scores to a CSV file? (y/n): ")
-    if save_details.lower() == 'y':
-        import pandas as pd
-        
-        # Create a flattened DataFrame
-        rows = []
-        for data in confidence_data:
-            row = {
-                'sequence': data['sequence'],
-                'time_range': data['time_range'],
-                'predicted_class': data['predicted'],
-                'predicted_name': taxonomy.get(data['predicted'], 'Unknown')
-            }
-            # Add each class score as a separate column
-            for class_id, score in data['scores'].items():
-                row[f'score_{class_id}_{taxonomy.get(class_id, "Unknown")}'] = score
-            
-            rows.append(row)
-        
-        # Convert to DataFrame and save
-        df = pd.DataFrame(rows)
-        output_path = os.path.join(os.path.dirname(video_path), 'confidence_scores.csv')
-        df.to_csv(output_path, index=False)
-        print(f"Confidence scores saved to: {output_path}")
+    # End program - removing the CSV save option

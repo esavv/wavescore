@@ -74,24 +74,17 @@ for epoch in range(num_epochs):
         print(f"    >  Processing batch {batch_idx + 1}/{total_batches}")
 
         # Move data to the correct device
-        # print(f"      >  Moving data to the correct device")
         frames, labels = frames.to(device), labels.to(device)
         
         # Forward pass
-        # print(f"      >  Forward pass outputs")
-        outputs = model(frames)
-        # print(f"      >  Forward pass criterion")
+        outputs, _ = model(frames)  # Discard the None/hidden state from the output
         loss = criterion(outputs, labels)
         
         # Backward pass and optimization
-        # print(f"      >  Backward pass zero grad")
         optimizer.zero_grad()
-        # print(f"      >  Backward pass backward")
         loss.backward()
-        # print(f"      >  Backward pass optimizer step")
         optimizer.step()
         
-        # print(f"      >  Computing running loss")
         running_loss += loss.detach().item()
         # Print loss every N batches for progress feedback
         if (batch_idx + 1) % 10 == 0 or (batch_idx + 1) == total_batches:
