@@ -1,0 +1,9 @@
+# Prod mode (RGG, skip 5) with dev mode hyperparameters (on 3D CNN)
+# Notes:
+# - No maneuvers predicted, but some improvement over dev mode, with better distribution
+#       of confidence scores across sequences 1-5 and slightlty less confidence convergence
+#       in final several sequences
+
+real	11m32.036s
+user	14m55.085s
+sys	6m4.960s
