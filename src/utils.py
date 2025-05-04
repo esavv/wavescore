@@ -130,7 +130,7 @@ def load_frames_from_sequence(seq_dir, transform=None, mode='dev', add_batch_dim
     SKIP_FREQ = 10  # skip every 10 frames in dev mode
     COLOR = "L"     # "L" mode is for grayscale in dev mode
     if mode == 'prod':
-        SKIP_FREQ =  1
+        SKIP_FREQ =  2
         COLOR = "RGB"
     MAX_LENGTH = 60 // SKIP_FREQ  # base max sequence length
     
