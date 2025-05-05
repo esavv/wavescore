@@ -26,7 +26,7 @@ from model import SurfManeuverModel
 
 # Define Focal Loss for handling class imbalance
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=2.0, alpha=None):
+    def __init__(self, gamma=1.0, alpha=None):  # Reduced gamma from 2.0 to 1.0 for less aggressive focus
         super().__init__()
         self.gamma = gamma
         self.alpha = alpha  # Class weights
@@ -41,14 +41,16 @@ class FocalLoss(nn.Module):
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')
 parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set the application mode (prod or dev).')
 parser.add_argument('--focal_loss', action='store_true', help='Use Focal Loss instead of weighted Cross Entropy.')
-parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual'], default='sqrt', 
+parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced'], default='sqrt', 
                    help='Method for calculating class weights.')
 parser.add_argument('--visualize', action='store_true', help='Visualize class distribution and training progress.')
+parser.add_argument('--gamma', type=float, default=1.0, help='Gamma parameter for Focal Loss (if used).')
 args = parser.parse_args()
 mode = args.mode
 use_focal_loss = args.focal_loss
 weight_method = args.weight_method
 visualize = args.visualize
+focal_gamma = args.gamma
 
 # Hyperparameters, defaults for dev mode
 batch_size = 1
@@ -104,12 +106,22 @@ elif weight_method == 'sqrt':
     class_frequencies = class_counts / sum(class_counts)
     class_weights = 1.0 / torch.sqrt(class_frequencies + 1e-5)
     class_weights = class_weights / class_weights.sum() * num_classes
+elif weight_method == 'balanced':
+    # New balanced approach - more conservative weighting to avoid over-penalizing common classes
+    class_frequencies = class_counts / sum(class_counts)
+    # Apply cube root for even more moderate scaling than sqrt
+    class_weights = 1.0 / torch.pow(class_frequencies + 1e-5, 1/3)
+    class_weights = class_weights / class_weights.sum() * num_classes
 else:  # 'manual'
     # Manual weighting: less weight for "No maneuver", more for others
-    class_weights = torch.ones(num_classes)
-    class_weights[0] = 0.6  # Reduce weight for "No maneuver"
+    class_weights = torch.ones(num_classes) 
+    class_weights[0] = 0.75  # Reduced penalty for "No maneuver" (was 0.6)
+    # More moderate boost for actual maneuvers
     for i in range(1, num_classes):
-        class_weights[i] = 1.3  # Increase weight for actual maneuvers
+        if i in [3, 5]:  # 360 and Air (rarest classes)
+            class_weights[i] = 1.5  
+        else:
+            class_weights[i] = 1.25  # Other maneuvers
 
 print('>  Class weights:')
 for class_id in range(num_classes):
@@ -146,13 +158,18 @@ model = model.to(device)
 
 # Create loss function with class weights
 if use_focal_loss:
-    print('>  Using Focal Loss with class weights')
-    criterion = FocalLoss(gamma=2.0, alpha=class_weights)
+    print(f'>  Using Focal Loss with gamma={focal_gamma} and class weights')
+    criterion = FocalLoss(gamma=focal_gamma, alpha=class_weights)
 else:
     print('>  Using Cross Entropy Loss with class weights')
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+# Add learning rate scheduler for better convergence
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer, mode='min', factor=0.5, patience=1, verbose=True
+)
 
 # Lists to track metrics
 epoch_losses = []
@@ -193,9 +210,13 @@ for epoch in range(num_epochs):
     epoch_loss = running_loss / total_batches
     epoch_losses.append(epoch_loss)
     
+    # Update learning rate based on loss
+    scheduler.step(epoch_loss)
+    
     # Print average loss and time taken for the epoch
     epoch_duration = time.time() - start_time
     print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {epoch_duration:.2f} seconds. Average Loss: {epoch_loss:.4f}")    
+    print(f"    >  Current learning rate: {optimizer.param_groups[0]['lr']}")
 
     # Save model checkpoint for each epoch
     if epoch > 0 and epoch % 1 == 0:  # Save every epoch
