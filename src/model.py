@@ -5,7 +5,7 @@ import torchvision.models.video as video_models
 from torchvision.models.video import R3D_18_Weights
 
 class SurfManeuverModel(nn.Module):
-    def __init__(self, num_classes=7, mode='dev'):
+    def __init__(self, num_classes=7, mode='dev', dropout_rate=0.3):
         super(SurfManeuverModel, self).__init__()
         self.mode = mode
         
@@ -31,9 +31,17 @@ class SurfManeuverModel(nn.Module):
             with torch.no_grad():
                 self.model.stem[0].weight[:, 0:1, :, :, :] = old_conv.weight[:, 0:1, :, :, :].clone()
         
-        # Replace the classification head with our own for the correct number of classes
+        # Modify the classification head with dropout for better generalization
         in_features = self.model.fc.in_features
-        self.model.fc = nn.Linear(in_features, num_classes)
+        
+        # Replace simple linear layer with a small classifier network
+        self.model.fc = nn.Sequential(
+            nn.Dropout(dropout_rate),
+            nn.Linear(in_features, in_features // 2),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(in_features // 2, num_classes)
+        )
     
     def forward(self, x, hidden=None):
         """

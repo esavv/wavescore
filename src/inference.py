@@ -8,21 +8,6 @@ import torch
 from model import SurfManeuverModel
 from utils import sequence_video_frames, load_frames_from_sequence
 import argparse, csv, os, shutil, sys
-import numpy as np
-# import boto3
-# from botocore.exceptions import NoCredentialsError
-
-# print("inference: Setting env variables...")
-# if os.path.exists("./keys/aws_s3_accessKeys.csv"):
-#     with open('./keys/aws_s3_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
-#         reader = csv.DictReader(file)
-#         for row in reader:
-#             os.environ['AWS_ACCESS_KEY_ID'] = row['Access key ID']
-#             os.environ['AWS_SECRET_ACCESS_KEY'] = row['Secret access key']
-#             break  # Assuming there is only one row, exit the loop after setting the variables
-#else:
-    #TODO: raise an appropriate error
-    #raise EnvironmentError("Missing AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables")
 
 # Set device to GPU if available, otherwise use CPU
 print('inference: Configuring device & model transforms...')
@@ -76,23 +61,6 @@ def run_inference(video_path, model_filename, mode='dev'):
     model_dir = "../models/"
     model_path = os.path.join(model_dir, model_filename)
 
-    # if not os.path.exists(model_path):
-    #     print("  Downloading model from S3...")
-    #     s3 = boto3.client("s3")
-    #     os.makedirs(model_dir, exist_ok=True)
-    #     try:
-    #         # Download the model file from S3
-    #         s3.download_file(bucket_name, model_filename, model_path)
-    #         print(f"Model downloaded successfully and saved to {model_path}")
-    #     except NoCredentialsError:
-    #         print("AWS credentials not found. Please set them in your environment.")
-    #         raise
-    #     except Exception as e:
-    #         print(f"Error downloading model: {e}")
-    #         raise
-    # else:
-    #     print("  Model already saved locally, continuing...")
-
     # Load the saved model
     print('Loading the model...')
     model = SurfManeuverModel(mode=mode)
@@ -145,7 +113,6 @@ def run_inference(video_path, model_filename, mode='dev'):
             name = taxonomy.get(maneuver_id, 'Unknown maneuver')
             if maneuver_id != 0:
                 maneuvers.append({'name': name, 'start_time': start_time, 'end_time': end_time})
-            print(f"  Predicted maneuver for sequence {sq}: {maneuver_id}")
 
             # Print the confidence scores for all classes
             print(f"\nSequence {sq} (Time: {start_time:.1f}s - {end_time:.1f}s):")
@@ -221,5 +188,3 @@ if __name__ == "__main__":
     video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
     maneuvers, confidence_data, taxonomy = run_inference(video_path, model_filename, mode)
     print("\nPrediction dict: " + str(maneuvers))
-    
-    # End program - removing the CSV save option
