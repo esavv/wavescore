@@ -1,0 +1,11 @@
+# Prod mode (RGG, skip 3) with hyperparameters (on 3D CNN), now with class weighting:
+#    batch_size = 2       
+#    learning_rate = 0.005
+#    num_epochs = 2       
+
+# Notes:
+# - no maneuvers predicted, no obvious improvement over previous model
+
+real	52m24.095s
+user	52m30.850s
+sys	29m13.336s

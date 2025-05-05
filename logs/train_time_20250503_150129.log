@@ -1,0 +1,7 @@
+# Prod mode (RGG, skip 5) with dev mode hyperparameters (on 3D CNN), now with class weighting
+# Notes:
+# - No maneuvers predicted, no obvious improvement over previous model
+
+real	12m8.453s
+user	15m6.622s
+sys	6m37.745s
