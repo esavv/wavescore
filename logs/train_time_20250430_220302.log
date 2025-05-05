@@ -1,4 +1,4 @@
-# Dev mode hyperparameters but full color images and no frame skipping.
+# Dev mode hyperparameters but RGB images and no frame skipping.
 /Users/eriksavage/Documents/wavescore/src/train.py:101: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
 Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/native/Scalar.cpp:23.)
   running_loss += loss.item()

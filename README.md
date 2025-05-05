@@ -11,10 +11,16 @@ This application will allow users to upload videos of themselves surfing and get
 ## Roadmap
 
 ### Things to Work on Next
-Last updated: 2025/04/17
+Last updated: 2025/05/05
    - Get 1st part of 2-part model working well locally
-      - Get more data, etc
-   - Build 2nd part of 2-part model: Infer wave score from maneuvers performed
+      - (DONE) Get a little bit more data (but still not much)
+      - (DONE) Try training the CNN+LSTM in prod mode, RGB, non-trivial hyperparameters
+      - (DONE) Switch to 3D CNN because previous approach learned only spatial features within a frame sequence and attempted to learn temporal feature across sequences, but it's more important to learn temporal features *within* a sequence
+      - Even with 3D CNN model isn't learning much. Not enough data. Some things to try:
+         - Vastly reduce pretrained model params given low amount of data, freeze 3D CNN layers
+         - Experiment with data augmentation to artificially increase my data
+         - If even this doesn't help much, we need more data. We need to make data labeling easier, so switch to labeling a ride video as a sequence of maneuvers (maybe with 0-1 timestamps per maneuver)
+         - Consider switching to a TCN or a Transformer / seq2seq approach
    - Deploy model inference in the cloud (either Heroku or AWS)
       - We spent some time on this on 12/29/24. We uploaded the 46MB model to S3 to save slug size on Heroku, only to find that PyTorch & other packages increase our slug size to 3GB+
       - Some approaches for moving forward:
@@ -22,9 +28,9 @@ Last updated: 2025/04/17
          - Dockerize my application (at least the API code) so I can develop locally on Linux & use a CPU-only version of PyTorch that is officially supported
          - Abandon deploying my model to Heroku since it doesn't even work yet and it'll likely get so big that the previous approaches are only temporary workarounds. Instead, deploy my model to AWS or similar and expose an API to my Heroku service for calling inference   - Deploy model training in the cloud
          - Might be overkill to have Heroku run my API and AWS run model training + inference. Maybe just deploy it all to AWS.
-   - Migrate data from directory system to postgres + blob storage (S3)
+   - Build 2nd part of 2-part model: Infer wave score from maneuvers performed
    - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
-   - 2-part model: Investigate whether it's bad that our 2-part model runs inference on a single frame sequence at a time, even though we trained it to learn relationships across/betweens sequences
+   - Migrate data from directory system to postgres + blob storage (S3)
    - API cleanup: Raise appropriate errors in api/video_content and api/video_overlay if key files are missing
    - API cleanup: Remove the Google Cloud base64 account key if no longer necessary
    - iOS code cleanup: Refactor toast & other logic in ContentView
