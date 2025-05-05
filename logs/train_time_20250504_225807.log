@@ -1,0 +1,15 @@
+# Prod mode (RGG, skip 2) with hyperparameters (on 3D CNN), now with class weighting:
+#    batch_size = 3 
+#    learning_rate = 0.001
+#    num_epochs = 5
+# This time though:
+# - More complex architecture with dropout layers and learning rate scheduler
+# - Lower gamma for focal loss to fix overcorrection in last run
+
+# Notes:
+# - Still predicting low freq maneuvers with converging confidence, not useful
+# - Next time, let's use the balanced class weighting option (cube root)
+
+real	430m17.456s
+user	200m53.590s
+sys	196m29.263s

@@ -151,6 +151,11 @@ dataloader = DataLoader(
 total_batches = len(dataloader)
 start_time = time.time()  # Track the start time of training
 
+# Generate timestamp to use for all model saves
+est = pytz.timezone('US/Eastern')
+now = datetime.now(est)
+timestamp = now.strftime("%Y%m%d_%H%M")
+
 # Model, loss function, and optimizer
 print('>  Defining the model...')
 model = SurfManeuverModel(mode=mode)
@@ -168,7 +173,7 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Add learning rate scheduler for better convergence
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode='min', factor=0.5, patience=1, verbose=True
+    optimizer, mode='min', factor=0.5, patience=1
 )
 
 # Lists to track metrics
@@ -218,9 +223,9 @@ for epoch in range(num_epochs):
     print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {epoch_duration:.2f} seconds. Average Loss: {epoch_loss:.4f}")    
     print(f"    >  Current learning rate: {optimizer.param_groups[0]['lr']}")
 
-    # Save model checkpoint for each epoch
-    if epoch > 0 and epoch % 1 == 0:  # Save every epoch
-        checkpoint_path = f"../models/surf_maneuver_model_checkpoint_epoch_{epoch+1}.pth"
+    # Save model checkpoint for each epoch except the last one
+    if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
+        checkpoint_path = f"../models/surf_maneuver_model_{timestamp}_checkpoint_epoch_{epoch+1}.pth"
         torch.save(model.state_dict(), checkpoint_path)
         print(f"    >  Model checkpoint saved: {checkpoint_path}")
 
@@ -244,10 +249,6 @@ if visualize:
     plt.close()
 
 print("Training complete.")
-
-est = pytz.timezone('US/Eastern')
-now = datetime.now(est)
-timestamp = now.strftime("%Y%m%d_%H%M")
 
 # Save final model
 model_filename = f"../models/surf_maneuver_model_{timestamp}.pth"
