@@ -1,4 +1,4 @@
-# Prod mode (RGG, skip 3) with hyperparameters (on 3D CNN), now with class weighting:
+# Prod mode (RGB, skip 3) with hyperparameters (on 3D CNN), now with class weighting:
 #    batch_size = 2       
 #    learning_rate = 0.005
 #    num_epochs = 2       

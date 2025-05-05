@@ -1,4 +1,4 @@
-# Prod mode (RGG, skip 5) with dev mode hyperparameters (on 3D CNN), now with class weighting
+# Prod mode (RGB, skip 5) with dev mode hyperparameters (on 3D CNN), now with class weighting
 # Notes:
 # - No maneuvers predicted, no obvious improvement over previous model
 

@@ -1,5 +1,5 @@
 # model: surf_maneuver_model_20250505_0608.pth
-# Prod mode (RGG, skip 2) with hyperparameters (on 3D CNN), now with class weighting:
+# Prod mode (RGB, skip 2) with hyperparameters (on 3D CNN), now with class weighting:
 #    batch_size = 3 
 #    learning_rate = 0.001
 #    num_epochs = 5
