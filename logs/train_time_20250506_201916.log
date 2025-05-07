@@ -1,0 +1,9 @@
+# See: training_config_20250506_2019.json
+# Notes:
+# - Predicts no_maneuver on all inference sequences, but there's some variance in confidence
+# - Immediate next step: Try batch size of 16 to speed up training (update: ran out of memory)
+# - Next steps: try some weighting correction and train for more epochs
+
+real	7m32.215s
+user	0m43.164s
+sys	0m44.846s

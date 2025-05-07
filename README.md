@@ -17,7 +17,10 @@ Last updated: 2025/05/05
       - (DONE) Try training the CNN+LSTM in prod mode, RGB, non-trivial hyperparameters
       - (DONE) Switch to 3D CNN because previous approach learned only spatial features within a frame sequence and attempted to learn temporal feature across sequences, but it's more important to learn temporal features *within* a sequence
       - Even with 3D CNN model isn't learning much. Not enough data. Some things to try:
-         - Vastly reduce pretrained model params given low amount of data, freeze 3D CNN layers
+         - Vastly reduce pretrained model params given low amount of data, freeze 3D CNN layers. As we continue testing the frozen model:
+            - Run inference on the 20250506_2042 model
+            - Disable the learning rate scheduler
+            - Visualize how loss evolves over each epoch, and log overall loss
          - Experiment with data augmentation to artificially increase my data
          - If even this doesn't help much, we need more data. We need to make data labeling easier, so switch to labeling a ride video as a sequence of maneuvers (maybe with 0-1 timestamps per maneuver)
          - Consider switching to a TCN or a Transformer / seq2seq approach

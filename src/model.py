@@ -5,7 +5,7 @@ import torchvision.models.video as video_models
 from torchvision.models.video import R3D_18_Weights
 
 class SurfManeuverModel(nn.Module):
-    def __init__(self, num_classes=7, mode='dev', dropout_rate=0.3):
+    def __init__(self, num_classes=7, mode='dev', dropout_rate=0.5, freeze_backbone=True):
         super(SurfManeuverModel, self).__init__()
         self.mode = mode
         
@@ -31,16 +31,22 @@ class SurfManeuverModel(nn.Module):
             with torch.no_grad():
                 self.model.stem[0].weight[:, 0:1, :, :, :] = old_conv.weight[:, 0:1, :, :, :].clone()
         
+        # Freeze most of the backbone layers if specified
+        if freeze_backbone:
+            # Freeze all layers except the final fully connected layer
+            for name, param in self.model.named_parameters():
+                if 'fc' not in name:  # Don't freeze the fully connected layer
+                    param.requires_grad = False
+                    
+            print("Model backbone frozen. Only training the classifier head.")
+        
         # Modify the classification head with dropout for better generalization
         in_features = self.model.fc.in_features
         
-        # Replace simple linear layer with a small classifier network
+        # Replace with a simpler classifier network
         self.model.fc = nn.Sequential(
             nn.Dropout(dropout_rate),
-            nn.Linear(in_features, in_features // 2),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(in_features // 2, num_classes)
+            nn.Linear(in_features, num_classes)
         )
     
     def forward(self, x, hidden=None):
