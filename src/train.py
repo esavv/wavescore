@@ -68,7 +68,16 @@ if mode == 'prod':
 print('>  Setting hyperparameters... (mode is: ' + mode + ')')
 
 # Set device to GPU if available, otherwise use CPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print('>  Configuring device...')
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+    print('>  Using MPS (Apple Silicon GPU) acceleration')
+elif torch.cuda.is_available():
+    device = torch.device("cuda")
+    print('>  Using CUDA (NVIDIA GPU) acceleration')
+else:
+    device = torch.device("cpu")
+    print('>  Using CPU for computation')
 
 # Data preparation
 print('>  Creating dataset...')
