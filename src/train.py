@@ -41,16 +41,21 @@ class FocalLoss(nn.Module):
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')
 parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set the application mode (prod or dev).')
 parser.add_argument('--focal_loss', action='store_true', help='Use Focal Loss instead of weighted Cross Entropy.')
-parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced'], default='sqrt', 
-                   help='Method for calculating class weights.')
+parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced', 'none'], default='none', 
+                   help='Method for calculating class weights. Use "none" for no weighting.')
 parser.add_argument('--visualize', action='store_true', help='Visualize class distribution and training progress.')
 parser.add_argument('--gamma', type=float, default=1.0, help='Gamma parameter for Focal Loss (if used).')
+parser.add_argument('--freeze_backbone', action='store_true', default=True, 
+                   help='Freeze the backbone of the model and only train the classifier head. Default is True.')
+parser.add_argument('--unfreeze_backbone', action='store_false', dest='freeze_backbone',
+                   help='Unfreeze the backbone of the model to train all parameters.')
 args = parser.parse_args()
 mode = args.mode
 use_focal_loss = args.focal_loss
 weight_method = args.weight_method
 visualize = args.visualize
 focal_gamma = args.gamma
+freeze_backbone = args.freeze_backbone
 
 # Hyperparameters, defaults for dev mode
 batch_size = 1
@@ -91,43 +96,50 @@ for class_id in range(num_classes):
     class_counts[class_id] = class_distribution.get(class_id, 1)  # Default to 1 if class not found
 
 # Different methods to calculate weights
-if weight_method == 'inverse':
-    # Inverse frequency weighting
-    class_weights = 1.0 / (class_counts + 1e-5)  # Small epsilon to avoid division by zero
-    class_weights = class_weights / class_weights.sum() * num_classes
-elif weight_method == 'effective':
-    # Effective number of samples (Cui et al., 2019)
-    beta = 0.9999
-    effective_num = 1.0 - torch.pow(beta, class_counts)
-    class_weights = (1.0 - beta) / (effective_num + 1e-5)
-    class_weights = class_weights / class_weights.sum() * num_classes
-elif weight_method == 'sqrt':
-    # Square root of inverse frequency (more moderate)
-    class_frequencies = class_counts / sum(class_counts)
-    class_weights = 1.0 / torch.sqrt(class_frequencies + 1e-5)
-    class_weights = class_weights / class_weights.sum() * num_classes
-elif weight_method == 'balanced':
-    # New balanced approach - more conservative weighting to avoid over-penalizing common classes
-    class_frequencies = class_counts / sum(class_counts)
-    # Apply cube root for even more moderate scaling than sqrt
-    class_weights = 1.0 / torch.pow(class_frequencies + 1e-5, 1/3)
-    class_weights = class_weights / class_weights.sum() * num_classes
-else:  # 'manual'
-    # Manual weighting: less weight for "No maneuver", more for others
-    class_weights = torch.ones(num_classes) 
-    class_weights[0] = 0.75  # Reduced penalty for "No maneuver" (was 0.6)
-    # More moderate boost for actual maneuvers
-    for i in range(1, num_classes):
-        if i in [3, 5]:  # 360 and Air (rarest classes)
-            class_weights[i] = 1.5  
-        else:
-            class_weights[i] = 1.25  # Other maneuvers
+if weight_method == 'none':
+    # No weighting
+    use_weights = False
+    class_weights = None
+    print('>  Using unweighted loss (no class weighting)')
+else:
+    use_weights = True
+    if weight_method == 'inverse':
+        # Inverse frequency weighting
+        class_weights = 1.0 / (class_counts + 1e-5)  # Small epsilon to avoid division by zero
+        class_weights = class_weights / class_weights.sum() * num_classes
+    elif weight_method == 'effective':
+        # Effective number of samples (Cui et al., 2019)
+        beta = 0.9999
+        effective_num = 1.0 - torch.pow(beta, class_counts)
+        class_weights = (1.0 - beta) / (effective_num + 1e-5)
+        class_weights = class_weights / class_weights.sum() * num_classes
+    elif weight_method == 'sqrt':
+        # Square root of inverse frequency (more moderate)
+        class_frequencies = class_counts / sum(class_counts)
+        class_weights = 1.0 / torch.sqrt(class_frequencies + 1e-5)
+        class_weights = class_weights / class_weights.sum() * num_classes
+    elif weight_method == 'balanced':
+        # New balanced approach - more conservative weighting to avoid over-penalizing common classes
+        class_frequencies = class_counts / sum(class_counts)
+        # Apply cube root for even more moderate scaling than sqrt
+        class_weights = 1.0 / torch.pow(class_frequencies + 1e-5, 1/3)
+        class_weights = class_weights / class_weights.sum() * num_classes
+    else:  # 'manual'
+        # Manual weighting: less weight for "No maneuver", more for others
+        class_weights = torch.ones(num_classes) 
+        class_weights[0] = 0.75  # Reduced penalty for "No maneuver" (was 0.6)
+        # More moderate boost for actual maneuvers
+        for i in range(1, num_classes):
+            if i in [3, 5]:  # 360 and Air (rarest classes)
+                class_weights[i] = 1.5  
+            else:
+                class_weights[i] = 1.25  # Other maneuvers
 
-print('>  Class weights:')
-for class_id in range(num_classes):
-    print(f'  > Class {class_id}: {class_weights[class_id]:.4f}')
+    print('>  Class weights:')
+    for class_id in range(num_classes):
+        print(f'  > Class {class_id}: {class_weights[class_id]:.4f}')
 
-class_weights = class_weights.to(device)
+    class_weights = class_weights.to(device)
 
 # Visualize class distribution if requested
 if visualize:
@@ -158,16 +170,19 @@ timestamp = now.strftime("%Y%m%d_%H%M")
 
 # Model, loss function, and optimizer
 print('>  Defining the model...')
-model = SurfManeuverModel(mode=mode)
+model = SurfManeuverModel(mode=mode, freeze_backbone=freeze_backbone)
 model = model.to(device)
 
 # Create loss function with class weights
 if use_focal_loss:
     print(f'>  Using Focal Loss with gamma={focal_gamma} and class weights')
     criterion = FocalLoss(gamma=focal_gamma, alpha=class_weights)
-else:
+elif use_weights:
     print('>  Using Cross Entropy Loss with class weights')
     criterion = nn.CrossEntropyLoss(weight=class_weights)
+else:
+    print('>  Using unweighted Cross Entropy Loss')
+    criterion = nn.CrossEntropyLoss()
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -260,13 +275,19 @@ config = {
     'mode': mode,
     'use_focal_loss': use_focal_loss,
     'weight_method': weight_method,
-    'class_weights': class_weights.cpu().numpy().tolist(),
-    'class_distribution': {str(k): v for k, v in class_distribution.items()},
+    'freeze_backbone': freeze_backbone,
     'epochs': num_epochs,
     'batch_size': batch_size,
     'learning_rate': learning_rate,
     'final_loss': epoch_losses[-1]
 }
+
+# Add class weights to config if they were used
+if use_weights and class_weights is not None:
+    config['class_weights'] = class_weights.cpu().numpy().tolist()
+
+# Add class distribution to config
+config['class_distribution'] = {str(k): v for k, v in class_distribution.items()}
 
 # Save configuration to a log file
 import json
