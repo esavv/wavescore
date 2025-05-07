@@ -11,10 +11,9 @@
 # src $ python train.py --mode dev
 
 print('>  Importing modules...')
-import argparse, pytz, time, numpy as np, matplotlib.pyplot as plt
+import argparse, pytz, time, matplotlib.pyplot as plt
 from datetime import datetime
 from collections import Counter
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
