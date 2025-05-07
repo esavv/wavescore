@@ -63,7 +63,7 @@ num_epochs = 1
 if mode == 'prod':
     batch_size = 8
     learning_rate = 0.005
-    num_epochs = 5
+    num_epochs = 10
 print('>  Setting hyperparameters... (mode is: ' + mode + ')')
 
 # Set device to GPU if available, otherwise use CPU

@@ -1,0 +1,19 @@
+{
+  "mode": "prod",
+  "use_focal_loss": false,
+  "weight_method": "none",
+  "freeze_backbone": true,
+  "epochs": 1,
+  "batch_size": 8,
+  "learning_rate": 0.005,
+  "final_loss": 1.7746662804574678,
+  "class_distribution": {
+    "0": 147,
+    "3": 6,
+    "1": 42,
+    "2": 31,
+    "5": 6,
+    "4": 10,
+    "6": 19
+  }
+}
