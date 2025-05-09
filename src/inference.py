@@ -86,6 +86,16 @@ def run_inference(video_path, model_filename, mode='dev'):
         for row in reader:
             taxonomy[int(row['id'])] = row['name']
 
+    # Load the sequence labels if they exist
+    seq_labels_path = os.path.join(video_dir, 'seq_labels.csv')
+    actual_labels = {}
+    if os.path.exists(seq_labels_path):
+        with open(seq_labels_path, mode='r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                seq_num = int(row['sequence_id'].split('_')[1])  # Extract number from 'seq_X'
+                actual_labels[seq_num] = int(row['label'])
+
     maneuvers = []
     confidence_data = []
     sequence_duration = sequences_metadata['sequence_duration']
@@ -102,12 +112,6 @@ def run_inference(video_path, model_filename, mode='dev'):
             
             start_time = sq * sequence_duration
             end_time = start_time + sequence_duration
-
-            # hardcoding to get interesting results
-            # if sq == 2:
-            #     maneuver_id = 6
-            # elif sq == 5:
-            #     maneuver_id = 4
             
             # lookup manuever name
             name = taxonomy.get(maneuver_id, 'Unknown maneuver')
@@ -120,13 +124,27 @@ def run_inference(video_path, model_filename, mode='dev'):
             print("  Confidence scores:")
             for class_id, score in enumerate(confidence_scores):
                 class_name = taxonomy.get(class_id, 'Unknown')
-                print(f"    {class_id} ({class_name}): {score:.4f}" + (" <-- PREDICTED" if class_id == maneuver_id else ""))
+                actual_label = actual_labels.get(sq, None)
+                is_predicted = class_id == maneuver_id
+                is_actual = actual_label is not None and class_id == actual_label
+                
+                # Build the indicator string
+                indicator = ""
+                if is_predicted and is_actual:
+                    indicator = " <-- PREDICTED & ACTUAL"
+                elif is_predicted:
+                    indicator = " <-- PREDICTED"
+                elif is_actual:
+                    indicator = " <-- ACTUAL"
+                
+                print(f"    {class_id} ({class_name}): {score:.4f}{indicator}")
             
             # Store confidence data for potential visualization
             confidence_data.append({
                 'sequence': sq,
                 'time_range': f"{start_time:.1f}s - {end_time:.1f}s",
                 'predicted': maneuver_id,
+                'actual': actual_labels.get(sq, None),
                 'scores': {class_id: float(score) for class_id, score in enumerate(confidence_scores)}
             })
 

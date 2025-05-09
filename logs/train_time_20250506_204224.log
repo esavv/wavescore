@@ -1,3 +1,16 @@
+# See training_config_20250506_2042.json
+# Notes:
+# - First meaningful training of a frozen 3D cnn and we got some interesting results
+# - Predicted no maneuver for all sequences, but confidence varied across sequences and in general
+#      the model was less confident in sequences that actually had a maneuver
+# - Some good next steps here:
+#    - Update the inference code to print the correct maneuver prediction alongside
+#      the actual prediction
+#    - Train a new model with more aggressive weighting correction (go up 1 from balanced) and
+#      more epochs & try again
+# - After comparing predictions to actual maneuvers, whenever a maneuver is actually performed,
+#      the model's 2nd-most confidence maneuver (aside from no maneuver) is that same maneuver,
+#      so this appears to be evidence that the model is starting to learn something!!!
 
 real	79m9.930s
 user	3m56.887s
