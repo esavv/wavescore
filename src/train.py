@@ -395,6 +395,11 @@ with open(log_filename, 'w') as f:
     f.write(f"Training Log: surf_maneuver_model_{timestamp}.pth\n")
     f.write("=" * (len(timestamp) + 35) + "\n\n")
     
+    # Note about old format checkpoint if applicable
+    if choice == 2 and not isinstance(torch.load(os.path.join("../models", selected_cp['filename'])), dict):
+        f.write("Note: Resumed from old format checkpoint (no training state saved).\n")
+        f.write("Training time and loss history only includes the resumed portion of training.\n\n")
+    
     # Configuration section
     f.write("Configuration\n")
     f.write("------------\n")
