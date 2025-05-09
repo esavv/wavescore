@@ -11,7 +11,7 @@
 # src $ python train.py --mode dev
 
 print('>  Importing modules...')
-import argparse, pytz, time, matplotlib.pyplot as plt, os, re, sys
+import argparse, pytz, time, os, re, sys
 from datetime import datetime
 from collections import Counter
 import torch
@@ -123,7 +123,6 @@ parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set 
 parser.add_argument('--focal_loss', action='store_true', help='Use Focal Loss instead of weighted Cross Entropy.')
 parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced', 'none'], default='none', 
                    help='Method for calculating class weights. Use "none" for no weighting.')
-parser.add_argument('--visualize', action='store_true', help='Visualize class distribution and training progress.')
 parser.add_argument('--gamma', type=float, default=1.0, help='Gamma parameter for Focal Loss (if used).')
 parser.add_argument('--freeze_backbone', action='store_true', default=True, 
                    help='Freeze the backbone of the model and only train the classifier head. Default is True.')
@@ -133,7 +132,6 @@ args = parser.parse_args()
 mode = args.mode
 use_focal_loss = args.focal_loss
 weight_method = args.weight_method
-visualize = args.visualize
 focal_gamma = args.gamma
 freeze_backbone = args.freeze_backbone
 
@@ -270,16 +268,6 @@ else:
 
     class_weights = class_weights.to(device)
 
-# Visualize class distribution if requested
-if visualize:
-    plt.figure(figsize=(10, 6))
-    plt.bar(range(num_classes), [class_distribution.get(i, 0) for i in range(num_classes)])
-    plt.title('Class Distribution')
-    plt.xlabel('Class ID')
-    plt.ylabel('Number of Samples')
-    plt.savefig(f'../logs/class_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
-    plt.close()
-
 dataloader = DataLoader(
     dataset,
     batch_size=batch_size,
@@ -394,25 +382,6 @@ for epoch in range(start_epoch, num_epochs):
     # Reset epoch timer for next epoch
     epoch_start_time = time.time()
 
-# Visualize training progress if requested
-if visualize:
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    plt.plot(epoch_losses)
-    plt.title('Loss per Epoch')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    
-    plt.subplot(1, 2, 2)
-    plt.plot(batch_losses)
-    plt.title('Loss per Batch')
-    plt.xlabel('Batch')
-    plt.ylabel('Loss')
-    
-    plt.tight_layout()
-    plt.savefig(f'../logs/training_progress_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
-    plt.close()
-
 print("Training complete.")
 
 # Save final model
@@ -420,28 +389,48 @@ model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, to
 print(f"Final model saved: {model_filename}")
 print(f"Total training time: {total_elapsed_time:.2f} seconds")
 
-# Save training configuration
-config = {
-    'mode': mode,
-    'use_focal_loss': use_focal_loss,
-    'weight_method': weight_method,
-    'freeze_backbone': freeze_backbone,
-    'epochs': num_epochs,
-    'batch_size': batch_size,
-    'learning_rate': learning_rate,
-    'final_loss': epoch_losses[-1]
-}
+# Write training log
+log_filename = f"../logs/training_{timestamp}.log"
+with open(log_filename, 'w') as f:
+    f.write(f"Training Log: surf_maneuver_model_{timestamp}.pth\n")
+    f.write("=" * (len(timestamp) + 35) + "\n\n")
+    
+    # Configuration section
+    f.write("Configuration\n")
+    f.write("------------\n")
+    f.write(f"Mode: {mode}\n")
+    f.write(f"Batch size: {batch_size}\n")
+    f.write(f"Learning rate: {learning_rate}\n")
+    f.write(f"Number of epochs: {num_epochs}\n")
+    f.write(f"Loss function: {'Focal Loss' if use_focal_loss else 'Cross Entropy Loss'}\n")
+    f.write(f"Class weighting: {weight_method}\n")
+    if use_focal_loss:
+        f.write(f"Focal loss gamma: {focal_gamma}\n")
+    f.write(f"Backbone frozen: {freeze_backbone}\n\n")
+    
+    # Class distribution section
+    f.write("Class Distribution\n")
+    f.write("-----------------\n")
+    for class_id in range(num_classes):
+        count = class_distribution.get(class_id, 0)
+        percentage = (count / total_samples) * 100
+        f.write(f"Class {class_id}: {count} samples ({percentage:.2f}%)\n")
+    f.write("\n")
+    
+    # Training progress section
+    f.write("Training Progress\n")
+    f.write("----------------\n")
+    f.write(f"Total training time: {total_elapsed_time:.2f} seconds\n\n")
+    
+    f.write("Epoch Losses:\n")
+    for i, loss in enumerate(epoch_losses, 1):
+        f.write(f"{i}: {loss:.4f}\n")
+    f.write("\n")
+    
+    # Final results section
+    f.write("Final Results\n")
+    f.write("------------\n")
+    f.write(f"Final loss: {epoch_losses[-1]:.4f}\n")
+    f.write(f"Final learning rate: {optimizer.param_groups[0]['lr']:.6f}\n")
 
-# Add class weights to config if they were used
-if use_weights and class_weights is not None:
-    config['class_weights'] = class_weights.cpu().numpy().tolist()
-
-# Add class distribution to config
-config['class_distribution'] = {str(k): v for k, v in class_distribution.items()}
-
-# Save configuration to a log file
-import json
-with open(f"../logs/training_config_{timestamp}.json", 'w') as f:
-    json.dump(config, f, indent=2)
-
-print(f"Training configuration saved to: ../logs/training_config_{timestamp}.json")
+print(f"Training log saved to: {log_filename}")
