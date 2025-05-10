@@ -58,14 +58,15 @@ def get_available_checkpoints():
     checkpoints.sort(key=lambda x: (x['timestamp'], x['epoch']))
     return checkpoints
 
-def save_checkpoint(model, optimizer, epoch, timestamp, elapsed_time, is_final=False):
+def save_checkpoint(model, optimizer, epoch, timestamp, elapsed_time, class_distribution, is_final=False):
     """Save a checkpoint with model state, optimizer state, and training info."""
     checkpoint = {
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'epoch': epoch,
         'timestamp': timestamp,
-        'elapsed_time': elapsed_time
+        'elapsed_time': elapsed_time,
+        'class_distribution': class_distribution
     }
     
     if is_final:
@@ -92,6 +93,7 @@ def load_checkpoint(model, optimizer, checkpoint_path):
         epoch = checkpoint['epoch']
         timestamp = checkpoint['timestamp']
         elapsed_time = checkpoint.get('elapsed_time', 0.0)  # Default to 0 for older checkpoints
+        class_distribution = checkpoint.get('class_distribution', None)  # None for older checkpoints
     else:
         # Old format - just model state dict
         print("Note: Loading old format checkpoint (no training state).")
@@ -106,6 +108,7 @@ def load_checkpoint(model, optimizer, checkpoint_path):
         else:
             raise ValueError("Could not extract timestamp and epoch from checkpoint filename")
         elapsed_time = 0.0  # No time tracking in old format
+        class_distribution = None  # No class distribution in old format
     
     # Validate model architecture by comparing state dict keys
     current_model_state = model.state_dict()
@@ -115,7 +118,7 @@ def load_checkpoint(model, optimizer, checkpoint_path):
     # Load state
     model.load_state_dict(model_state)
     
-    return epoch, timestamp, elapsed_time
+    return epoch, timestamp, elapsed_time, class_distribution
 
 # Set up command-line arguments
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')
@@ -303,9 +306,21 @@ if choice == 2:
     checkpoint_path = os.path.join("../models", selected_cp['filename'])
     print(f"\nLoading checkpoint: {checkpoint_path}")
     try:
-        start_epoch, timestamp, total_elapsed_time = load_checkpoint(model, optimizer, checkpoint_path)
+        start_epoch, timestamp, total_elapsed_time, saved_class_distribution = load_checkpoint(model, optimizer, checkpoint_path)
         print(f"Resuming from epoch {start_epoch + 1}")
         print(f"Previous training time: {total_elapsed_time:.2f} seconds")
+        
+        # Use saved class distribution if available
+        if saved_class_distribution is not None:
+            print("Using class distribution from checkpoint")
+            class_distribution = saved_class_distribution
+            total_samples = sum(class_distribution.values())
+            num_classes = max(class_distribution.keys()) + 1
+            
+            # Recalculate class weights based on saved distribution
+            class_counts = torch.zeros(num_classes)
+            for class_id in range(num_classes):
+                class_counts[class_id] = class_distribution.get(class_id, 1)
     except Exception as e:
         print(f"Error loading checkpoint: {e}")
         print("Starting fresh training.")
@@ -376,7 +391,7 @@ for epoch in range(start_epoch, num_epochs):
 
     # Save model checkpoint for each epoch except the last one
     if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
-        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time)
+        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time, class_distribution)
         print(f"    >  Model checkpoint saved: {checkpoint_path}")
     
     # Reset epoch timer for next epoch
@@ -385,7 +400,7 @@ for epoch in range(start_epoch, num_epochs):
 print("Training complete.")
 
 # Save final model
-model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, is_final=True)
+model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, is_final=True)
 print(f"Final model saved: {model_filename}")
 print(f"Total training time: {total_elapsed_time:.2f} seconds")
 
