@@ -64,7 +64,16 @@ def run_inference(video_path, model_filename, mode='dev'):
     # Load the saved model
     print('Loading the model...')
     model = SurfManeuverModel(mode=mode)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    
+    # Load checkpoint and handle both old and new formats
+    checkpoint = torch.load(model_path, map_location=device)
+    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+        # New format - full training state
+        model.load_state_dict(checkpoint['model_state_dict'])
+    else:
+        # Old format - just model state dict
+        model.load_state_dict(checkpoint)
+    
     model.eval()
     
     # Extract frames from the video

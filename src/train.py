@@ -11,7 +11,7 @@
 # src $ python train.py --mode dev
 
 print('>  Importing modules...')
-import argparse, pytz, time, matplotlib.pyplot as plt
+import argparse, pytz, time, os, re, sys
 from datetime import datetime
 from collections import Counter
 import torch
@@ -36,13 +36,93 @@ class FocalLoss(nn.Module):
         F_loss = (1-pt)**self.gamma * BCE_loss
         return F_loss.mean()
 
+def get_available_checkpoints():
+    """List available checkpoints in the models directory."""
+    checkpoint_dir = "../models"
+    checkpoints = []
+    
+    # Get all .pth files with 'checkpoint' in the name
+    for filename in os.listdir(checkpoint_dir):
+        if filename.endswith('.pth') and 'checkpoint' in filename:
+            # Extract timestamp and epoch from filename
+            match = re.match(r'surf_maneuver_model_(\d{8}_\d{4})_checkpoint_epoch_(\d+)\.pth', filename)
+            if match:
+                timestamp, epoch = match.groups()
+                checkpoints.append({
+                    'filename': filename,
+                    'timestamp': timestamp,
+                    'epoch': int(epoch)
+                })
+    
+    # Sort by timestamp and epoch
+    checkpoints.sort(key=lambda x: (x['timestamp'], x['epoch']))
+    return checkpoints
+
+def save_checkpoint(model, optimizer, epoch, timestamp, elapsed_time, is_final=False):
+    """Save a checkpoint with model state, optimizer state, and training info."""
+    checkpoint = {
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'epoch': epoch,
+        'timestamp': timestamp,
+        'elapsed_time': elapsed_time
+    }
+    
+    if is_final:
+        filename = f"../models/surf_maneuver_model_{timestamp}.pth"
+    else:
+        filename = f"../models/surf_maneuver_model_{timestamp}_checkpoint_epoch_{epoch+1}.pth"
+    
+    torch.save(checkpoint, filename)
+    return filename
+
+def load_checkpoint(model, optimizer, checkpoint_path):
+    """Load a checkpoint and validate model architecture.
+    
+    Handles both old format (just model state dict) and new format (full training state).
+    For old format, extracts timestamp and epoch from filename.
+    """
+    checkpoint = torch.load(checkpoint_path)
+    
+    # Check if this is an old format checkpoint (just model state dict)
+    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+        # New format - full training state
+        model_state = checkpoint['model_state_dict']
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        epoch = checkpoint['epoch']
+        timestamp = checkpoint['timestamp']
+        elapsed_time = checkpoint.get('elapsed_time', 0.0)  # Default to 0 for older checkpoints
+    else:
+        # Old format - just model state dict
+        print("Note: Loading old format checkpoint (no training state).")
+        print("Please ensure you're using the same training configuration as the original training.")
+        model_state = checkpoint
+        
+        # Extract timestamp and epoch from filename
+        match = re.match(r'surf_maneuver_model_(\d{8}_\d{4})_checkpoint_epoch_(\d+)\.pth', os.path.basename(checkpoint_path))
+        if match:
+            timestamp, epoch = match.groups()
+            epoch = int(epoch)  # Convert to integer
+        else:
+            raise ValueError("Could not extract timestamp and epoch from checkpoint filename")
+        elapsed_time = 0.0  # No time tracking in old format
+    
+    # Validate model architecture by comparing state dict keys
+    current_model_state = model.state_dict()
+    if set(current_model_state.keys()) != set(model_state.keys()):
+        raise ValueError("Model architecture in checkpoint does not match current model")
+    
+    # Load state
+    model.load_state_dict(model_state)
+    
+    return epoch, timestamp, elapsed_time
+
 # Set up command-line arguments
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')
 parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set the application mode (prod or dev).')
 parser.add_argument('--focal_loss', action='store_true', help='Use Focal Loss instead of weighted Cross Entropy.')
 parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced', 'none'], default='none', 
                    help='Method for calculating class weights. Use "none" for no weighting.')
-parser.add_argument('--visualize', action='store_true', help='Visualize class distribution and training progress.')
 parser.add_argument('--gamma', type=float, default=1.0, help='Gamma parameter for Focal Loss (if used).')
 parser.add_argument('--freeze_backbone', action='store_true', default=True, 
                    help='Freeze the backbone of the model and only train the classifier head. Default is True.')
@@ -52,9 +132,48 @@ args = parser.parse_args()
 mode = args.mode
 use_focal_loss = args.focal_loss
 weight_method = args.weight_method
-visualize = args.visualize
 focal_gamma = args.gamma
 freeze_backbone = args.freeze_backbone
+
+# Ask user if they want to resume from checkpoint
+print("\nDo you want to:")
+print("1. Train a new model from scratch")
+print("2. Resume training from a checkpoint")
+while True:
+    try:
+        choice = int(input("\nEnter your choice (1 or 2): "))
+        if choice in [1, 2]:
+            break
+        print("Please enter 1 or 2")
+    except ValueError:
+        print("Please enter a valid number")
+
+# Initialize variables
+start_epoch = 0
+timestamp = None
+total_elapsed_time = 0.0
+
+if choice == 2:
+    # List available checkpoints
+    checkpoints = get_available_checkpoints()
+    if not checkpoints:
+        print("Error: No checkpoints found. Please train a new model first.")
+        sys.exit(1)
+    
+    print("\nAvailable checkpoints:")
+    for i, cp in enumerate(checkpoints, 1):
+        print(f"{i}. {cp['filename']} (Epoch {cp['epoch']})")
+    
+    # Get user's checkpoint choice
+    while True:
+        try:
+            cp_choice = int(input("\nEnter the number of the checkpoint to resume from: "))
+            if 1 <= cp_choice <= len(checkpoints):
+                selected_cp = checkpoints[cp_choice - 1]
+                break
+            print(f"Please enter a number between 1 and {len(checkpoints)}")
+        except ValueError:
+            print("Please enter a valid number")
 
 # Hyperparameters, defaults for dev mode
 batch_size = 1
@@ -63,7 +182,7 @@ num_epochs = 1
 if mode == 'prod':
     batch_size = 8
     learning_rate = 0.005
-    num_epochs = 10
+    num_epochs = 20
 print('>  Setting hyperparameters... (mode is: ' + mode + ')')
 
 # Set device to GPU if available, otherwise use CPU
@@ -149,16 +268,6 @@ else:
 
     class_weights = class_weights.to(device)
 
-# Visualize class distribution if requested
-if visualize:
-    plt.figure(figsize=(10, 6))
-    plt.bar(range(num_classes), [class_distribution.get(i, 0) for i in range(num_classes)])
-    plt.title('Class Distribution')
-    plt.xlabel('Class ID')
-    plt.ylabel('Number of Samples')
-    plt.savefig(f'../logs/class_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
-    plt.close()
-
 dataloader = DataLoader(
     dataset,
     batch_size=batch_size,
@@ -170,11 +279,6 @@ dataloader = DataLoader(
 )
 total_batches = len(dataloader)
 start_time = time.time()  # Track the start time of training
-
-# Generate timestamp to use for all model saves
-est = pytz.timezone('US/Eastern')
-now = datetime.now(est)
-timestamp = now.strftime("%Y%m%d_%H%M")
 
 # Model, loss function, and optimizer
 print('>  Defining the model...')
@@ -194,6 +298,25 @@ else:
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+# Load checkpoint if resuming
+if choice == 2:
+    checkpoint_path = os.path.join("../models", selected_cp['filename'])
+    print(f"\nLoading checkpoint: {checkpoint_path}")
+    try:
+        start_epoch, timestamp, total_elapsed_time = load_checkpoint(model, optimizer, checkpoint_path)
+        print(f"Resuming from epoch {start_epoch + 1}")
+        print(f"Previous training time: {total_elapsed_time:.2f} seconds")
+    except Exception as e:
+        print(f"Error loading checkpoint: {e}")
+        print("Starting fresh training.")
+        choice = 1
+
+# Generate timestamp if starting fresh
+if choice == 1:
+    est = pytz.timezone('US/Eastern')
+    now = datetime.now(est)
+    timestamp = now.strftime("%Y%m%d_%H%M")
+
 # Add learning rate scheduler for better convergence
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, mode='min', factor=0.5, patience=1
@@ -205,7 +328,8 @@ batch_losses = []
 
 # Training loop
 print('>  Starting training...')
-for epoch in range(num_epochs):
+epoch_start_time = time.time()  # Track time for this epoch
+for epoch in range(start_epoch, num_epochs):
     print(f'  >  Epoch {epoch+1}/{num_epochs}')
     running_loss = 0.0
     
@@ -241,65 +365,77 @@ for epoch in range(num_epochs):
     # Update learning rate based on loss
     scheduler.step(epoch_loss)
     
+    # Calculate time for this epoch and update total
+    epoch_duration = time.time() - epoch_start_time
+    total_elapsed_time += epoch_duration
+    
     # Print average loss and time taken for the epoch
-    epoch_duration = time.time() - start_time
     print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {epoch_duration:.2f} seconds. Average Loss: {epoch_loss:.4f}")    
     print(f"    >  Current learning rate: {optimizer.param_groups[0]['lr']}")
+    print(f"    >  Total training time so far: {total_elapsed_time:.2f} seconds")
 
     # Save model checkpoint for each epoch except the last one
     if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
-        checkpoint_path = f"../models/surf_maneuver_model_{timestamp}_checkpoint_epoch_{epoch+1}.pth"
-        torch.save(model.state_dict(), checkpoint_path)
+        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time)
         print(f"    >  Model checkpoint saved: {checkpoint_path}")
-
-# Visualize training progress if requested
-if visualize:
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    plt.plot(epoch_losses)
-    plt.title('Loss per Epoch')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
     
-    plt.subplot(1, 2, 2)
-    plt.plot(batch_losses)
-    plt.title('Loss per Batch')
-    plt.xlabel('Batch')
-    plt.ylabel('Loss')
-    
-    plt.tight_layout()
-    plt.savefig(f'../logs/training_progress_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
-    plt.close()
+    # Reset epoch timer for next epoch
+    epoch_start_time = time.time()
 
 print("Training complete.")
 
 # Save final model
-model_filename = f"../models/surf_maneuver_model_{timestamp}.pth"
-torch.save(model.state_dict(), model_filename)
+model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, is_final=True)
 print(f"Final model saved: {model_filename}")
+print(f"Total training time: {total_elapsed_time:.2f} seconds")
 
-# Save training configuration
-config = {
-    'mode': mode,
-    'use_focal_loss': use_focal_loss,
-    'weight_method': weight_method,
-    'freeze_backbone': freeze_backbone,
-    'epochs': num_epochs,
-    'batch_size': batch_size,
-    'learning_rate': learning_rate,
-    'final_loss': epoch_losses[-1]
-}
+# Write training log
+log_filename = f"../logs/training_{timestamp}.log"
+with open(log_filename, 'w') as f:
+    f.write(f"Training Log: surf_maneuver_model_{timestamp}.pth\n")
+    f.write("=" * (len(timestamp) + 35) + "\n\n")
+    
+    # Note about old format checkpoint if applicable
+    if choice == 2 and not isinstance(torch.load(os.path.join("../models", selected_cp['filename'])), dict):
+        f.write("Note: Resumed from old format checkpoint (no training state saved).\n")
+        f.write("Training time and loss history only includes the resumed portion of training.\n\n")
+    
+    # Configuration section
+    f.write("Configuration\n")
+    f.write("------------\n")
+    f.write(f"Mode: {mode}\n")
+    f.write(f"Batch size: {batch_size}\n")
+    f.write(f"Learning rate: {learning_rate}\n")
+    f.write(f"Number of epochs: {num_epochs}\n")
+    f.write(f"Loss function: {'Focal Loss' if use_focal_loss else 'Cross Entropy Loss'}\n")
+    f.write(f"Class weighting: {weight_method}\n")
+    if use_focal_loss:
+        f.write(f"Focal loss gamma: {focal_gamma}\n")
+    f.write(f"Backbone frozen: {freeze_backbone}\n\n")
+    
+    # Class distribution section
+    f.write("Class Distribution\n")
+    f.write("-----------------\n")
+    for class_id in range(num_classes):
+        count = class_distribution.get(class_id, 0)
+        percentage = (count / total_samples) * 100
+        f.write(f"Class {class_id}: {count} samples ({percentage:.2f}%)\n")
+    f.write("\n")
+    
+    # Training progress section
+    f.write("Training Progress\n")
+    f.write("----------------\n")
+    f.write(f"Total training time: {total_elapsed_time:.2f} seconds\n\n")
+    
+    f.write("Epoch Losses:\n")
+    for i, loss in enumerate(epoch_losses, 1):
+        f.write(f"{i}: {loss:.4f}\n")
+    f.write("\n")
+    
+    # Final results section
+    f.write("Final Results\n")
+    f.write("------------\n")
+    f.write(f"Final loss: {epoch_losses[-1]:.4f}\n")
+    f.write(f"Final learning rate: {optimizer.param_groups[0]['lr']:.6f}\n")
 
-# Add class weights to config if they were used
-if use_weights and class_weights is not None:
-    config['class_weights'] = class_weights.cpu().numpy().tolist()
-
-# Add class distribution to config
-config['class_distribution'] = {str(k): v for k, v in class_distribution.items()}
-
-# Save configuration to a log file
-import json
-with open(f"../logs/training_config_{timestamp}.json", 'w') as f:
-    json.dump(config, f, indent=2)
-
-print(f"Training configuration saved to: ../logs/training_config_{timestamp}.json")
+print(f"Training log saved to: {log_filename}")

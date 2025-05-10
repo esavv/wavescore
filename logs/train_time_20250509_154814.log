@@ -1,0 +1,50 @@
+Traceback (most recent call last):
+  File "/Users/eriksavage/Projects/wavescore/src/train.py", line 221, in <module>
+    loss = criterion(outputs, labels)
+  File "/Users/eriksavage/Projects/wavescore/src/venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1751, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/eriksavage/Projects/wavescore/src/venv/lib/python3.13/site-packages/torch/nn/modules/module.py", line 1762, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/eriksavage/Projects/wavescore/src/venv/lib/python3.13/site-packages/torch/nn/modules/loss.py", line 1297, in forward
+    return F.cross_entropy(
+           ~~~~~~~~~~~~~~~^
+        input,
+        ^^^^^^
+    ...<4 lines>...
+        label_smoothing=self.label_smoothing,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/eriksavage/Projects/wavescore/src/venv/lib/python3.13/site-packages/torch/nn/functional.py", line 3494, in cross_entropy
+    return torch._C._nn.cross_entropy_loss(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        input,
+        ^^^^^^
+    ...<4 lines>...
+        label_smoothing,
+        ^^^^^^^^^^^^^^^^
+    )
+    ^
+KeyboardInterrupt
+Exception ignored in atexit callback <bound method finalize._exitfunc of <class 'weakref.finalize'>>:
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/weakref.py", line 666, in _exitfunc
+    f()
+  File "/opt/homebrew/Cellar/python@3.13/3.13.3/Frameworks/Python.framework/Versions/3.13/lib/python3.13/weakref.py", line 590, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+  File "/Users/eriksavage/Projects/wavescore/src/venv/lib/python3.13/site-packages/torch/library.py", line 449, in _del_library
+    handle.destroy()
+  File "/Users/eriksavage/Projects/wavescore/src/venv/lib/python3.13/site-packages/torch/_library/utils.py", line 42, in destroy
+    self._on_destroy()
+  File "/Users/eriksavage/Projects/wavescore/src/venv/lib/python3.13/site-packages/torch/_library/fake_impl.py", line 67, in deregister_fake_class
+    self.lib._destroy()
+  File "/Users/eriksavage/Projects/wavescore/src/venv/lib/python3.13/site-packages/torch/library.py", line 414, in _destroy
+    self.m.reset()
+KeyboardInterrupt: 
+
+[1]+  Stopped                 python train.py --mode prod --weight_method sqrt
+
+real	16m37.399s
+user	0m0.005s
+sys	0m0.005s
