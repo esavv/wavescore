@@ -307,7 +307,7 @@ if choice == 2:
     print(f"\nLoading checkpoint: {checkpoint_path}")
     try:
         start_epoch, timestamp, total_elapsed_time, saved_class_distribution = load_checkpoint(model, optimizer, checkpoint_path)
-        print(f"Resuming from epoch {start_epoch + 1}")
+        print(f"Resuming from epoch {start_epoch}")
         print(f"Previous training time: {total_elapsed_time:.2f} seconds")
         
         # Use saved class distribution if available
@@ -321,6 +321,9 @@ if choice == 2:
             class_counts = torch.zeros(num_classes)
             for class_id in range(num_classes):
                 class_counts[class_id] = class_distribution.get(class_id, 1)
+        
+        # Increment start_epoch since we want to start from the next epoch
+        start_epoch += 1
     except Exception as e:
         print(f"Error loading checkpoint: {e}")
         print("Starting fresh training.")
