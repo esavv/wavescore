@@ -279,7 +279,7 @@ else:
     print('>  Using fixed learning rate')
 
 # Lists to track metrics
-epoch_losses, epoch_times, batch_losses = [], [], []  # Track losses and timing metrics
+epoch_losses, epoch_times = [], []  # Track losses and timing metrics
 
 # Training loop
 print('>  Starting training...')
@@ -307,7 +307,6 @@ for epoch in range(start_epoch, num_epochs):
         # Track loss
         loss_value = loss.detach().item()
         running_loss += loss_value
-        batch_losses.append(loss_value)
         
         # Print loss every N batches for progress feedback
         if (batch_idx + 1) % 10 == 0 or (batch_idx + 1) == total_batches:
