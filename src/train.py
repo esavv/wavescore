@@ -23,13 +23,7 @@ from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
 from utils import load_maneuver_taxonomy
 from checkpoints import get_available_checkpoints, save_checkpoint, load_checkpoint
-
-def format_time(seconds):
-    """Format time in seconds to hours, minutes, seconds."""
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    seconds = seconds % 60
-    return f"{hours}h {minutes}m {seconds:.1f}s"
+from logging import format_time, write_training_log
 
 # Define Focal Loss for handling class imbalance
 class FocalLoss(nn.Module):
@@ -347,65 +341,25 @@ print(f"Total training time: {format_time(total_elapsed_time)}")
 
 # Write training log
 log_filename = f"../logs/training_{timestamp}.log"
-with open(log_filename, 'w') as f:
-    f.write(f"Training Log: surf_maneuver_model_{timestamp}.pth\n")
-    f.write("=" * (len(timestamp) + 35) + "\n\n")
-    
-    # Note about old format checkpoint if applicable
-    if choice == 2 and not isinstance(torch.load(os.path.join("../models", selected_cp['filename'])), dict):
-        f.write("Note: Resumed from old format checkpoint (no training state saved).\n")
-        f.write("Training time and loss history only includes the resumed portion of training.\n\n")
-    
-    # Configuration section
-    f.write("Configuration\n")
-    f.write("------------\n")
-    f.write(f"Mode: {mode}\n")
-    f.write(f"Batch size: {batch_size}\n")
-    f.write(f"Learning rate: {learning_rate}\n")
-    f.write(f"Number of epochs: {num_epochs}\n")
-    f.write(f"Loss function: {'Focal Loss' if use_focal_loss else 'Cross Entropy Loss'}\n")
-    f.write(f"Class weighting: {weight_method}\n")
-    if use_focal_loss:
-        f.write(f"Focal loss gamma: {focal_gamma}\n")
-    f.write(f"Backbone frozen: {freeze_backbone}\n\n")
-    
-    # Class distribution section
-    f.write("Class Distribution\n")
-    f.write("-----------------\n")
-    for class_id in range(num_classes):
-        count = class_distribution.get(class_id, 0)
-        percentage = (count / total_samples) * 100
-        name = maneuver_names.get(class_id, f"Unknown-{class_id}")
-        f.write(f"Class {class_id} - {name}: {count:>{max_count_width}} samples ({percentage:>5.2f}%)\n")
-    f.write("\n")
-    
-    # Training progress section
-    f.write("Training Progress\n")
-    f.write("----------------\n")
-    f.write(f"Total training time: {format_time(total_elapsed_time)}\n\n")
-    
-    f.write("Epoch Results\n")
-    f.write("-------------\n")
-    # Write header with aligned columns
-    f.write(f"{'Epoch':>6} {'Loss':>10} {'Time':>12} {'Cumulative':>12}\n")
-    f.write("-" * 42 + "\n")  # Separator line
-    
-    cumulative_time = 0
-    for i, (loss, epoch_time) in enumerate(zip(epoch_losses, epoch_times), 1):
-        cumulative_time += epoch_time
-        f.write(f"{i:>6} {loss:>10.4f} {format_time(epoch_time):>12} {format_time(cumulative_time):>12}\n")
-    f.write("\n")
-    
-    # Final results section
-    f.write("Final Results\n")
-    f.write("------------\n")
-    f.write(f"Final loss: {epoch_losses[-1]:.4f}\n")
-    f.write(f"Final learning rate: {optimizer.param_groups[0]['lr']:.6f}\n\n")
-    
-    # Add Inference Notes section
-    f.write("Inference Notes\n")
-    f.write("-------------\n")
-    f.write("\n")  # Add blank line for notes
+write_training_log(
+    log_filename=log_filename,
+    timestamp=timestamp,
+    mode=mode,
+    batch_size=batch_size,
+    learning_rate=learning_rate,
+    num_epochs=num_epochs,
+    use_focal_loss=use_focal_loss,
+    weight_method=weight_method,
+    focal_gamma=focal_gamma,
+    freeze_backbone=freeze_backbone,
+    class_distribution=class_distribution,
+    maneuver_names=maneuver_names,
+    total_elapsed_time=total_elapsed_time,
+    epoch_losses=epoch_losses,
+    epoch_times=epoch_times,
+    final_lr=optimizer.param_groups[0]['lr'],
+    is_old_format=choice == 2 and not isinstance(torch.load(os.path.join("../models", selected_cp['filename'])), dict)
+)
 
 print(f"Training log saved to: {log_filename}")
 print(f"Total training time: {format_time(total_elapsed_time)}")
