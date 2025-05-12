@@ -341,7 +341,6 @@ print("Training complete.")
 # Save final model
 model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, is_final=True)
 print(f"Final model saved: {model_filename}")
-print(f"Total training time: {format_time(total_elapsed_time)}")
 
 # Write training log
 log_filename = f"../logs/training_{timestamp}.log"
