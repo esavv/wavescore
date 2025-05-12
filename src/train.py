@@ -45,16 +45,16 @@ parser.add_argument('--focal_loss', action='store_true', help='Use Focal Loss in
 parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced', 'none'], default='none', 
                    help='Method for calculating class weights. Use "none" for no weighting.')
 parser.add_argument('--gamma', type=float, default=1.0, help='Gamma parameter for Focal Loss (if used).')
-parser.add_argument('--freeze_backbone', action='store_true', default=True, 
-                   help='Freeze the backbone of the model and only train the classifier head. Default is True.')
-parser.add_argument('--unfreeze_backbone', action='store_false', dest='freeze_backbone',
-                   help='Unfreeze the backbone of the model to train all parameters.')
+parser.add_argument('--unfreeze_backbone', action='store_true', 
+                   help='Unfreeze the backbone of the model to train all parameters. Default is False (backbone frozen).')
+parser.add_argument('--use_scheduler', action='store_true', help='Use learning rate scheduler. Disabled by default for initial training.')
 args = parser.parse_args()
 mode = args.mode
 use_focal_loss = args.focal_loss
 weight_method = args.weight_method
 focal_gamma = args.gamma
-freeze_backbone = args.freeze_backbone
+freeze_backbone = not args.unfreeze_backbone  # Invert the flag to get freeze_backbone
+use_scheduler = args.use_scheduler
 
 # Ask user if they want to resume from checkpoint
 print("\nDo you want to:")
@@ -140,9 +140,6 @@ num_classes = max(class_distribution.keys()) + 1
 
 # Load maneuver names from taxonomy
 maneuver_names = load_maneuver_taxonomy()
-
-# Find the longest maneuver name for alignment
-max_name_length = max(len(name) for name in maneuver_names.values())
 
 # Calculate the maximum number of digits in any count and add one for padding
 max_count_width = max(len(str(count)) for count in class_distribution.values()) + 1
@@ -272,9 +269,14 @@ if choice == 1:
     timestamp = now.strftime("%Y%m%d_%H%M")
 
 # Add learning rate scheduler for better convergence
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode='min', factor=0.5, patience=1
-)
+scheduler = None
+if use_scheduler:
+    print('>  Using learning rate scheduler')
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=1
+    )
+else:
+    print('>  Using fixed learning rate')
 
 # Lists to track metrics
 epoch_losses, epoch_times, batch_losses = [], [], []  # Track losses and timing metrics
@@ -316,7 +318,8 @@ for epoch in range(start_epoch, num_epochs):
     epoch_losses.append(epoch_loss)
     
     # Update learning rate based on loss
-    scheduler.step(epoch_loss)
+    if scheduler is not None:
+        scheduler.step(epoch_loss)
     
     # Calculate time for this epoch and update total
     epoch_duration = time.time() - epoch_start_time
