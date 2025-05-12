@@ -6,7 +6,7 @@
 
 import torch
 from model import SurfManeuverModel
-from utils import sequence_video_frames, load_frames_from_sequence
+from utils import sequence_video_frames, load_frames_from_sequence, load_maneuver_taxonomy
 import argparse, csv, os, shutil, sys
 
 # Set device to GPU if available, otherwise use CPU
@@ -89,11 +89,7 @@ def run_inference(video_path, model_filename, mode='dev'):
 
     # Run inference on each sequence in the new video
     print('Running inference...')
-    taxonomy = {}
-    with open('../data/maneuver_taxonomy.csv', mode='r') as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            taxonomy[int(row['id'])] = row['name']
+    taxonomy = load_maneuver_taxonomy()
 
     # Load the sequence labels if they exist
     seq_labels_path = os.path.join(video_dir, 'seq_labels.csv')

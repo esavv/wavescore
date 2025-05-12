@@ -1,4 +1,4 @@
-import cv2, math, os, torch
+import cv2, math, os, torch, csv
 import pandas as pd
 from PIL import Image
 import torchvision.transforms.functional as F
@@ -214,3 +214,16 @@ def preserve_aspect_ratio_transform(image, target_size=224):
     tensor_image = F.to_tensor(new_image)
     
     return tensor_image
+
+def load_maneuver_taxonomy():
+    """Load the maneuver taxonomy from CSV file.
+    
+    Returns:
+        dict: Mapping of maneuver IDs to their names
+    """
+    taxonomy = {}
+    with open('../data/maneuver_taxonomy.csv', mode='r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            taxonomy[int(row['id'])] = row['name']
+    return taxonomy

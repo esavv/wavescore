@@ -19,9 +19,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torchvision import transforms
 from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
+from utils import load_maneuver_taxonomy
 
 # Define Focal Loss for handling class imbalance
 class FocalLoss(nn.Module):
@@ -214,11 +214,23 @@ for _, label in dataset:
 total_samples = sum(class_distribution.values())
 num_classes = max(class_distribution.keys()) + 1
 
+# Load maneuver names from taxonomy
+maneuver_names = load_maneuver_taxonomy()
+
+# Find the longest maneuver name for alignment
+max_name_length = max(len(name) for name in maneuver_names.values())
+
+# Calculate the maximum number of digits in any count and add one for padding
+max_count_width = max(len(str(count)) for count in class_distribution.values()) + 1
+
 print('>  Class distribution:')
 for class_id in range(num_classes):
     count = class_distribution.get(class_id, 0)
     percentage = (count / total_samples) * 100
-    print(f'  > Class {class_id}: {count} samples ({percentage:.2f}%)')
+    name = maneuver_names.get(class_id, f"Unknown-{class_id}")
+    # Format: "Class X - Name: count (percentage%)"
+    # Use max_count_width for right alignment
+    print(f'  > Class {class_id} - {name}: {count:>{max_count_width}} samples ({percentage:>5.2f}%)')
 
 # Calculate class weights based on distribution
 class_counts = torch.zeros(num_classes)
@@ -437,7 +449,8 @@ with open(log_filename, 'w') as f:
     for class_id in range(num_classes):
         count = class_distribution.get(class_id, 0)
         percentage = (count / total_samples) * 100
-        f.write(f"Class {class_id}: {count} samples ({percentage:.2f}%)\n")
+        name = maneuver_names.get(class_id, f"Unknown-{class_id}")
+        f.write(f"Class {class_id} - {name}: {count:>{max_count_width}} samples ({percentage:>5.2f}%)\n")
     f.write("\n")
     
     # Training progress section
