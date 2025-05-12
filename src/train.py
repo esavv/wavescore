@@ -11,7 +11,7 @@
 # src $ python train.py --mode dev
 
 print('>  Importing modules...')
-import argparse, pytz, time, os, re, sys
+import argparse, pytz, time, os, sys
 from datetime import datetime
 from collections import Counter
 import torch
@@ -24,19 +24,6 @@ from model import SurfManeuverModel
 from utils import load_maneuver_taxonomy, save_class_distribution, load_class_distribution, distribution_outdated
 from checkpoints import get_available_checkpoints, save_checkpoint, load_checkpoint
 from logging import format_time, write_training_log
-
-# Define Focal Loss for handling class imbalance
-class FocalLoss(nn.Module):
-    def __init__(self, gamma=1.0, alpha=None):  # Reduced gamma from 2.0 to 1.0 for less aggressive focus
-        super().__init__()
-        self.gamma = gamma
-        self.alpha = alpha  # Class weights
-        
-    def forward(self, inputs, targets):
-        BCE_loss = F.cross_entropy(inputs, targets, reduction='none', weight=self.alpha)
-        pt = torch.exp(-BCE_loss)
-        F_loss = (1-pt)**self.gamma * BCE_loss
-        return F_loss.mean()
 
 # Set up command-line arguments
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')
@@ -56,14 +43,18 @@ focal_gamma = args.gamma
 freeze_backbone = not args.unfreeze_backbone  # Invert the flag to get freeze_backbone
 use_scheduler = args.use_scheduler
 
+# Model training choices
+TRAIN_FROM_SCRATCH = 1
+RESUME_FROM_CHECKPOINT = 2
+
 # Ask user if they want to resume from checkpoint
 print("\nDo you want to:")
 print("1. Train a new model from scratch")
 print("2. Resume training from a checkpoint")
 while True:
     try:
-        choice = int(input("\nEnter your choice (1 or 2): "))
-        if choice in [1, 2]:
+        model_choice = int(input("\nEnter your choice (1 or 2): "))
+        if model_choice in [TRAIN_FROM_SCRATCH, RESUME_FROM_CHECKPOINT]:
             break
         print("Please enter 1 or 2")
     except ValueError:
@@ -74,7 +65,7 @@ start_epoch = 0
 timestamp = None
 total_elapsed_time = 0.0
 
-if choice == 2:
+if model_choice == RESUME_FROM_CHECKPOINT:
     # List available checkpoints
     checkpoints = get_available_checkpoints()
     if not checkpoints:
@@ -221,6 +212,19 @@ print('>  Defining the model...')
 model = SurfManeuverModel(mode=mode, freeze_backbone=freeze_backbone)
 model = model.to(device)
 
+# Define Focal Loss for handling class imbalance
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=1.0, alpha=None):  # Reduced gamma from 2.0 to 1.0 for less aggressive focus
+        super().__init__()
+        self.gamma = gamma
+        self.alpha = alpha  # Class weights
+        
+    def forward(self, inputs, targets):
+        BCE_loss = F.cross_entropy(inputs, targets, reduction='none', weight=self.alpha)
+        pt = torch.exp(-BCE_loss)
+        F_loss = (1-pt)**self.gamma * BCE_loss
+        return F_loss.mean()
+
 # Create loss function with class weights
 if use_focal_loss:
     print(f'>  Using Focal Loss with gamma={focal_gamma} and class weights')
@@ -235,7 +239,7 @@ else:
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Load checkpoint if resuming
-if choice == 2:
+if model_choice == RESUME_FROM_CHECKPOINT:
     checkpoint_path = os.path.join("../models", selected_cp['filename'])
     print(f"\nLoading checkpoint: {checkpoint_path}")
     try:
@@ -260,10 +264,10 @@ if choice == 2:
     except Exception as e:
         print(f"Error loading checkpoint: {e}")
         print("Starting fresh training.")
-        choice = 1
+        model_choice = TRAIN_FROM_SCRATCH
 
 # Generate timestamp if starting fresh
-if choice == 1:
+if model_choice == TRAIN_FROM_SCRATCH:
     est = pytz.timezone('US/Eastern')
     now = datetime.now(est)
     timestamp = now.strftime("%Y%m%d_%H%M")
@@ -363,7 +367,7 @@ write_training_log(
     epoch_losses=epoch_losses,
     epoch_times=epoch_times,
     final_lr=optimizer.param_groups[0]['lr'],
-    is_old_format=choice == 2 and not isinstance(torch.load(os.path.join("../models", selected_cp['filename'])), dict)
+    is_old_format=model_choice == RESUME_FROM_CHECKPOINT and not isinstance(torch.load(os.path.join("../models", selected_cp['filename'])), dict)
 )
 
 print(f"Training log saved to: {log_filename}")
