@@ -1,0 +1,64 @@
+Training Log: surf_maneuver_model_20250511_1731.pth
+================================================
+
+Configuration
+------------
+Mode: prod
+Batch size: 8
+Learning rate: 0.005
+Number of epochs: 20
+Loss function: Cross Entropy Loss
+Class weighting: sqrt
+Backbone frozen: True
+
+Class Distribution
+-----------------
+Class 0: 147 samples (56.32%)
+Class 1: 42 samples (16.09%)
+Class 2: 31 samples (11.88%)
+Class 3: 6 samples (2.30%)
+Class 4: 10 samples (3.83%)
+Class 5: 6 samples (2.30%)
+Class 6: 19 samples (7.28%)
+
+Training Progress
+----------------
+Total training time: 9313.50 seconds
+
+Epoch Losses:
+1: 2.5470
+2: 2.0187
+3: 1.9863
+4: 1.8824
+5: 1.7163
+6: 1.7414
+7: 2.0924
+8: 1.6018
+9: 1.4235
+10: 1.3548
+11: 1.3424
+12: 1.5353
+13: 1.3475
+14: 1.3109
+15: 1.4541
+16: 1.3772
+17: 1.3244
+18: 1.3351
+19: 1.1962
+20: 1.3374
+
+Final Results
+------------
+Final loss: 1.3374
+Final learning rate: 0.000313
+
+Inference Notes
+------------
+- Model predicts no maneuver for all sequences, but the second highest confidence maneuver for each sequence
+    is the correct maneuver. So that looks pretty promising. It seems that the square root class weighting
+    correction is surprisingly not aggressive enough. We still have the learning rate scheduler enabled, 
+    which is a legacy feature from our previous architecture.
+- So for the next training run, I want to make two changes:
+    - Disable the learning rate scheduler
+    - Try a more aggressive class weighting correction, namely the inverse weighting approach.
+
