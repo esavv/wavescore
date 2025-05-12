@@ -23,6 +23,13 @@ from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
 from utils import load_maneuver_taxonomy
 
+def format_time(seconds):
+    """Format time in seconds to hours, minutes, seconds."""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = seconds % 60
+    return f"{hours}h {minutes}m {seconds:.1f}s"
+
 # Define Focal Loss for handling class imbalance
 class FocalLoss(nn.Module):
     def __init__(self, gamma=1.0, alpha=None):  # Reduced gamma from 2.0 to 1.0 for less aggressive focus
@@ -354,6 +361,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 
 # Lists to track metrics
 epoch_losses = []
+epoch_times = []  # Track time for each epoch
 batch_losses = []
 
 # Training loop
@@ -397,12 +405,13 @@ for epoch in range(start_epoch, num_epochs):
     
     # Calculate time for this epoch and update total
     epoch_duration = time.time() - epoch_start_time
+    epoch_times.append(epoch_duration)  # Store this epoch's time
     total_elapsed_time += epoch_duration
     
     # Print average loss and time taken for the epoch
-    print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {epoch_duration:.2f} seconds. Average Loss: {epoch_loss:.4f}")    
+    print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {format_time(epoch_duration)}. Average Loss: {epoch_loss:.4f}")    
     print(f"    >  Current learning rate: {optimizer.param_groups[0]['lr']}")
-    print(f"    >  Total training time so far: {total_elapsed_time:.2f} seconds")
+    print(f"    >  Total training time so far: {format_time(total_elapsed_time)}")
 
     # Save model checkpoint for each epoch except the last one
     if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
@@ -417,7 +426,7 @@ print("Training complete.")
 # Save final model
 model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, is_final=True)
 print(f"Final model saved: {model_filename}")
-print(f"Total training time: {total_elapsed_time:.2f} seconds")
+print(f"Total training time: {format_time(total_elapsed_time)}")
 
 # Write training log
 log_filename = f"../logs/training_{timestamp}.log"
@@ -456,17 +465,30 @@ with open(log_filename, 'w') as f:
     # Training progress section
     f.write("Training Progress\n")
     f.write("----------------\n")
-    f.write(f"Total training time: {total_elapsed_time:.2f} seconds\n\n")
+    f.write(f"Total training time: {format_time(total_elapsed_time)}\n\n")
     
-    f.write("Epoch Losses:\n")
-    for i, loss in enumerate(epoch_losses, 1):
-        f.write(f"{i}: {loss:.4f}\n")
+    f.write("Epoch Results\n")
+    f.write("-------------\n")
+    # Write header with aligned columns
+    f.write(f"{'Epoch':>6} {'Loss':>10} {'Time':>12} {'Cumulative':>12}\n")
+    f.write("-" * 42 + "\n")  # Separator line
+    
+    cumulative_time = 0
+    for i, (loss, epoch_time) in enumerate(zip(epoch_losses, epoch_times), 1):
+        cumulative_time += epoch_time
+        f.write(f"{i:>6} {loss:>10.4f} {format_time(epoch_time):>12} {format_time(cumulative_time):>12}\n")
     f.write("\n")
     
     # Final results section
     f.write("Final Results\n")
     f.write("------------\n")
     f.write(f"Final loss: {epoch_losses[-1]:.4f}\n")
-    f.write(f"Final learning rate: {optimizer.param_groups[0]['lr']:.6f}\n")
+    f.write(f"Final learning rate: {optimizer.param_groups[0]['lr']:.6f}\n\n")
+    
+    # Add Inference Notes section
+    f.write("Inference Notes\n")
+    f.write("-------------\n")
+    f.write("\n")  # Add blank line for notes
 
 print(f"Training log saved to: {log_filename}")
+print(f"Total training time: {format_time(total_elapsed_time)}")
