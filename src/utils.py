@@ -2,6 +2,8 @@ import cv2, math, os, torch, csv
 import pandas as pd
 from PIL import Image
 import torchvision.transforms.functional as F
+import json
+from collections import Counter
 
 def sequence_video_frames(video_path, output_dir, sequence_duration=2):
     """
@@ -227,3 +229,65 @@ def load_maneuver_taxonomy():
         for row in reader:
             taxonomy[int(row['id'])] = row['name']
     return taxonomy
+
+def save_class_distribution(class_distribution):
+    """Save class distribution to a JSON file.
+    
+    Args:
+        class_distribution: Counter object with class distribution
+    """
+    # Convert Counter to dict for JSON serialization
+    dist_dict = dict(class_distribution)
+    
+    # Save to JSON file
+    with open('../data/class_distribution.json', 'w') as f:
+        json.dump(dist_dict, f, indent=2)
+
+def load_class_distribution():
+    """Load class distribution from JSON file.
+    
+    Returns:
+        Counter: Class distribution if file exists, None otherwise
+    """
+    try:
+        with open('../data/class_distribution.json', 'r') as f:
+            dist_dict = json.load(f)
+        return Counter(dist_dict)
+    except FileNotFoundError:
+        return None
+
+def get_total_samples_in_heats():
+    """Get total number of samples in the heats directory.
+    
+    Returns:
+        int: Total number of samples
+    """
+    total = 0
+    heats_dir = "../data/heats"
+    
+    # Walk through all subdirectories
+    for root, _, files in os.walk(heats_dir):
+        # Count sequence directories
+        if any(f.endswith('.jpg') for f in files):
+            total += 1
+            
+    return total
+
+def distribution_outdated():
+    """Check if class distribution needs to be recalculated.
+    
+    Returns:
+        bool: True if distribution should be recalculated
+    """
+    # Try to load existing distribution
+    saved_dist = load_class_distribution()
+    if saved_dist is None:
+        return True
+        
+    # Get current total samples
+    current_total = get_total_samples_in_heats()
+    
+    # Compare with saved total
+    saved_total = sum(saved_dist.values())
+    
+    return current_total != saved_total

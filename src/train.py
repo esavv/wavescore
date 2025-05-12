@@ -21,7 +21,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
-from utils import load_maneuver_taxonomy
+from utils import load_maneuver_taxonomy, save_class_distribution, load_class_distribution, distribution_outdated
 from checkpoints import get_available_checkpoints, save_checkpoint, load_checkpoint
 from logging import format_time, write_training_log
 
@@ -123,11 +123,17 @@ print('>  Creating dataset...')
 dataset = SurfManeuverDataset(root_dir="../data/heats", transform=None, mode=mode)
 print('>  Creating dataloader...')
 
-# Calculate class distribution
-class_distribution = Counter()
-print('>  Calculating class distribution...')
-for _, label in dataset:
-    class_distribution[label] += 1
+# Calculate or load class distribution
+print('>  Checking class distribution...')
+if distribution_outdated():
+    print('  >  Recalculating class distribution...')
+    class_distribution = Counter()
+    for _, label in dataset:
+        class_distribution[label] += 1
+    save_class_distribution(class_distribution)
+else:
+    print('  >  Loading cached class distribution...')
+    class_distribution = load_class_distribution()
 
 total_samples = sum(class_distribution.values())
 num_classes = max(class_distribution.keys()) + 1
@@ -271,9 +277,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 )
 
 # Lists to track metrics
-epoch_losses = []
-epoch_times = []  # Track time for each epoch
-batch_losses = []
+epoch_losses, epoch_times, batch_losses = [], [], []  # Track losses and timing metrics
 
 # Training loop
 print('>  Starting training...')
