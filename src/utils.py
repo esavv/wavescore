@@ -5,6 +5,20 @@ import torchvision.transforms.functional as F
 import json
 from collections import Counter
 
+def format_time(seconds):
+    """Format time in seconds to hours, minutes, seconds.
+    
+    Args:
+        seconds: Time in seconds
+        
+    Returns:
+        str: Formatted time string (e.g. "2h 35m 13.5s")
+    """
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = seconds % 60
+    return f"{hours}h {minutes}m {seconds:.1f}s"
+
 def sequence_video_frames(video_path, output_dir, sequence_duration=2):
     """
     Extract frames from a video and organize them into sequence directories.

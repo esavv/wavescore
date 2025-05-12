@@ -21,9 +21,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
-from utils import load_maneuver_taxonomy, save_class_distribution, load_class_distribution, distribution_outdated
+from utils import load_maneuver_taxonomy, save_class_distribution, load_class_distribution, distribution_outdated, format_time
 from checkpoints import get_available_checkpoints, save_checkpoint, load_checkpoint
-from logging import format_time, write_training_log
+from model_logging import write_training_log
 
 # Set up command-line arguments
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')

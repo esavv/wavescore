@@ -4,22 +4,8 @@ This module handles writing training logs with consistent formatting.
 """
 
 import os
-from utils import load_maneuver_taxonomy
+from utils import load_maneuver_taxonomy, format_time
 import math
-
-def format_time(seconds):
-    """Format time in seconds to hours, minutes, seconds.
-    
-    Args:
-        seconds: Time in seconds
-        
-    Returns:
-        str: Formatted time string (e.g. "2h 35m 13.5s")
-    """
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    seconds = seconds % 60
-    return f"{hours}h {minutes}m {seconds:.1f}s"
 
 def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate, num_epochs,
                       use_focal_loss, weight_method, focal_gamma, freeze_backbone,
