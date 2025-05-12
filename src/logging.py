@@ -5,6 +5,7 @@ This module handles writing training logs with consistent formatting.
 
 import os
 from utils import load_maneuver_taxonomy
+import math
 
 def format_time(seconds):
     """Format time in seconds to hours, minutes, seconds.
@@ -104,7 +105,12 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         f.write("Final Results\n")
         f.write("------------\n")
         f.write(f"Final loss: {epoch_losses[-1]:.4f}\n")
-        f.write(f"Final learning rate: {final_lr:.6f}\n\n")
+        f.write(f"Final learning rate: {final_lr:.6f}\n")
+        
+        # Add random guessing baseline
+        random_guess_loss = -math.log(1.0 / num_classes)
+        f.write(f"Random guessing baseline: {random_guess_loss:.4f}\n")
+        f.write(f"Improvement over random: {((random_guess_loss - epoch_losses[-1]) / random_guess_loss * 100):.1f}%\n\n")
         
         # Add Inference Notes section
         f.write("Inference Notes\n")
