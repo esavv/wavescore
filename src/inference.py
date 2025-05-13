@@ -7,6 +7,7 @@
 import torch
 from model import SurfManeuverModel
 from utils import sequence_video_frames, load_frames_from_sequence, load_maneuver_taxonomy
+from checkpoints import load_checkpoint
 import argparse, csv, os, shutil, sys
 
 # Set device to GPU if available, otherwise use CPU
@@ -66,13 +67,8 @@ def run_inference(video_path, model_filename, mode='dev'):
     model = SurfManeuverModel(mode=mode)
     
     # Load checkpoint and handle both old and new formats
-    checkpoint = torch.load(model_path, map_location=device)
-    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-        # New format - full training state
-        model.load_state_dict(checkpoint['model_state_dict'])
-    else:
-        # Old format - just model state dict
-        model.load_state_dict(checkpoint)
+    model_state, _, _, _, _, _, _ = load_checkpoint(model_path)
+    model.load_state_dict(model_state)
     
     model.eval()
     

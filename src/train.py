@@ -64,6 +64,23 @@ while True:
 start_epoch = 0
 timestamp = None
 total_elapsed_time = 0.0
+epoch_losses, epoch_times = [], []
+is_old_format = False
+
+# Hyperparameters, defaults for dev mode if not loaded from checkpoint
+if model_choice == TRAIN_FROM_SCRATCH:
+    batch_size = 1
+    learning_rate = 0.01
+    num_epochs = 1
+    if mode == 'prod':
+        batch_size = 8
+        learning_rate = 0.005
+        num_epochs = 20
+
+    # Generate new timestamp for fresh training
+    est = pytz.timezone('US/Eastern')
+    now = datetime.now(est)
+    timestamp = now.strftime("%Y%m%d_%H%M")
 
 if model_choice == RESUME_FROM_CHECKPOINT:
     # List available checkpoints
@@ -86,22 +103,12 @@ if model_choice == RESUME_FROM_CHECKPOINT:
             print(f"Please enter a number between 1 and {len(checkpoints)}")
         except ValueError:
             print("Please enter a valid number")
-
-# Hyperparameters, defaults for dev mode
-batch_size = 1
-learning_rate = 0.01
-num_epochs = 1
-if mode == 'prod':
-    batch_size = 8
-    learning_rate = 0.005
-    num_epochs = 20
-
-# Load checkpoint if resuming
-if model_choice == RESUME_FROM_CHECKPOINT:
+    
+    # Load checkpoint data
     checkpoint_path = os.path.join("../models", selected_cp['filename'])
     print(f"\nLoading checkpoint: {checkpoint_path}")
     try:
-        start_epoch, timestamp, total_elapsed_time, training_config, training_history = load_checkpoint(model, optimizer, checkpoint_path)
+        model_state, optimizer_state, start_epoch, timestamp, training_config, training_history = load_checkpoint(checkpoint_path)
         
         # Load training history if it exists
         if training_history:
@@ -109,10 +116,6 @@ if model_choice == RESUME_FROM_CHECKPOINT:
             epoch_times = training_history['epoch_times']
             total_elapsed_time = training_history['total_elapsed_time']
         else:
-            # For old format checkpoints, start fresh
-            epoch_losses = []
-            epoch_times = []
-            total_elapsed_time = 0
             is_old_format = True
         
         # Apply saved training config if available
@@ -132,8 +135,7 @@ if model_choice == RESUME_FROM_CHECKPOINT:
         print(f"Previous training time: {total_elapsed_time:.2f} seconds")
     except Exception as e:
         print(f"Error loading checkpoint: {e}")
-        print("Starting fresh training.")
-        model_choice = TRAIN_FROM_SCRATCH
+        sys.exit(1)
 
 # Print final configuration
 print('\n>  Training configuration:')
@@ -162,7 +164,7 @@ else:
     print('>  Using CPU for computation')
 
 # Data preparation
-print('>  Creating dataset...')
+print('>  Loading dataset...')
 dataset = SurfManeuverDataset(root_dir="../data/heats", transform=None, mode=mode)
 print('>  Creating dataloader...')
 
@@ -192,8 +194,6 @@ for class_id in range(num_classes):
     count = class_distribution.get(class_id, 0)
     percentage = (count / total_samples) * 100
     name = maneuver_names.get(class_id, f"Unknown-{class_id}")
-    # Format: "Class X - Name: count (percentage%)"
-    # Use max_count_width for right alignment
     print(f'  > Class {class_id} - {name}: {count:>{max_count_width}} samples ({percentage:>5.2f}%)')
 
 # Calculate class weights based on distribution
@@ -260,7 +260,19 @@ start_time = time.time()  # Track the start time of training
 print('>  Defining the model...')
 model = SurfManeuverModel(mode=mode, freeze_backbone=freeze_backbone)
 model = model.to(device)
+
+# If resuming, validate and load the model state
+if model_choice == RESUME_FROM_CHECKPOINT:
+    # Validate model architecture by comparing state dict keys
+    current_model_state = model.state_dict()
+    if set(current_model_state.keys()) != set(model_state.keys()):
+        raise ValueError("Model architecture in checkpoint does not match current model")
+    model.load_state_dict(model_state)
+
+# Create optimizer
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+if model_choice == RESUME_FROM_CHECKPOINT and optimizer_state is not None:
+    optimizer.load_state_dict(optimizer_state)
 
 # Define Focal Loss for handling class imbalance
 class FocalLoss(nn.Module):
@@ -283,21 +295,12 @@ elif weight_method != 'none':
 else:
     criterion = nn.CrossEntropyLoss()
 
-# Generate timestamp if starting fresh
-if model_choice == TRAIN_FROM_SCRATCH:
-    est = pytz.timezone('US/Eastern')
-    now = datetime.now(est)
-    timestamp = now.strftime("%Y%m%d_%H%M")
-
 # Add learning rate scheduler for better convergence
 scheduler = None
 if use_scheduler:
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min', factor=0.5, patience=1
     )
-
-# Lists to track metrics
-epoch_losses, epoch_times = [], []  # Track losses and timing metrics
 
 # Training loop
 print('>  Starting training...')
@@ -366,7 +369,7 @@ for epoch in range(start_epoch, num_epochs):
             'epoch_times': epoch_times,
             'total_elapsed_time': total_elapsed_time
         }
-        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time, class_distribution, training_config, training_history=training_history)
+        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, class_distribution, training_config, training_history=training_history)
         print(f"    >  Model checkpoint saved: {checkpoint_path}")
     
     # Reset epoch timer for next epoch
@@ -391,7 +394,7 @@ training_history = {
     'epoch_times': epoch_times,
     'total_elapsed_time': total_elapsed_time
 }
-model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, training_config, is_final=True, training_history=training_history)
+model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, class_distribution, training_config, is_final=True, training_history=training_history)
 print(f"Final model saved: {model_filename}")
 
 # Write training log
