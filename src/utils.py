@@ -266,7 +266,8 @@ def load_class_distribution():
     try:
         with open('../data/class_distribution.json', 'r') as f:
             dist_dict = json.load(f)
-        return Counter(dist_dict)
+        # Convert string keys to integers
+        return Counter({int(k): v for k, v in dist_dict.items()})
     except FileNotFoundError:
         return None
 

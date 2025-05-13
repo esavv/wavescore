@@ -243,7 +243,7 @@ if model_choice == RESUME_FROM_CHECKPOINT:
     checkpoint_path = os.path.join("../models", selected_cp['filename'])
     print(f"\nLoading checkpoint: {checkpoint_path}")
     try:
-        start_epoch, timestamp, total_elapsed_time, saved_class_distribution = load_checkpoint(model, optimizer, checkpoint_path)
+        start_epoch, timestamp, total_elapsed_time, saved_class_distribution, saved_config = load_checkpoint(model, optimizer, checkpoint_path)
         print(f"Resuming from epoch {start_epoch}")
         print(f"Previous training time: {total_elapsed_time:.2f} seconds")
         
@@ -258,6 +258,31 @@ if model_choice == RESUME_FROM_CHECKPOINT:
             class_counts = torch.zeros(num_classes)
             for class_id in range(num_classes):
                 class_counts[class_id] = class_distribution.get(class_id, 1)
+        
+        # Use saved training config if available
+        if saved_config is not None:
+            print("\nResuming with previous training configuration:")
+            print(f"Mode: {saved_config['mode']}")
+            print(f"Batch size: {saved_config['batch_size']}")
+            print(f"Learning rate: {saved_config['learning_rate']}")
+            print(f"Number of epochs: {saved_config['num_epochs']}")
+            print(f"Loss function: {'Focal Loss' if saved_config['use_focal_loss'] else 'Cross Entropy Loss'}")
+            print(f"Class weighting: {saved_config['weight_method']}")
+            if saved_config['use_focal_loss']:
+                print(f"Focal loss gamma: {saved_config['focal_gamma']}")
+            print(f"Backbone frozen: {saved_config['freeze_backbone']}")
+            print(f"Learning rate scheduler: {'Enabled' if saved_config['use_scheduler'] else 'Disabled'}")
+            
+            # Apply saved config
+            mode = saved_config['mode']
+            batch_size = saved_config['batch_size']
+            learning_rate = saved_config['learning_rate']
+            num_epochs = saved_config['num_epochs']
+            use_focal_loss = saved_config['use_focal_loss']
+            weight_method = saved_config['weight_method']
+            focal_gamma = saved_config['focal_gamma']
+            freeze_backbone = saved_config['freeze_backbone']
+            use_scheduler = saved_config['use_scheduler']
         
         # Increment start_epoch since we want to start from the next epoch
         start_epoch += 1
@@ -336,7 +361,18 @@ for epoch in range(start_epoch, num_epochs):
 
     # Save model checkpoint for each epoch except the last one
     if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
-        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time, class_distribution)
+        training_config = {
+            'mode': mode,
+            'batch_size': batch_size,
+            'learning_rate': learning_rate,
+            'num_epochs': num_epochs,
+            'use_focal_loss': use_focal_loss,
+            'weight_method': weight_method,
+            'focal_gamma': focal_gamma,
+            'freeze_backbone': freeze_backbone,
+            'use_scheduler': use_scheduler
+        }
+        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time, class_distribution, training_config)
         print(f"    >  Model checkpoint saved: {checkpoint_path}")
     
     # Reset epoch timer for next epoch
@@ -345,7 +381,18 @@ for epoch in range(start_epoch, num_epochs):
 print("Training complete.")
 
 # Save final model
-model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, is_final=True)
+training_config = {
+    'mode': mode,
+    'batch_size': batch_size,
+    'learning_rate': learning_rate,
+    'num_epochs': num_epochs,
+    'use_focal_loss': use_focal_loss,
+    'weight_method': weight_method,
+    'focal_gamma': focal_gamma,
+    'freeze_backbone': freeze_backbone,
+    'use_scheduler': use_scheduler
+}
+model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, training_config, is_final=True)
 print(f"Final model saved: {model_filename}")
 
 # Write training log
