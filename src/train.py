@@ -101,37 +101,35 @@ if model_choice == RESUME_FROM_CHECKPOINT:
     checkpoint_path = os.path.join("../models", selected_cp['filename'])
     print(f"\nLoading checkpoint: {checkpoint_path}")
     try:
-        start_epoch, timestamp, total_elapsed_time, saved_class_distribution, saved_config = load_checkpoint(model, optimizer, checkpoint_path)
+        start_epoch, timestamp, total_elapsed_time, class_distribution, training_config, training_history = load_checkpoint(model, optimizer, checkpoint_path)
+        
+        # Load training history if it exists
+        if training_history:
+            epoch_losses = training_history['epoch_losses']
+            epoch_times = training_history['epoch_times']
+            total_elapsed_time = training_history['total_elapsed_time']
+        else:
+            # For old format checkpoints, start fresh
+            epoch_losses = []
+            epoch_times = []
+            total_elapsed_time = 0
+            is_old_format = True
+        
+        # Apply saved training config if available
+        if training_config:
+            print("Using training configuration from checkpoint")
+            mode = training_config['mode']
+            batch_size = training_config['batch_size']
+            learning_rate = training_config['learning_rate']
+            num_epochs = training_config['num_epochs']
+            use_focal_loss = training_config['use_focal_loss']
+            weight_method = training_config['weight_method']
+            focal_gamma = training_config['focal_gamma']
+            freeze_backbone = training_config['freeze_backbone']
+            use_scheduler = training_config['use_scheduler']
+        
         print(f"Resuming from epoch {start_epoch}")
         print(f"Previous training time: {total_elapsed_time:.2f} seconds")
-        
-        # Use saved class distribution if available
-        if saved_class_distribution is not None:
-            print("Using class distribution from checkpoint")
-            class_distribution = saved_class_distribution
-            total_samples = sum(class_distribution.values())
-            num_classes = max(class_distribution.keys()) + 1
-            
-            # Recalculate class weights based on saved distribution
-            class_counts = torch.zeros(num_classes)
-            for class_id in range(num_classes):
-                class_counts[class_id] = class_distribution.get(class_id, 1)
-        
-        # Use saved training config if available
-        if saved_config is not None:
-            # Apply saved config
-            mode = saved_config['mode']
-            batch_size = saved_config['batch_size']
-            learning_rate = saved_config['learning_rate']
-            num_epochs = saved_config['num_epochs']
-            use_focal_loss = saved_config['use_focal_loss']
-            weight_method = saved_config['weight_method']
-            focal_gamma = saved_config['focal_gamma']
-            freeze_backbone = saved_config['freeze_backbone']
-            use_scheduler = saved_config['use_scheduler']
-        
-        # Increment start_epoch since we want to start from the next epoch
-        start_epoch += 1
     except Exception as e:
         print(f"Error loading checkpoint: {e}")
         print("Starting fresh training.")
@@ -364,7 +362,12 @@ for epoch in range(start_epoch, num_epochs):
             'freeze_backbone': freeze_backbone,
             'use_scheduler': use_scheduler
         }
-        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time, class_distribution, training_config)
+        training_history = {
+            'epoch_losses': epoch_losses,
+            'epoch_times': epoch_times,
+            'total_elapsed_time': total_elapsed_time
+        }
+        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time, class_distribution, training_config, training_history=training_history)
         print(f"    >  Model checkpoint saved: {checkpoint_path}")
     
     # Reset epoch timer for next epoch
@@ -384,7 +387,12 @@ training_config = {
     'freeze_backbone': freeze_backbone,
     'use_scheduler': use_scheduler
 }
-model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, training_config, is_final=True)
+training_history = {
+    'epoch_losses': epoch_losses,
+    'epoch_times': epoch_times,
+    'total_elapsed_time': total_elapsed_time
+}
+model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, training_config, is_final=True, training_history=training_history)
 print(f"Final model saved: {model_filename}")
 
 # Write training log
@@ -406,7 +414,7 @@ write_training_log(
     epoch_losses=epoch_losses,
     epoch_times=epoch_times,
     final_lr=optimizer.param_groups[0]['lr'],
-    is_old_format=model_choice == RESUME_FROM_CHECKPOINT and not isinstance(torch.load(os.path.join("../models", selected_cp['filename'])), dict)
+    is_old_format=is_old_format
 )
 
 print(f"Training log saved to: {log_filename}")
