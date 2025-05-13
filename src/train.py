@@ -137,20 +137,6 @@ if model_choice == RESUME_FROM_CHECKPOINT:
         print(f"Error loading checkpoint: {e}")
         sys.exit(1)
 
-# Print final configuration
-print('\n>  Training configuration:')
-print('>    Mode:', mode)
-print('>    Batch size:', batch_size)
-print('>    Learning rate:', learning_rate)
-print('>    Number of epochs:', num_epochs)
-print('>    Loss function:', 'Focal Loss' if use_focal_loss else 'Cross Entropy Loss')
-print('>    Class weighting:', weight_method)
-if use_focal_loss:
-    print('>    Focal loss gamma:', focal_gamma)
-print('>    Backbone frozen:', freeze_backbone)
-print('>    Learning rate scheduler:', 'Enabled' if use_scheduler else 'Disabled')
-print()
-
 # Set device to GPU if available, otherwise use CPU
 print('>  Configuring device...')
 if torch.backends.mps.is_available():
@@ -301,6 +287,20 @@ if use_scheduler:
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min', factor=0.5, patience=1
     )
+
+# Print final configuration
+print('\n>  Training configuration:')
+print('>    Mode:', mode)
+print('>    Batch size:', batch_size)
+print('>    Learning rate:', learning_rate)
+print('>    Number of epochs:', num_epochs)
+print('>    Loss function:', 'Focal Loss' if use_focal_loss else 'Cross Entropy Loss')
+print('>    Class weighting:', weight_method)
+if use_focal_loss:
+    print('>    Focal loss gamma:', focal_gamma)
+print('>    Backbone frozen:', freeze_backbone)
+print('>    Learning rate scheduler:', 'Enabled' if use_scheduler else 'Disabled')
+print()
 
 # Training loop
 print('>  Starting training...')
