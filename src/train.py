@@ -95,7 +95,61 @@ if mode == 'prod':
     batch_size = 8
     learning_rate = 0.005
     num_epochs = 20
-print('>  Setting hyperparameters... (mode is: ' + mode + ')')
+
+# Load checkpoint if resuming
+if model_choice == RESUME_FROM_CHECKPOINT:
+    checkpoint_path = os.path.join("../models", selected_cp['filename'])
+    print(f"\nLoading checkpoint: {checkpoint_path}")
+    try:
+        start_epoch, timestamp, total_elapsed_time, saved_class_distribution, saved_config = load_checkpoint(model, optimizer, checkpoint_path)
+        print(f"Resuming from epoch {start_epoch}")
+        print(f"Previous training time: {total_elapsed_time:.2f} seconds")
+        
+        # Use saved class distribution if available
+        if saved_class_distribution is not None:
+            print("Using class distribution from checkpoint")
+            class_distribution = saved_class_distribution
+            total_samples = sum(class_distribution.values())
+            num_classes = max(class_distribution.keys()) + 1
+            
+            # Recalculate class weights based on saved distribution
+            class_counts = torch.zeros(num_classes)
+            for class_id in range(num_classes):
+                class_counts[class_id] = class_distribution.get(class_id, 1)
+        
+        # Use saved training config if available
+        if saved_config is not None:
+            # Apply saved config
+            mode = saved_config['mode']
+            batch_size = saved_config['batch_size']
+            learning_rate = saved_config['learning_rate']
+            num_epochs = saved_config['num_epochs']
+            use_focal_loss = saved_config['use_focal_loss']
+            weight_method = saved_config['weight_method']
+            focal_gamma = saved_config['focal_gamma']
+            freeze_backbone = saved_config['freeze_backbone']
+            use_scheduler = saved_config['use_scheduler']
+        
+        # Increment start_epoch since we want to start from the next epoch
+        start_epoch += 1
+    except Exception as e:
+        print(f"Error loading checkpoint: {e}")
+        print("Starting fresh training.")
+        model_choice = TRAIN_FROM_SCRATCH
+
+# Print final configuration
+print('\n>  Training configuration:')
+print('>    Mode:', mode)
+print('>    Batch size:', batch_size)
+print('>    Learning rate:', learning_rate)
+print('>    Number of epochs:', num_epochs)
+print('>    Loss function:', 'Focal Loss' if use_focal_loss else 'Cross Entropy Loss')
+print('>    Class weighting:', weight_method)
+if use_focal_loss:
+    print('>    Focal loss gamma:', focal_gamma)
+print('>    Backbone frozen:', freeze_backbone)
+print('>    Learning rate scheduler:', 'Enabled' if use_scheduler else 'Disabled')
+print()
 
 # Set device to GPU if available, otherwise use CPU
 print('>  Configuring device...')
@@ -152,11 +206,8 @@ for class_id in range(num_classes):
 # Different methods to calculate weights
 if weight_method == 'none':
     # No weighting
-    use_weights = False
     class_weights = None
-    print('>  Using unweighted loss (no class weighting)')
 else:
-    use_weights = True
     if weight_method == 'inverse':
         # Inverse frequency weighting
         class_weights = 1.0 / (class_counts + 1e-5)  # Small epsilon to avoid division by zero
@@ -227,69 +278,13 @@ class FocalLoss(nn.Module):
 
 # Create loss function with class weights
 if use_focal_loss:
-    print(f'>  Using Focal Loss with gamma={focal_gamma} and class weights')
     criterion = FocalLoss(gamma=focal_gamma, alpha=class_weights)
-elif use_weights:
-    print('>  Using Cross Entropy Loss with class weights')
+elif weight_method != 'none':
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 else:
-    print('>  Using unweighted Cross Entropy Loss')
     criterion = nn.CrossEntropyLoss()
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-# Load checkpoint if resuming
-if model_choice == RESUME_FROM_CHECKPOINT:
-    checkpoint_path = os.path.join("../models", selected_cp['filename'])
-    print(f"\nLoading checkpoint: {checkpoint_path}")
-    try:
-        start_epoch, timestamp, total_elapsed_time, saved_class_distribution, saved_config = load_checkpoint(model, optimizer, checkpoint_path)
-        print(f"Resuming from epoch {start_epoch}")
-        print(f"Previous training time: {total_elapsed_time:.2f} seconds")
-        
-        # Use saved class distribution if available
-        if saved_class_distribution is not None:
-            print("Using class distribution from checkpoint")
-            class_distribution = saved_class_distribution
-            total_samples = sum(class_distribution.values())
-            num_classes = max(class_distribution.keys()) + 1
-            
-            # Recalculate class weights based on saved distribution
-            class_counts = torch.zeros(num_classes)
-            for class_id in range(num_classes):
-                class_counts[class_id] = class_distribution.get(class_id, 1)
-        
-        # Use saved training config if available
-        if saved_config is not None:
-            print("\nResuming with previous training configuration:")
-            print(f"Mode: {saved_config['mode']}")
-            print(f"Batch size: {saved_config['batch_size']}")
-            print(f"Learning rate: {saved_config['learning_rate']}")
-            print(f"Number of epochs: {saved_config['num_epochs']}")
-            print(f"Loss function: {'Focal Loss' if saved_config['use_focal_loss'] else 'Cross Entropy Loss'}")
-            print(f"Class weighting: {saved_config['weight_method']}")
-            if saved_config['use_focal_loss']:
-                print(f"Focal loss gamma: {saved_config['focal_gamma']}")
-            print(f"Backbone frozen: {saved_config['freeze_backbone']}")
-            print(f"Learning rate scheduler: {'Enabled' if saved_config['use_scheduler'] else 'Disabled'}")
-            
-            # Apply saved config
-            mode = saved_config['mode']
-            batch_size = saved_config['batch_size']
-            learning_rate = saved_config['learning_rate']
-            num_epochs = saved_config['num_epochs']
-            use_focal_loss = saved_config['use_focal_loss']
-            weight_method = saved_config['weight_method']
-            focal_gamma = saved_config['focal_gamma']
-            freeze_backbone = saved_config['freeze_backbone']
-            use_scheduler = saved_config['use_scheduler']
-        
-        # Increment start_epoch since we want to start from the next epoch
-        start_epoch += 1
-    except Exception as e:
-        print(f"Error loading checkpoint: {e}")
-        print("Starting fresh training.")
-        model_choice = TRAIN_FROM_SCRATCH
 
 # Generate timestamp if starting fresh
 if model_choice == TRAIN_FROM_SCRATCH:
@@ -300,12 +295,9 @@ if model_choice == TRAIN_FROM_SCRATCH:
 # Add learning rate scheduler for better convergence
 scheduler = None
 if use_scheduler:
-    print('>  Using learning rate scheduler')
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min', factor=0.5, patience=1
     )
-else:
-    print('>  Using fixed learning rate')
 
 # Lists to track metrics
 epoch_losses, epoch_times = [], []  # Track losses and timing metrics
