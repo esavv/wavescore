@@ -101,7 +101,7 @@ if model_choice == RESUME_FROM_CHECKPOINT:
     checkpoint_path = os.path.join("../models", selected_cp['filename'])
     print(f"\nLoading checkpoint: {checkpoint_path}")
     try:
-        start_epoch, timestamp, total_elapsed_time, class_distribution, training_config, training_history = load_checkpoint(model, optimizer, checkpoint_path)
+        start_epoch, timestamp, total_elapsed_time, training_config, training_history = load_checkpoint(model, optimizer, checkpoint_path)
         
         # Load training history if it exists
         if training_history:
@@ -260,6 +260,7 @@ start_time = time.time()  # Track the start time of training
 print('>  Defining the model...')
 model = SurfManeuverModel(mode=mode, freeze_backbone=freeze_backbone)
 model = model.to(device)
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Define Focal Loss for handling class imbalance
 class FocalLoss(nn.Module):
@@ -281,8 +282,6 @@ elif weight_method != 'none':
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 else:
     criterion = nn.CrossEntropyLoss()
-
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Generate timestamp if starting fresh
 if model_choice == TRAIN_FROM_SCRATCH:
