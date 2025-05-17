@@ -64,6 +64,7 @@ Inference Notes
  - Checkpoint 17 actually does reasonably well, predicts a bunch of no maneuvers in the right
     places and even correctly predicts a 360 and a snap.
  - We'll try a couple of changes to improve things:
+    - Apply data augmentation to the training data.
     - Find a middle ground between inverse and sqrt weighting:
         Inverse (p^-1): 1/0.023 ≈ 43.5x weight
         Square root (p^-0.5): 1/√0.023 ≈ 6.6x weight
