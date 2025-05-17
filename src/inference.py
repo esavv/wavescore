@@ -67,7 +67,7 @@ def run_inference(video_path, model_filename, mode='dev'):
     model = SurfManeuverModel(mode=mode)
     
     # Load checkpoint and handle both old and new formats
-    model_state, _, _, _, _, _, _ = load_checkpoint(model_path)
+    model_state = load_checkpoint(model_path)[0]  # Only get the model state
     model.load_state_dict(model_state)
     
     model.eval()
