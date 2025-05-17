@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-import cv2
+import argparse, cv2, shutil
 import numpy as np
-import argparse
 from pathlib import Path
-import shutil
 
 # Define valid transformations
 VALID_TRANSFORMATIONS = {
