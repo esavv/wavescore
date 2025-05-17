@@ -74,7 +74,7 @@ if model_choice == TRAIN_FROM_SCRATCH:
     num_epochs = 1
     if mode == 'prod':
         batch_size = 8
-        learning_rate = 0.005
+        learning_rate = 0.0025
         num_epochs = 20
 
     # Generate new timestamp for fresh training
