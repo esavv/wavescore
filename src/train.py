@@ -29,7 +29,7 @@ from model_logging import write_training_log
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')
 parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set the application mode (prod or dev).')
 parser.add_argument('--focal_loss', action='store_true', help='Use Focal Loss instead of weighted Cross Entropy.')
-parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced', 'none'], default='none', 
+parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced', 'power75', 'none'], default='none', 
                    help='Method for calculating class weights. Use "none" for no weighting.')
 parser.add_argument('--gamma', type=float, default=1.0, help='Gamma parameter for Focal Loss (if used).')
 parser.add_argument('--unfreeze_backbone', action='store_true', 
@@ -206,6 +206,11 @@ else:
         # Square root of inverse frequency (more moderate)
         class_frequencies = class_counts / sum(class_counts)
         class_weights = 1.0 / torch.sqrt(class_frequencies + 1e-5)
+        class_weights = class_weights / class_weights.sum() * num_classes
+    elif weight_method == 'power75':
+        # p^-0.75 power weighting (between inverse and sqrt)
+        class_frequencies = class_counts / sum(class_counts)
+        class_weights = 1.0 / torch.pow(class_frequencies + 1e-5, 0.75)
         class_weights = class_weights / class_weights.sum() * num_classes
     elif weight_method == 'balanced':
         # New balanced approach - more conservative weighting to avoid over-penalizing common classes
