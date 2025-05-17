@@ -35,7 +35,7 @@ def get_available_checkpoints():
     checkpoints.sort(key=lambda x: (x['timestamp'], x['epoch']))
     return checkpoints
 
-def save_checkpoint(model, optimizer, epoch, timestamp, elapsed_time, class_distribution, is_final=False):
+def save_checkpoint(model, optimizer, epoch, timestamp, class_distribution, training_config, is_final=False, training_history=None):
     """Save a checkpoint with model state, optimizer state, and training info.
     
     Args:
@@ -43,20 +43,18 @@ def save_checkpoint(model, optimizer, epoch, timestamp, elapsed_time, class_dist
         optimizer: The optimizer to save
         epoch: Current epoch number
         timestamp: Training session timestamp
-        elapsed_time: Total training time so far
-        class_distribution: Distribution of classes in training data
+        class_distribution: Distribution of classes in training data (deprecated, kept for backward compatibility)
+        training_config: Dict containing training hyperparameters
         is_final: Whether this is the final model (True) or a checkpoint (False)
-    
-    Returns:
-        str: Path to the saved checkpoint file
+        training_history: Dictionary containing epoch_losses, epoch_times, and total_elapsed_time
     """
     checkpoint = {
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'epoch': epoch,
         'timestamp': timestamp,
-        'elapsed_time': elapsed_time,
-        'class_distribution': class_distribution
+        'training_config': training_config,
+        'training_history': training_history
     }
     
     if is_final:
@@ -67,19 +65,14 @@ def save_checkpoint(model, optimizer, epoch, timestamp, elapsed_time, class_dist
     torch.save(checkpoint, filename)
     return filename
 
-def load_checkpoint(model, optimizer, checkpoint_path):
-    """Load a checkpoint and validate model architecture.
+def load_checkpoint(checkpoint_path):
+    """Load a checkpoint and return its contents.
     
     Args:
-        model: The model to load state into
-        optimizer: The optimizer to load state into
         checkpoint_path: Path to the checkpoint file
     
     Returns:
-        tuple: (epoch, timestamp, elapsed_time, class_distribution)
-    
-    Raises:
-        ValueError: If model architecture doesn't match checkpoint
+        tuple: (model_state, optimizer_state, epoch, timestamp, training_config, training_history)
     """
     checkpoint = torch.load(checkpoint_path)
     
@@ -87,16 +80,17 @@ def load_checkpoint(model, optimizer, checkpoint_path):
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         # New format - full training state
         model_state = checkpoint['model_state_dict']
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        optimizer_state = checkpoint['optimizer_state_dict']
         epoch = checkpoint['epoch']
         timestamp = checkpoint['timestamp']
-        elapsed_time = checkpoint.get('elapsed_time', 0.0)  # Default to 0 for older checkpoints
-        class_distribution = checkpoint.get('class_distribution', None)  # None for older checkpoints
+        training_config = checkpoint.get('training_config', None)  # None for older checkpoints
+        training_history = checkpoint.get('training_history', None)  # None for older checkpoints
     else:
         # Old format - just model state dict
         print("Note: Loading old format checkpoint (no training state).")
         print("Please ensure you're using the same training configuration as the original training.")
         model_state = checkpoint
+        optimizer_state = None
         
         # Extract timestamp and epoch from filename
         match = re.match(r'surf_maneuver_model_(\d{8}_\d{4})_checkpoint_epoch_(\d+)\.pth', os.path.basename(checkpoint_path))
@@ -105,15 +99,7 @@ def load_checkpoint(model, optimizer, checkpoint_path):
             epoch = int(epoch)  # Convert to integer
         else:
             raise ValueError("Could not extract timestamp and epoch from checkpoint filename")
-        elapsed_time = 0.0  # No time tracking in old format
-        class_distribution = None  # No class distribution in old format
+        training_config = None  # No training config in old format
+        training_history = None  # No training history in old format
     
-    # Validate model architecture by comparing state dict keys
-    current_model_state = model.state_dict()
-    if set(current_model_state.keys()) != set(model_state.keys()):
-        raise ValueError("Model architecture in checkpoint does not match current model")
-    
-    # Load state
-    model.load_state_dict(model_state)
-    
-    return epoch, timestamp, elapsed_time, class_distribution 
+    return model_state, optimizer_state, epoch, timestamp, training_config, training_history 

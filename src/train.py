@@ -21,15 +21,15 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
-from utils import load_maneuver_taxonomy, save_class_distribution, load_class_distribution, distribution_outdated
+from utils import load_maneuver_taxonomy, save_class_distribution, load_class_distribution, distribution_outdated, format_time
 from checkpoints import get_available_checkpoints, save_checkpoint, load_checkpoint
-from logging import format_time, write_training_log
+from model_logging import write_training_log
 
 # Set up command-line arguments
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')
 parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set the application mode (prod or dev).')
 parser.add_argument('--focal_loss', action='store_true', help='Use Focal Loss instead of weighted Cross Entropy.')
-parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced', 'none'], default='none', 
+parser.add_argument('--weight_method', choices=['inverse', 'effective', 'sqrt', 'manual', 'balanced', 'power75', 'none'], default='none', 
                    help='Method for calculating class weights. Use "none" for no weighting.')
 parser.add_argument('--gamma', type=float, default=1.0, help='Gamma parameter for Focal Loss (if used).')
 parser.add_argument('--unfreeze_backbone', action='store_true', 
@@ -64,6 +64,23 @@ while True:
 start_epoch = 0
 timestamp = None
 total_elapsed_time = 0.0
+epoch_losses, epoch_times = [], []
+is_old_format = False
+
+# Hyperparameters, defaults for dev mode if not loaded from checkpoint
+if model_choice == TRAIN_FROM_SCRATCH:
+    batch_size = 1
+    learning_rate = 0.01
+    num_epochs = 1
+    if mode == 'prod':
+        batch_size = 8
+        learning_rate = 0.005
+        num_epochs = 20
+
+    # Generate new timestamp for fresh training
+    est = pytz.timezone('US/Eastern')
+    now = datetime.now(est)
+    timestamp = now.strftime("%Y%m%d_%H%M")
 
 if model_choice == RESUME_FROM_CHECKPOINT:
     # List available checkpoints
@@ -86,16 +103,39 @@ if model_choice == RESUME_FROM_CHECKPOINT:
             print(f"Please enter a number between 1 and {len(checkpoints)}")
         except ValueError:
             print("Please enter a valid number")
-
-# Hyperparameters, defaults for dev mode
-batch_size = 1
-learning_rate = 0.01
-num_epochs = 1
-if mode == 'prod':
-    batch_size = 8
-    learning_rate = 0.005
-    num_epochs = 20
-print('>  Setting hyperparameters... (mode is: ' + mode + ')')
+    
+    # Load checkpoint data
+    checkpoint_path = os.path.join("../models", selected_cp['filename'])
+    print(f"\nLoading checkpoint: {checkpoint_path}")
+    try:
+        model_state, optimizer_state, start_epoch, timestamp, training_config, training_history = load_checkpoint(checkpoint_path)
+        
+        # Load training history if it exists
+        if training_history:
+            epoch_losses = training_history['epoch_losses']
+            epoch_times = training_history['epoch_times']
+            total_elapsed_time = training_history['total_elapsed_time']
+        else:
+            is_old_format = True
+        
+        # Apply saved training config if available
+        if training_config:
+            print("Using training configuration from checkpoint")
+            mode = training_config['mode']
+            batch_size = training_config['batch_size']
+            learning_rate = training_config['learning_rate']
+            num_epochs = training_config['num_epochs']
+            use_focal_loss = training_config['use_focal_loss']
+            weight_method = training_config['weight_method']
+            focal_gamma = training_config['focal_gamma']
+            freeze_backbone = training_config['freeze_backbone']
+            use_scheduler = training_config['use_scheduler']
+        
+        print(f"Resuming from epoch {start_epoch}")
+        print(f"Previous training time: {total_elapsed_time:.2f} seconds")
+    except Exception as e:
+        print(f"Error loading checkpoint: {e}")
+        sys.exit(1)
 
 # Set device to GPU if available, otherwise use CPU
 print('>  Configuring device...')
@@ -110,7 +150,7 @@ else:
     print('>  Using CPU for computation')
 
 # Data preparation
-print('>  Creating dataset...')
+print('>  Loading dataset...')
 dataset = SurfManeuverDataset(root_dir="../data/heats", transform=None, mode=mode)
 print('>  Creating dataloader...')
 
@@ -140,8 +180,6 @@ for class_id in range(num_classes):
     count = class_distribution.get(class_id, 0)
     percentage = (count / total_samples) * 100
     name = maneuver_names.get(class_id, f"Unknown-{class_id}")
-    # Format: "Class X - Name: count (percentage%)"
-    # Use max_count_width for right alignment
     print(f'  > Class {class_id} - {name}: {count:>{max_count_width}} samples ({percentage:>5.2f}%)')
 
 # Calculate class weights based on distribution
@@ -152,11 +190,8 @@ for class_id in range(num_classes):
 # Different methods to calculate weights
 if weight_method == 'none':
     # No weighting
-    use_weights = False
     class_weights = None
-    print('>  Using unweighted loss (no class weighting)')
 else:
-    use_weights = True
     if weight_method == 'inverse':
         # Inverse frequency weighting
         class_weights = 1.0 / (class_counts + 1e-5)  # Small epsilon to avoid division by zero
@@ -171,6 +206,11 @@ else:
         # Square root of inverse frequency (more moderate)
         class_frequencies = class_counts / sum(class_counts)
         class_weights = 1.0 / torch.sqrt(class_frequencies + 1e-5)
+        class_weights = class_weights / class_weights.sum() * num_classes
+    elif weight_method == 'power75':
+        # p^-0.75 power weighting (between inverse and sqrt)
+        class_frequencies = class_counts / sum(class_counts)
+        class_weights = 1.0 / torch.pow(class_frequencies + 1e-5, 0.75)
         class_weights = class_weights / class_weights.sum() * num_classes
     elif weight_method == 'balanced':
         # New balanced approach - more conservative weighting to avoid over-penalizing common classes
@@ -212,6 +252,19 @@ print('>  Defining the model...')
 model = SurfManeuverModel(mode=mode, freeze_backbone=freeze_backbone)
 model = model.to(device)
 
+# If resuming, validate and load the model state
+if model_choice == RESUME_FROM_CHECKPOINT:
+    # Validate model architecture by comparing state dict keys
+    current_model_state = model.state_dict()
+    if set(current_model_state.keys()) != set(model_state.keys()):
+        raise ValueError("Model architecture in checkpoint does not match current model")
+    model.load_state_dict(model_state)
+
+# Create optimizer
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+if model_choice == RESUME_FROM_CHECKPOINT and optimizer_state is not None:
+    optimizer.load_state_dict(optimizer_state)
+
 # Define Focal Loss for handling class imbalance
 class FocalLoss(nn.Module):
     def __init__(self, gamma=1.0, alpha=None):  # Reduced gamma from 2.0 to 1.0 for less aggressive focus
@@ -227,63 +280,32 @@ class FocalLoss(nn.Module):
 
 # Create loss function with class weights
 if use_focal_loss:
-    print(f'>  Using Focal Loss with gamma={focal_gamma} and class weights')
     criterion = FocalLoss(gamma=focal_gamma, alpha=class_weights)
-elif use_weights:
-    print('>  Using Cross Entropy Loss with class weights')
+elif weight_method != 'none':
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 else:
-    print('>  Using unweighted Cross Entropy Loss')
     criterion = nn.CrossEntropyLoss()
-
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-# Load checkpoint if resuming
-if model_choice == RESUME_FROM_CHECKPOINT:
-    checkpoint_path = os.path.join("../models", selected_cp['filename'])
-    print(f"\nLoading checkpoint: {checkpoint_path}")
-    try:
-        start_epoch, timestamp, total_elapsed_time, saved_class_distribution = load_checkpoint(model, optimizer, checkpoint_path)
-        print(f"Resuming from epoch {start_epoch}")
-        print(f"Previous training time: {total_elapsed_time:.2f} seconds")
-        
-        # Use saved class distribution if available
-        if saved_class_distribution is not None:
-            print("Using class distribution from checkpoint")
-            class_distribution = saved_class_distribution
-            total_samples = sum(class_distribution.values())
-            num_classes = max(class_distribution.keys()) + 1
-            
-            # Recalculate class weights based on saved distribution
-            class_counts = torch.zeros(num_classes)
-            for class_id in range(num_classes):
-                class_counts[class_id] = class_distribution.get(class_id, 1)
-        
-        # Increment start_epoch since we want to start from the next epoch
-        start_epoch += 1
-    except Exception as e:
-        print(f"Error loading checkpoint: {e}")
-        print("Starting fresh training.")
-        model_choice = TRAIN_FROM_SCRATCH
-
-# Generate timestamp if starting fresh
-if model_choice == TRAIN_FROM_SCRATCH:
-    est = pytz.timezone('US/Eastern')
-    now = datetime.now(est)
-    timestamp = now.strftime("%Y%m%d_%H%M")
 
 # Add learning rate scheduler for better convergence
 scheduler = None
 if use_scheduler:
-    print('>  Using learning rate scheduler')
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='min', factor=0.5, patience=1
     )
-else:
-    print('>  Using fixed learning rate')
 
-# Lists to track metrics
-epoch_losses, epoch_times = [], []  # Track losses and timing metrics
+# Print final configuration
+print('\n>  Training configuration:')
+print('>    Mode:', mode)
+print('>    Batch size:', batch_size)
+print('>    Learning rate:', learning_rate)
+print('>    Number of epochs:', num_epochs)
+print('>    Loss function:', 'Focal Loss' if use_focal_loss else 'Cross Entropy Loss')
+print('>    Class weighting:', weight_method)
+if use_focal_loss:
+    print('>    Focal loss gamma:', focal_gamma)
+print('>    Backbone frozen:', freeze_backbone)
+print('>    Learning rate scheduler:', 'Enabled' if use_scheduler else 'Disabled')
+print()
 
 # Training loop
 print('>  Starting training...')
@@ -336,7 +358,23 @@ for epoch in range(start_epoch, num_epochs):
 
     # Save model checkpoint for each epoch except the last one
     if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
-        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, total_elapsed_time, class_distribution)
+        training_config = {
+            'mode': mode,
+            'batch_size': batch_size,
+            'learning_rate': learning_rate,
+            'num_epochs': num_epochs,
+            'use_focal_loss': use_focal_loss,
+            'weight_method': weight_method,
+            'focal_gamma': focal_gamma,
+            'freeze_backbone': freeze_backbone,
+            'use_scheduler': use_scheduler
+        }
+        training_history = {
+            'epoch_losses': epoch_losses,
+            'epoch_times': epoch_times,
+            'total_elapsed_time': total_elapsed_time
+        }
+        checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, class_distribution, training_config, training_history=training_history)
         print(f"    >  Model checkpoint saved: {checkpoint_path}")
     
     # Reset epoch timer for next epoch
@@ -345,7 +383,23 @@ for epoch in range(start_epoch, num_epochs):
 print("Training complete.")
 
 # Save final model
-model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, total_elapsed_time, class_distribution, is_final=True)
+training_config = {
+    'mode': mode,
+    'batch_size': batch_size,
+    'learning_rate': learning_rate,
+    'num_epochs': num_epochs,
+    'use_focal_loss': use_focal_loss,
+    'weight_method': weight_method,
+    'focal_gamma': focal_gamma,
+    'freeze_backbone': freeze_backbone,
+    'use_scheduler': use_scheduler
+}
+training_history = {
+    'epoch_losses': epoch_losses,
+    'epoch_times': epoch_times,
+    'total_elapsed_time': total_elapsed_time
+}
+model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, class_distribution, training_config, is_final=True, training_history=training_history)
 print(f"Final model saved: {model_filename}")
 
 # Write training log
@@ -367,7 +421,7 @@ write_training_log(
     epoch_losses=epoch_losses,
     epoch_times=epoch_times,
     final_lr=optimizer.param_groups[0]['lr'],
-    is_old_format=model_choice == RESUME_FROM_CHECKPOINT and not isinstance(torch.load(os.path.join("../models", selected_cp['filename'])), dict)
+    is_old_format=is_old_format
 )
 
 print(f"Training log saved to: {log_filename}")

@@ -1,0 +1,72 @@
+Training Log: surf_maneuver_model_20250513_0038.pth
+================================================
+
+Configuration
+------------
+Mode: prod
+Batch size: 8
+Learning rate: 0.005
+Number of epochs: 20
+Loss function: Cross Entropy Loss
+Class weighting: inverse
+Backbone frozen: True
+
+Class Distribution
+-----------------
+Class 0 - No maneuver:  147 samples (56.32%)
+Class 1 - Cutback:   42 samples (16.09%)
+Class 2 - Snap:   31 samples (11.88%)
+Class 3 - 360:    6 samples ( 2.30%)
+Class 4 - Floater:   10 samples ( 3.83%)
+Class 5 - Air:    6 samples ( 2.30%)
+Class 6 - Tube ride:   19 samples ( 7.28%)
+
+Training Progress
+----------------
+Total training time: 3h 0m 2.1s
+
+Epoch Results
+-------------
+ Epoch       Loss         Time   Cumulative
+------------------------------------------
+     1     2.9371  0h 5m 19.7s  0h 5m 19.7s
+     2     2.6262   0h 7m 6.6s 0h 12m 26.3s
+     3     2.2697  0h 7m 11.2s 0h 19m 37.5s
+     4     1.9830  0h 7m 30.3s  0h 27m 7.8s
+     5     1.8772  0h 7m 26.8s 0h 34m 34.6s
+     6     1.9125  0h 9m 28.2s  0h 44m 2.8s
+     7     1.9556  0h 9m 55.2s 0h 53m 58.0s
+     8     2.1295  0h 9m 28.1s  1h 3m 26.1s
+     9     1.8782  0h 9m 38.4s  1h 13m 4.5s
+    10     1.6561  0h 9m 40.6s 1h 22m 45.1s
+    11     1.8118  0h 9m 50.6s 1h 32m 35.7s
+    12     2.0776  0h 10m 5.7s 1h 42m 41.4s
+    13     1.7919  0h 9m 37.8s 1h 52m 19.2s
+    14     1.6669  0h 9m 46.2s   2h 2m 5.4s
+    15     1.8215  0h 9m 50.0s 2h 11m 55.3s
+    16     1.8814  0h 9m 30.4s 2h 21m 25.7s
+    17     1.6233  0h 9m 35.5s  2h 31m 1.2s
+    18     1.8446  0h 9m 45.5s 2h 40m 46.8s
+    19     2.0361  0h 9m 34.8s 2h 50m 21.6s
+    20     2.2279  0h 9m 40.6s   3h 0m 2.1s
+
+Final Results
+------------
+Final loss: 2.2279
+Final learning rate: 0.005000
+Random guessing baseline: 1.9459
+Improvement over random: -14.5%
+
+Inference Notes
+-------------
+ - Inverse weighting seems too aggressive, inference predicts the rarest class "Air" for
+    sequences. But sqrt weighting was too weak... so I suppose we need something in between.
+ - Checkpoint 17 actually does reasonably well, predicts a bunch of no maneuvers in the right
+    places and even correctly predicts a 360 and a snap.
+ - We'll try a couple of changes to improve things:
+    - Apply data augmentation to the training data.
+    - Find a middle ground between inverse and sqrt weighting:
+        Inverse (p^-1): 1/0.023 ≈ 43.5x weight
+        Square root (p^-0.5): 1/√0.023 ≈ 6.6x weight
+        p^-0.75 would give about 15.9x weight
+    - Reduce learning rate to from 0.005 to 0.0025.
