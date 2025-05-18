@@ -12,7 +12,7 @@
 # Usage:
 # src $ python download_youtube.py 123
 
-import os, subprocess, sys, csv
+import csv, os, subprocess, sys
 
 def create_directory_structure(video_id):
     """Create the required directory structure and CSV file."""

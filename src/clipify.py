@@ -10,7 +10,7 @@
 
 # Usage:
 # src $ python clipify.py 123
-import csv, os, subprocess, sys, re
+import csv, os, re, subprocess, sys
 
 # assert video ID command-line argument is provided
 if len(sys.argv) < 2:

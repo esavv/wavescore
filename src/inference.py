@@ -4,11 +4,10 @@
 # Usage:
 # src $ python inference.py --mode dev
 
-import torch
+import argparse, csv, os, shutil, sys, torch
 from model import SurfManeuverModel
 from utils import sequence_video_frames, load_frames_from_sequence, load_maneuver_taxonomy
 from checkpoints import load_checkpoint
-import argparse, csv, os, shutil, sys
 
 # Set device to GPU if available, otherwise use CPU
 print('inference: Configuring device & model transforms...')

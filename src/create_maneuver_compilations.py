@@ -1,11 +1,6 @@
-import os
-import cv2
+import argparse, cv2, glob, os, re, time
 import pandas as pd
-import glob
-import argparse
 from pathlib import Path
-import time
-import re
 
 def create_maneuver_compilations(base_data_dir, output_dir, verbose=False):
     """
