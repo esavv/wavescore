@@ -212,6 +212,10 @@ git branch -D heroku-main
 ```
 
 ### AWS EC2 Management
+   - Zip my src/ files to scp to AWS later
+```bash  
+zip -r src.zip augment_data.py checkpoints.py clipify.py create_maneuver_compilations.py dataset.py download_youtube.py inference.py maneuver_sequencing.py model_logging.py model_logging.py requirements.txt train.py utils.py
+```
    - SSH into my EC2 instance to train models / manage the model API. From root dir:
 ```bash  
 ssh -i "src/esavage_ec2.pem" ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com
