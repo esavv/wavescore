@@ -211,6 +211,11 @@ git checkout main
 git branch -D heroku-main
 ```
 
+### AWS EC2 Management
+   - SSH into my EC2 instance to train models / manage the model API. From root dir:
+```bash  
+ssh -i "src/esavage_ec2.pem" ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com
+```
 
 ## Acknowledgments
 
