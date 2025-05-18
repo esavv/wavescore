@@ -218,7 +218,7 @@ zip -r src.zip augment_data.py checkpoints.py clipify.py create_maneuver_compila
 ```
    - SSH into my EC2 instance to train models / manage the model API. From root dir:
 ```bash  
-ssh -i "src/esavage_ec2.pem" ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com
+ssh -i "src/esavage_ec2.pem" ubuntu@ec2-3-236-10-162.compute-1.amazonaws.com
 ```
    - From EC2 instance, make necessary project directories
 ```bash  
@@ -227,7 +227,7 @@ mkdir data logs models src
 ```
    - Transfer my src zip to fresh EC2 instance from src dir:
 ```bash  
-scp -i esavage_ec2.pem -r src.zip ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
+scp -i esavage_ec2.pem -r src.zip ubuntu@ec2-3-236-10-162.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
 ```
    - From EC2 instance, create a venv & install the required packages
 ```bash  
@@ -241,12 +241,12 @@ zip -r data.zip heats/ inference_vids/ class_distribution.json maneuver_taxonomy
 ```
    - Transfer my data zip to EC2 instance from data dir (lazy approach):
 ```bash  
-scp -i ../src/esavage_ec2.pem -r data.zip ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
+scp -i ../src/esavage_ec2.pem -r data.zip ubuntu@ec2-3-236-10-162.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
 ```
    - Copy model and training log from EC2 instance back to local project; run this locally
 ```bash  
-scp -i esavage_ec2.pem ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:'/home/ubuntu/wavescore/models/surf_maneuver_model_20250518_1431.pth' ../models/
-scp -i esavage_ec2.pem ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:'/home/ubuntu/wavescore/logs/training_20250518_1431.log' ../logs/
+scp -i esavage_ec2.pem ubuntu@ec2-3-236-10-162.compute-1.amazonaws.com:'/home/ubuntu/wavescore/models/surf_maneuver_model_20250518_1431.pth' ../models/
+scp -i esavage_ec2.pem ubuntu@ec2-3-236-10-162.compute-1.amazonaws.com:'/home/ubuntu/wavescore/logs/training_20250518_1431.log' ../logs/
 ```
 
 
