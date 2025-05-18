@@ -211,6 +211,38 @@ git checkout main
 git branch -D heroku-main
 ```
 
+### AWS EC2 Management
+   - Zip my src/ files to scp to AWS later
+```bash  
+zip -r src.zip augment_data.py checkpoints.py clipify.py create_maneuver_compilations.py dataset.py download_youtube.py inference.py maneuver_sequencing.py model_logging.py model_logging.py requirements.txt train.py utils.py
+```
+   - SSH into my EC2 instance to train models / manage the model API. From root dir:
+```bash  
+ssh -i "src/esavage_ec2.pem" ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com
+```
+   - From EC2 instance, make necessary project directories
+```bash  
+mkdir wavescore; cd wavescore
+mkdir data logs models src
+```
+   - Transfer my src zip to fresh EC2 instance from src dir:
+```bash  
+scp -i esavage_ec2.pem -r src.zip ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
+```
+   - From EC2 instance, create a venv & install the required packages
+```bash  
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+   - Zip my data/ files to scp to AWS later (lazy approach)
+```bash  
+zip -r data.zip heats/ inference_vids/ class_distribution.json maneuver_taxonomy.csv
+```
+   - Transfer my data zip to EC2 instance from data dir (lazy approach):
+```bash  
+scp -i ../src/esavage_ec2.pem -r data.zip ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
+```
 
 ## Acknowledgments
 

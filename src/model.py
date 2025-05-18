@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torchvision.models as models
 import torchvision.models.video as video_models
 from torchvision.models.video import R3D_18_Weights
 

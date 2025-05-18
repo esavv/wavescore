@@ -3,9 +3,8 @@
 This module handles writing training logs with consistent formatting.
 """
 
-import os
-from utils import load_maneuver_taxonomy, format_time
 import math
+from utils import format_time
 
 def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate, num_epochs,
                       use_focal_loss, weight_method, focal_gamma, freeze_backbone,

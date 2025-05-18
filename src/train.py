@@ -12,13 +12,13 @@
 
 print('>  Importing modules...')
 import argparse, pytz, time, os, sys
-from datetime import datetime
-from collections import Counter
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from datetime import datetime
+from collections import Counter
 from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
 from utils import load_maneuver_taxonomy, save_class_distribution, load_class_distribution, distribution_outdated, format_time

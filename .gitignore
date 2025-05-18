@@ -13,3 +13,5 @@ models/
 src/__pycache__/
 src/keys/
 tmp/
+*.pem
+*.zip
