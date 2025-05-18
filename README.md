@@ -243,6 +243,12 @@ zip -r data.zip heats/ inference_vids/ class_distribution.json maneuver_taxonomy
 ```bash  
 scp -i ../src/esavage_ec2.pem -r data.zip ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
 ```
+   - Copy model and training log from EC2 instance back to local project; run this locally
+```bash  
+scp -i esavage_ec2.pem ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:'/home/ubuntu/wavescore/models/surf_maneuver_model_20250518_1431.pth' ../models/
+scp -i esavage_ec2.pem ubuntu@ec2-54-166-38-125.compute-1.amazonaws.com:'/home/ubuntu/wavescore/logs/training_20250518_1431.log' ../logs/
+```
+
 
 ## Acknowledgments
 
