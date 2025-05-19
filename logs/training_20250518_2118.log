@@ -61,6 +61,8 @@ Inference Notes
 -------------
  - GPU utilization on g5.xlarge at 32 batch size: 17009MiB / 23028MiB; ~74%
     This seems like the right batch size for this hardware.
+ - 20 epochs here took about 90 minutes to train. On my M3 MacBook 2 epochs took the same amount
+    of time --> 10x speedup on A10G / g5.xlarge.
  - This is starting to look promising. On our inference video from the training set, the model
     correctly predicts 10 of the 15 sequences, and during the stretch from sequence 7-11 when
     3 actual cutbacks are performed, the model predicts 2 of them, but seems to be off by 1
