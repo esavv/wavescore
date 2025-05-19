@@ -42,14 +42,31 @@ def process_video_stream(video_path):
             "message": "Analyzing ride..."
         }
         yield f"data: {json.dumps(result)}\n\n"
-        time.sleep(5)
+        time.sleep(2)
+ 
+        result = {
+            "status": "interim",
+            "message": "Identifying maneuvers..."
+        }
+        yield f"data: {json.dumps(result)}\n\n"
+
+        # Run inference
         s3_bucket_name = "wavescorevideos"
         # model_url = "https://wavescorevideos.s3.us-east-1.amazonaws.com/surf_maneuver_model_20250518_2118.pth"
         model_filename = "surf_maneuver_model_20250518_2118.pth"
-
-        # Run inference
         maneuvers, _, _ = inference.run_inference(video_path, model_filename, mode='prod')
-        analysis = {'maneuvers': maneuvers, 'score': 8.5}
+
+        result = {
+            "status": "interim",
+            "message": "Predicting score..."
+        }
+        yield f"data: {json.dumps(result)}\n\n"
+        time.sleep(2)
+
+        # "Predict" score
+        score = 8.5
+
+        analysis = {'maneuvers': maneuvers, 'score': score}
 
         result = {
             "status": "interim",
