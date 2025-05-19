@@ -211,39 +211,69 @@ git checkout main
 git branch -D heroku-main
 ```
 
-### AWS EC2 Management
-   - Zip my src/ files to scp to AWS later
-```bash  
-zip -r src.zip augment_data.py checkpoints.py clipify.py create_maneuver_compilations.py dataset.py download_youtube.py inference.py maneuver_sequencing.py model_logging.py model.py requirements.txt train.py utils.py
-```
-   - SSH into my EC2 instance to train models / manage the model API. From root dir:
+### AWS EC2 Management - Training & Inference Servers
+   - SSH into an EC2 instance to manage my training and/or inference servers. From root dir:
 ```bash  
 ssh -i "src/keys/aws_ec2.pem" ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com
 ```
    - From EC2 instance, make necessary project directories
 ```bash  
 mkdir wavescore; cd wavescore
+```
+   - ...for training server
+```bash
 mkdir data logs models src
 ```
-   - Transfer my src zip to fresh EC2 instance from src dir:
+   - ...for inference server
+```bash
+mkdir models src
+```
+   - Training server: Zip my src/ files to scp to AWS later
+```bash  
+zip -r src.zip augment_data.py checkpoints.py clipify.py create_maneuver_compilations.py dataset.py download_youtube.py inference.py maneuver_sequencing.py model_logging.py model.py requirements.txt train.py utils.py
+```
+   - Training server: Transfer my src zip to fresh EC2 instance from src dir:
 ```bash  
 scp -i keys/aws_ec2.pem -r src.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
+```
+   - Training server: Zip my data/ files to scp to AWS later (lazy approach)
+```bash  
+zip -r data.zip heats/ inference_vids/ class_distribution.json maneuver_taxonomy.csv
+```
+   - Training server: Transfer my data zip to EC2 instance from data dir (lazy approach):
+```bash  
+scp -i ../src/keys/aws_ec2.pem -r data.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
+```
+   - Inference server: Zip my src/ files to scp to AWS later
+```bash  
+zip -r api.zip apidata/ keys/ app.py verify_video.py modify_video.py inference.py model.py utils.py checkpoints.py requirements_cpu.txt
+```
+   - Inference server: Transfer my src zip to EC2 instance from src dir:
+```bash  
+scp -i keys/aws_ec2.pem -r api.zip ubuntu@ec2-44-202-9-43.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
+```
+   - Inference server: Transfer my model to EC2 instance from src dir:
+```bash  
+scp -i keys/aws_ec2.pem -r ../models/surf_maneuver_model_20250518_2118.pth ubuntu@ec2-44-202-9-43.compute-1.amazonaws.com:/home/ubuntu/wavescore/models
 ```
    - From EC2 instance, create a venv & install the required packages
 ```bash  
 python3 -m venv venv
 source venv/bin/activate
+```
+   - Training server install:
+```bash  
 pip install -r requirements.txt
 ```
-   - Zip my data/ files to scp to AWS later (lazy approach)
+   - Inference server install:
 ```bash  
-zip -r data.zip heats/ inference_vids/ class_distribution.json maneuver_taxonomy.csv
+pip install -r requirements_cpu.txt --index-url https://download.pytorch.org/whl/cpu
 ```
-   - Transfer my data zip to EC2 instance from data dir (lazy approach):
+   - From EC2 instance, check disk space
 ```bash  
-scp -i ../src/keys/aws_ec2.pem -r data.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
+df -h
 ```
-   - Copy model and training log from EC2 instance back to local project; run this locally
+   - Training server: Copy model and training log from EC2 instance back to local project; run this locally
 ```bash  
 scp -i keys/aws_ec2.pem ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:'/home/ubuntu/wavescore/models/surf_maneuver_model_20250518_1431.pth' ../models/
 scp -i keys/aws_ec2.pem ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:'/home/ubuntu/wavescore/logs/training_20250518_1431.log' ../logs/
