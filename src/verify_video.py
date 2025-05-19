@@ -14,7 +14,7 @@ def is_surf_video(video_path):
     print("Extracting random frames from the video...")
     frames = extract_random_frames(video_path, num_frames=5)
 
-    keyword_path = './google_cloud_vision_keywords.csv'
+    keyword_path = './apidata/google_cloud_vision_keywords.csv'
     file = csv.reader(open(keyword_path, 'r'))
     keywords = set([row[0] for row in file])
 
