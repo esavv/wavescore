@@ -1,0 +1,63 @@
+Training Log: surf_maneuver_model_20250518_2118.pth
+================================================
+
+Configuration
+------------
+Mode: prod
+Batch size: 32
+Learning rate: 0.005
+Number of epochs: 20
+Loss function: Cross Entropy Loss
+Class weighting: power75
+Backbone frozen: True
+
+Class Distribution
+-----------------
+Class 0 - No maneuver:  882 samples (56.32%)
+Class 1 - Cutback:  252 samples (16.09%)
+Class 2 - Snap:  186 samples (11.88%)
+Class 3 - 360:   36 samples ( 2.30%)
+Class 4 - Floater:   60 samples ( 3.83%)
+Class 5 - Air:   36 samples ( 2.30%)
+Class 6 - Tube ride:  114 samples ( 7.28%)
+
+Training Progress
+----------------
+Total training time: 1h 33m 14.7s
+
+Epoch Results
+-------------
+ Epoch       Loss         Time   Cumulative
+------------------------------------------
+     1     1.9660  0h 4m 51.9s  0h 4m 51.9s
+     2     1.5689  0h 4m 39.4s  0h 9m 31.2s
+     3     1.5286  0h 4m 38.7s 0h 14m 10.0s
+     4     1.3633  0h 4m 36.9s 0h 18m 46.9s
+     5     1.3151  0h 4m 37.2s 0h 23m 24.0s
+     6     1.2724  0h 4m 45.5s  0h 28m 9.5s
+     7     1.3212  0h 4m 38.3s 0h 32m 47.8s
+     8     1.1997  0h 4m 44.6s 0h 37m 32.4s
+     9     1.2230  0h 4m 35.9s  0h 42m 8.3s
+    10     1.2366  0h 4m 36.4s 0h 46m 44.8s
+    11     1.2334  0h 4m 36.6s 0h 51m 21.4s
+    12     1.1908  0h 4m 44.0s  0h 56m 5.4s
+    13     1.2038  0h 4m 40.5s  1h 0m 45.9s
+    14     1.2879  0h 4m 37.0s  1h 5m 23.0s
+    15     1.2915  0h 4m 37.2s  1h 10m 0.2s
+    16     1.3029  0h 4m 36.1s 1h 14m 36.3s
+    17     1.2424  0h 4m 43.8s 1h 19m 20.1s
+    18     1.2956  0h 4m 37.2s 1h 23m 57.2s
+    19     1.2012  0h 4m 36.1s 1h 28m 33.4s
+    20     1.2517  0h 4m 41.3s 1h 33m 14.7s
+
+Final Results
+------------
+Final loss: 1.2517
+Final learning rate: 0.005000
+Random guessing baseline: 1.9459
+Improvement over random: 35.7%
+
+Inference Notes
+-------------
+ - GPU utilization on g5.xlarge at 32 batch size: 17009MiB / 23028MiB; ~74%
+
