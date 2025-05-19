@@ -55,8 +55,7 @@ def run_inference(video_path, model_filename, mode='dev'):
     print('Loading target video...')
     video_dir = os.path.dirname(video_path)
 
-    # If not already there, download the model from S3 to local directory
-    # Model URL: 
+    # Retrieve the model from locally. TODO: Support S3 retrieval
     print('Retrieving the model...')
     model_dir = "../models/"
     model_path = os.path.join(model_dir, model_filename)
@@ -100,8 +99,6 @@ def run_inference(video_path, model_filename, mode='dev'):
     confidence_data = []
     sequence_duration = sequences_metadata['sequence_duration']
     total_sequences = sequences_metadata['total_sequences']
-    
-    # No need to initialize hidden state for 3D CNN
     
     for sq in range(total_sequences):
         seq_name = f'seq_{sq}'
