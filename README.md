@@ -250,11 +250,11 @@ zip -r api.zip apidata/ keys/ app.py verify_video.py modify_video.py inference.p
 ```
    - Inference server: Transfer my src zip to EC2 instance from src dir:
 ```bash  
-scp -i keys/aws_ec2.pem -r api.zip ubuntu@ec2-44-202-9-43.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
+scp -i keys/aws_ec2.pem -r api.zip ubuntu@ec2-3-94-62-63.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
 ```
    - Inference server: Transfer my model to EC2 instance from src dir:
 ```bash  
-scp -i keys/aws_ec2.pem -r ../models/surf_maneuver_model_20250518_2118.pth ubuntu@ec2-44-202-9-43.compute-1.amazonaws.com:/home/ubuntu/wavescore/models
+scp -i keys/aws_ec2.pem -r ../models/surf_maneuver_model_20250518_2118.pth ubuntu@ec2-3-94-62-63.compute-1.amazonaws.com:/home/ubuntu/wavescore/models
 ```
    - From EC2 instance, create a venv & install the required packages
 ```bash  
@@ -269,6 +269,7 @@ pip install -r requirements.txt
 ```bash  
 pip install -r requirements_cpu.txt --index-url https://download.pytorch.org/whl/cpu
 ```
+   - Inference server: Follow [ngrok linux installation instructions](https://dashboard.ngrok.com/get-started/setup/linux)
    - From EC2 instance, check disk space
 ```bash  
 df -h
