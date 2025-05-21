@@ -27,23 +27,25 @@ def process_video_stream(video_path):
         "message": "Checking if video is a surf video..."
     }
     yield f"data: {json.dumps(result)}\n\n"
-    is_surf = verify_video.is_surf_video(video_path)
-
-    if isinstance(is_surf, dict) and "error" in is_surf:
-        print("Couldn't check if surf video, exiting...")
+    try:
+        is_surf = verify_video.is_surf_video(video_path)
+    except Exception as e:
+        print(f"Error during video verification: {str(e)}")
         result = {
             "status": "error",
-            "message": is_surf["error"]
+            "message": "Internal error encountered, exiting..."
         }
         yield f"data: {json.dumps(result)}\n\n"
-    elif is_surf:
+        return
+
+    if is_surf:
         result = {
             "status": "interim",
             "message": "Analyzing ride..."
         }
         yield f"data: {json.dumps(result)}\n\n"
         time.sleep(2)
- 
+     
         result = {
             "status": "interim",
             "message": "Identifying maneuvers..."
@@ -54,7 +56,16 @@ def process_video_stream(video_path):
         s3_bucket_name = "wavescorevideos"
         # model_url = "https://wavescorevideos.s3.us-east-1.amazonaws.com/surf_maneuver_model_20250518_2118.pth"
         model_filename = "surf_maneuver_model_20250518_2118.pth"
-        maneuvers, _, _ = inference.run_inference(video_path, model_filename, mode='prod')
+        try:
+            maneuvers, _, _ = inference.run_inference(video_path, model_filename, mode='prod')
+        except Exception as e:
+            print(f"Error during inference: {str(e)}")
+            result = {
+                "status": "error",
+                "message": "Internal error encountered, exiting..."
+            }
+            yield f"data: {json.dumps(result)}\n\n"
+            return
 
         result = {
             "status": "interim",
@@ -115,16 +126,18 @@ def process_video_stream_hardcode(video_path):
         "message": "Checking if video is a surf video..."
     }
     yield f"data: {json.dumps(result)}\n\n"
-    is_surf = verify_video.is_surf_video(video_path)
-
-    if isinstance(is_surf, dict) and "error" in is_surf:
-        print("Couldn't check if surf video, exiting...")
+    try:
+        is_surf = verify_video.is_surf_video(video_path)
+    except Exception as e:
+        print(f"Error during video verification: {str(e)}")
         result = {
             "status": "error",
-            "message": is_surf["error"]
+            "message": "Internal error encountered, exiting..."
         }
         yield f"data: {json.dumps(result)}\n\n"
-    elif is_surf:
+        return
+
+    if is_surf:
         result = {
             "status": "interim",
             "message": "Analyzing ride..."

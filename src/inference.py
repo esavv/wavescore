@@ -51,105 +51,113 @@ def verify_input_sequence(sequence, seq_name, mode):
         print(f"Frame {i} stats - Min: {frame.min().item():.6f}, Max: {frame.max().item():.6f}, Mean: {frame.mean().item():.6f}")
 
 def run_inference(video_path, model_filename, mode='dev'):
-    # Load the video target for inference
-    print('Loading target video...')
-    video_dir = os.path.dirname(video_path)
+    try:
+        # Load the video target for inference
+        print('Loading target video...')
+        video_dir = os.path.dirname(video_path)
 
-    # Retrieve the model from locally. TODO: Support S3 retrieval
-    print('Retrieving the model...')
-    model_dir = "../models/"
-    model_path = os.path.join(model_dir, model_filename)
+        # Retrieve the model from locally. TODO: Support S3 retrieval
+        print('Retrieving the model...')
+        model_dir = "../models/"
+        model_path = os.path.join(model_dir, model_filename)
 
-    # Load the saved model
-    print('Loading the model...')
-    model = SurfManeuverModel(mode=mode)
-    
-    # Load checkpoint and handle both old and new formats
-    model_state = load_checkpoint(model_path)[0]  # Only get the model state
-    model.load_state_dict(model_state)
-    
-    model.eval()
-    
-    # Extract frames from the video
-    print('Opening the video file & extracting frames...')
-    seqs_path = os.path.join(video_dir, 'seqs')
-    
-    # Use the utility function to extract frames
-    sequences_metadata = sequence_video_frames(
-        video_path=video_path,
-        output_dir=seqs_path,
-        sequence_duration=2
-    )
+        # Load the saved model
+        print('Loading the model...')
+        model = SurfManeuverModel(mode=mode)
+        
+        # Load checkpoint and handle both old and new formats
+        model_state = load_checkpoint(model_path)[0]  # Only get the model state
+        model.load_state_dict(model_state)
+        
+        model.eval()
+        
+        # Extract frames from the video
+        print('Opening the video file & extracting frames...')
+        seqs_path = os.path.join(video_dir, 'seqs')
+        
+        # Use the utility function to extract frames
+        sequences_metadata = sequence_video_frames(
+            video_path=video_path,
+            output_dir=seqs_path,
+            sequence_duration=2
+        )
 
-    # Run inference on each sequence in the new video
-    print('Running inference...')
-    taxonomy = load_maneuver_taxonomy()
+        # Run inference on each sequence in the new video
+        print('Running inference...')
+        taxonomy = load_maneuver_taxonomy()
 
-    # Load the sequence labels if they exist
-    seq_labels_path = os.path.join(video_dir, 'seq_labels.csv')
-    actual_labels = {}
-    if os.path.exists(seq_labels_path):
-        with open(seq_labels_path, mode='r') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                seq_num = int(row['sequence_id'].split('_')[1])  # Extract number from 'seq_X'
-                actual_labels[seq_num] = int(row['label'])
+        # Load the sequence labels if they exist
+        seq_labels_path = os.path.join(video_dir, 'seq_labels.csv')
+        actual_labels = {}
+        if os.path.exists(seq_labels_path):
+            with open(seq_labels_path, mode='r') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    seq_num = int(row['sequence_id'].split('_')[1])  # Extract number from 'seq_X'
+                    actual_labels[seq_num] = int(row['label'])
 
-    maneuvers = []
-    confidence_data = []
-    sequence_duration = sequences_metadata['sequence_duration']
-    total_sequences = sequences_metadata['total_sequences']
-    
-    for sq in range(total_sequences):
-        seq_name = f'seq_{sq}'
-        seq_dir = os.path.join(seqs_path, seq_name)
-        if os.path.isdir(seq_dir):
-            # Run inference on each sequence independently
-            maneuver_id, confidence_scores = infer_sequence(model, seq_dir, mode=mode)
-            
-            start_time = sq * sequence_duration
-            end_time = start_time + sequence_duration
-            
-            # lookup manuever name
-            name = taxonomy.get(maneuver_id, 'Unknown maneuver')
-            if maneuver_id != 0:
-                maneuvers.append({'name': name, 'start_time': start_time, 'end_time': end_time})
-
-            # Print the confidence scores for all classes
-            print(f"\nSequence {sq} (Time: {start_time:.1f}s - {end_time:.1f}s):")
-            print(f"  Predicted maneuver: {maneuver_id} ({name})")
-            print("  Confidence scores:")
-            for class_id, score in enumerate(confidence_scores):
-                class_name = taxonomy.get(class_id, 'Unknown')
-                actual_label = actual_labels.get(sq, None)
-                is_predicted = class_id == maneuver_id
-                is_actual = actual_label is not None and class_id == actual_label
+        maneuvers = []
+        confidence_data = []
+        sequence_duration = sequences_metadata['sequence_duration']
+        total_sequences = sequences_metadata['total_sequences']
+        
+        for sq in range(total_sequences):
+            seq_name = f'seq_{sq}'
+            seq_dir = os.path.join(seqs_path, seq_name)
+            if os.path.isdir(seq_dir):
+                # Run inference on each sequence independently
+                maneuver_id, confidence_scores = infer_sequence(model, seq_dir, mode=mode)
                 
-                # Build the indicator string
-                indicator = ""
-                if is_predicted and is_actual:
-                    indicator = " <-- PREDICTED & ACTUAL"
-                elif is_predicted:
-                    indicator = " <-- PREDICTED"
-                elif is_actual:
-                    indicator = " <-- ACTUAL"
+                start_time = sq * sequence_duration
+                end_time = start_time + sequence_duration
                 
-                print(f"    {class_id} ({class_name}): {score:.4f}{indicator}")
-            
-            # Store confidence data for potential visualization
-            confidence_data.append({
-                'sequence': sq,
-                'time_range': f"{start_time:.1f}s - {end_time:.1f}s",
-                'predicted': maneuver_id,
-                'actual': actual_labels.get(sq, None),
-                'scores': {class_id: float(score) for class_id, score in enumerate(confidence_scores)}
-            })
+                # lookup manuever name
+                name = taxonomy.get(maneuver_id, 'Unknown maneuver')
+                if maneuver_id != 0:
+                    maneuvers.append({'name': name, 'start_time': start_time, 'end_time': end_time})
 
-    # clean things up
-    shutil.rmtree(seqs_path)
+                # Print the confidence scores for all classes
+                print(f"\nSequence {sq} (Time: {start_time:.1f}s - {end_time:.1f}s):")
+                print(f"  Predicted maneuver: {maneuver_id} ({name})")
+                print("  Confidence scores:")
+                for class_id, score in enumerate(confidence_scores):
+                    class_name = taxonomy.get(class_id, 'Unknown')
+                    actual_label = actual_labels.get(sq, None)
+                    is_predicted = class_id == maneuver_id
+                    is_actual = actual_label is not None and class_id == actual_label
+                    
+                    # Build the indicator string
+                    indicator = ""
+                    if is_predicted and is_actual:
+                        indicator = " <-- PREDICTED & ACTUAL"
+                    elif is_predicted:
+                        indicator = " <-- PREDICTED"
+                    elif is_actual:
+                        indicator = " <-- ACTUAL"
+                    
+                    print(f"    {class_id} ({class_name}): {score:.4f}{indicator}")
+                
+                # Store confidence data for potential visualization
+                confidence_data.append({
+                    'sequence': sq,
+                    'time_range': f"{start_time:.1f}s - {end_time:.1f}s",
+                    'predicted': maneuver_id,
+                    'actual': actual_labels.get(sq, None),
+                    'scores': {class_id: float(score) for class_id, score in enumerate(confidence_scores)}
+                })
 
-    # Return the results without activation analysis
-    return maneuvers, confidence_data, taxonomy
+        # clean things up
+        shutil.rmtree(seqs_path)
+
+        # Return the results without activation analysis
+        return maneuvers, confidence_data, taxonomy
+
+    except Exception as e:
+        # Clean up any temporary files
+        if 'seqs_path' in locals() and os.path.exists(seqs_path):
+            shutil.rmtree(seqs_path)
+        print(f"Error during inference: {str(e)}")
+        raise
 
 def infer_sequence(model, seq_dir, mode='dev', hidden=None):
     """Run inference on a single sequence."""

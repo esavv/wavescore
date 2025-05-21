@@ -10,40 +10,40 @@ if os.path.exists("./keys/google_cloud_account_key.json"):
     #raise EnvironmentError("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 environment variable")
 
 def is_surf_video(video_path):
-    # Step 1: Extract random frames
-    print("Extracting random frames from the video...")
-    frames = extract_random_frames(video_path, num_frames=5)
+    try:
+        # Step 1: Extract random frames
+        print("Extracting random frames from the video...")
+        frames = extract_random_frames(video_path, num_frames=5)
 
-    keyword_path = './apidata/google_cloud_vision_keywords.csv'
-    file = csv.reader(open(keyword_path, 'r'))
-    keywords = set([row[0] for row in file])
+        keyword_path = './apidata/google_cloud_vision_keywords.csv'
+        file = csv.reader(open(keyword_path, 'r'))
+        keywords = set([row[0] for row in file])
 
-    result = False
-    # Step 2: Analyze each extracted frame using Cloud Vision API
-    for frame in frames:
-        print(f"  Analyzing {frame}...")
-        frame_labels = analyze_image(frame)
-
-        if isinstance(frame_labels, dict) and "error" in frame_labels:
-            print("  Error with Cloud Vision API, exiting...")
-            result = frame_labels
-            break
-
-        for label in frame_labels:
-            # Collect label description and its score
-            if label.score >= 0.8:
-                if label.description in keywords:
-                    print("    Found relevant label: " + label.description)
-                    result = True
-
-        # Delete the frame after analysis
-        os.remove(frame)
-
-    if isinstance(result, dict) and "error" in result:
+        result = False
+        # Step 2: Analyze each extracted frame using Cloud Vision API
         for frame in frames:
+            print(f"  Analyzing {frame}...")
+            frame_labels = analyze_image(frame)
+
+            for label in frame_labels:
+                # Collect label description and its score
+                if label.score >= 0.8:
+                    if label.description in keywords:
+                        print("    Found relevant label: " + label.description)
+                        result = True
+
+            # Delete the frame after analysis
             os.remove(frame)
 
-    return result
+        return result
+    except Exception as e:
+        print(f"Error verifying surf video: {str(e)}")
+        # Clean up any remaining frames
+        if 'frames' in locals():
+            for frame in frames:
+                if os.path.exists(frame):
+                    os.remove(frame)
+        raise
 
 # Function to extract 5 random frames from a video
 def extract_random_frames(video_path, num_frames=5):
@@ -78,11 +78,7 @@ def analyze_image(image_path):
     # Perform label detection
     try:
         response = client.label_detection(image=image)
-        labels = response.label_annotations
-        return labels
-    except PermissionDenied as e:
-        return {"error": "PermissionDenied", "message": str(e)}
-    except GoogleAPICallError as e:
-        return {"error": "GoogleAPICallError", "message": str(e)}
-    except Exception as e:
-        return {"error": "UnknownError", "message": str(e)}
+        return response.label_annotations
+    except (PermissionDenied, GoogleAPICallError, Exception) as e:
+        print(f"Error analyzing image: {str(e)}")
+        raise
