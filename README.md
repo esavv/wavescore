@@ -226,7 +226,7 @@ mkdir data logs models src
 ```
    - ...for inference server
 ```bash
-mkdir models src
+mkdir data models src
 ```
    - Training server: Zip my src/ files to scp to AWS later
 ```bash  
@@ -246,7 +246,7 @@ scp -i ../src/keys/aws_ec2.pem -r data.zip ubuntu@ec2-44-210-82-47.compute-1.ama
 ```
    - Inference server: Zip my src/ files to scp to AWS later
 ```bash  
-zip -r api.zip apidata/ keys/ app.py verify_video.py modify_video.py inference.py model.py utils.py checkpoints.py requirements_cpu.txt
+zip -r api.zip apidata/ keys/ app.py verify_video.py modify_video.py inference.py model.py utils.py checkpoints.py requirements_cpu.txt ../data/maneuver_taxonomy.csv
 ```
    - Inference server: Transfer my src zip to EC2 instance from src dir:
 ```bash  
