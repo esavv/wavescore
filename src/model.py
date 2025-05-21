@@ -37,7 +37,7 @@ class SurfManeuverModel(nn.Module):
                 if 'fc' not in name:  # Don't freeze the fully connected layer
                     param.requires_grad = False
                     
-            print("Model backbone frozen. Only training the classifier head.")
+            print("Model backbone frozen. Only using the classifier head.")
         
         # Modify the classification head with dropout for better generalization
         in_features = self.model.fc.in_features

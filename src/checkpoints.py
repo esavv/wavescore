@@ -6,6 +6,14 @@ It supports both old format (just model state dict) and new format (full trainin
 
 import os, re, torch
 
+# Determine the device to use
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+elif torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    device = torch.device("cpu")
+
 def get_available_checkpoints():
     """List available checkpoints in the models directory.
     
@@ -74,7 +82,8 @@ def load_checkpoint(checkpoint_path):
     Returns:
         tuple: (model_state, optimizer_state, epoch, timestamp, training_config, training_history)
     """
-    checkpoint = torch.load(checkpoint_path)
+    # Load checkpoint with appropriate device mapping
+    checkpoint = torch.load(checkpoint_path, map_location=device)
     
     # Check if this is an old format checkpoint (just model state dict)
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
