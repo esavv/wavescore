@@ -11,7 +11,12 @@ from checkpoints import load_checkpoint
 
 # Set device to GPU if available, otherwise use CPU
 print('inference: Configuring device & model transforms...')
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+elif torch.backends.mps.is_available():
+    device = torch.device('mps')
+else:
+    device = torch.device('cpu')
 
 def verify_input_sequence(sequence, seq_name, mode):
     """Print statistics about input sequence to verify loading."""
