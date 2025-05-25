@@ -1,0 +1,137 @@
+# This script runs inference on a surf video to predict the score of the ride.
+# It expects a video file as input and a trained model file in the ../models/ directory.
+
+# Usage:
+# src $ python score_inference.py --mode dev
+
+import argparse, os, sys, torch
+# TODO: Implement VideoScorePredictor class
+from score_model import VideoScorePredictor
+# TODO: Implement ScoreDataset class for video preprocessing
+from score_dataset import ScoreDataset
+from checkpoints import load_checkpoint
+
+# Set device to GPU if available, otherwise use CPU
+print('score_inference: Configuring device & model transforms...')
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+elif torch.backends.mps.is_available():
+    device = torch.device('mps')
+else:
+    device = torch.device('cpu')
+
+def run_inference(video_path, model_filename, mode='dev'):
+    try:
+        # Load the video target for inference
+        print('Loading target video...')
+        
+        # Retrieve the model from locally. TODO: Support S3 retrieval
+        print('Retrieving the model...')
+        model_dir = "../models/"
+        model_path = os.path.join(model_dir, model_filename)
+
+        # Load the saved model
+        print('Loading the model...')
+        # TODO: Load training config from checkpoint to get model parameters
+        model_state, optimizer_state, start_epoch, timestamp, training_config, training_history = load_checkpoint(model_path)
+        
+        # Extract model configuration from training config
+        freeze_backbone = training_config.get('freeze_backbone', True)
+        
+        # Initialize model with same configuration as training
+        model = VideoScorePredictor(
+            model_type='timesformer', 
+            variant='base', 
+            freeze_backbone=freeze_backbone
+        )
+        model.load_state_dict(model_state)
+        model.to(device)
+        model.eval()
+        
+        # Load and preprocess the video
+        print('Loading and preprocessing video...')
+        # TODO: Implement video loading and preprocessing
+        # For now, we'll use a placeholder approach similar to the dataset
+        video_tensor = load_video_for_inference(video_path, mode=mode)
+        video_tensor = video_tensor.to(device)
+
+        # Run inference on the video
+        print('Running inference...')
+        predicted_score = infer_video_score(model, video_tensor)
+        
+        print(f"\n=== INFERENCE RESULTS ===")
+        print(f"Video: {os.path.basename(video_path)}")
+        print(f"Predicted score: {predicted_score:.2f}/10.0")
+        
+        return predicted_score
+
+    except Exception as e:
+        print(f"Error during inference: {str(e)}")
+        raise
+
+def load_video_for_inference(video_path, mode='dev'):
+    """Load and preprocess video for inference."""
+    # TODO: Implement proper video loading using ScoreDataset or similar approach
+    # This is a placeholder that will be replaced when we implement the dataset
+    print(f"TODO: Implement video loading for {video_path}")
+    
+    # For now, return a dummy tensor with the expected shape
+    # Shape: (batch_size, num_frames, channels, height, width)
+    if mode == 'dev':
+        # Smaller tensor for dev mode
+        dummy_tensor = torch.randn(1, 8, 3, 224, 224)
+    else:
+        # Larger tensor for prod mode
+        dummy_tensor = torch.randn(1, 16, 3, 224, 224)
+    
+    return dummy_tensor
+
+def infer_video_score(model, video_tensor):
+    """Run inference on a single video."""
+    with torch.no_grad():
+        # Forward pass
+        output = model(video_tensor)
+        
+        # Extract score (assuming model outputs a single value)
+        predicted_score = output.squeeze().cpu().item()
+        
+        # Clamp score to valid range [0.0, 10.0]
+        predicted_score = max(0.0, min(10.0, predicted_score))
+        
+    return predicted_score
+
+if __name__ == "__main__":
+    # Set up command-line arguments & configure 'prod' and 'dev' modes
+    print('Setting up command-line arguments')
+    parser = argparse.ArgumentParser(description='Toggle between prod and dev modes.')
+    parser.add_argument('--mode', choices=['prod', 'dev'], default='dev', help='Set the application mode (prod or dev).')
+    args = parser.parse_args()
+    mode = args.mode
+
+    # List available models
+    model_dir = "../models/"
+    models = sorted([f for f in os.listdir(model_dir) if f.endswith('.pth')])
+    if not models:
+        print("Error: No model files found in ../models/")
+        sys.exit(1)
+
+    print("\nAvailable models:")
+    for i, model in enumerate(models, 1):
+        print(f"{i}. {model}")
+
+    # Get user's model choice
+    while True:
+        try:
+            choice = int(input("\nEnter the number of the model to use: "))
+            if 1 <= choice <= len(models):
+                model_filename = models[choice - 1]
+                break
+            else:
+                print(f"Please enter a number between 1 and {len(models)}")
+        except ValueError:
+            print("Please enter a valid number")
+
+    # Set video path and run inference
+    video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
+    predicted_score = run_inference(video_path, model_filename, mode)
+    print(f"\nFinal prediction: {predicted_score:.2f}/10.0") 
