@@ -11,44 +11,12 @@ from checkpoints import load_checkpoint
 
 # Set device to GPU if available, otherwise use CPU
 print('inference: Configuring device & model transforms...')
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-def verify_input_sequence(sequence, seq_name, mode):
-    """Print statistics about input sequence to verify loading."""
-    print(f"\n=== INPUT SEQUENCE DIAGNOSTICS: {seq_name} ===")
-    print(f"Input sequence shape: {sequence.shape}")
-    print(f"Input sequence dtype: {sequence.dtype}")
-    print(f"Input mode: {mode}")
-    
-    # Check sequence values
-    min_val = sequence.min().item()
-    max_val = sequence.max().item()
-    mean_val = sequence.mean().item()
-    std_val = sequence.std().item()
-    
-    print(f"Input sequence range: [{min_val:.6f}, {max_val:.6f}]")
-    print(f"Input sequence mean: {mean_val:.6f}, std: {std_val:.6f}")
-    
-    # Check if frames have variation
-    if sequence.shape[1] > 1:  # More than one frame
-        frame_diffs = []
-        for i in range(1, min(5, sequence.shape[1])):  # Check first few frames
-            diff = (sequence[0, i] - sequence[0, 0]).abs().mean().item()
-            frame_diffs.append(diff)
-            print(f"Difference between frame 0 and frame {i}: {diff:.6f}")
-        
-        if all(diff < 1e-6 for diff in frame_diffs):
-            print("WARNING: First frames appear to be identical or very similar!")
-    
-    # Check if all values are zeros or very close to zero
-    if max_val < 1e-6:
-        print("WARNING: Sequence appears to be all zeros or very close to zeros!")
-    
-    # Sample stats for a few individual frames
-    num_samples = min(3, sequence.shape[1])
-    for i in range(num_samples):
-        frame = sequence[0, i]
-        print(f"Frame {i} stats - Min: {frame.min().item():.6f}, Max: {frame.max().item():.6f}, Mean: {frame.mean().item():.6f}")
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+elif torch.backends.mps.is_available():
+    device = torch.device('mps')
+else:
+    device = torch.device('cpu')
 
 def run_inference(video_path, model_filename, mode='dev'):
     try:
