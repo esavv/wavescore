@@ -89,13 +89,14 @@ This approach keeps score data co-located with ride timing data for easy managem
 
 ## Implementation Plan Summary
 
-1. Set up training infrastructure (`score_train.py`)
+1. [COMPLETED] Set up training infrastructure (`score_train.py`)
 2. Create inference pipeline (`score_inference.py`)
 3. Set up model abstraction (`score_model.py`)
 4. Implement data loading pipeline (`score_dataset.py`)
 5. Configure frame sampling and preprocessing
 6. Extend shared infrastructure (shared files)
-7. Implement evaluation metrics and visualization (`score_evaluation.py`)
+7. Add validation to training script
+8. Implement evaluation metrics and visualization (`score_evaluation.py`)
 
 ## Implementation Plan Details
 
@@ -206,6 +207,34 @@ The dataset will:
 - `model_logging.py` - add score training log format
 - `utils.py` - add score-specific utility functions
 
-### 7. Implement evaluation metrics and visualization (`score_evaluation.py`)
+**Key Functions:**
+- Update `model_logging.py` to handle score prediction:
+  - Add support for score prediction model type
+  - Handle case where validation metrics are not present
+  - Ensure consistent logging format with maneuver prediction
+  - Add proper time tracking for training sessions
+
+**Implementation Notes:**
+- Keep logging format consistent with existing maneuver prediction
+- Add new model type 'score_prediction' to logging system
+- Ensure backward compatibility with existing logs
+- Add proper time tracking for training sessions
+- Handle case where validation is not performed
+
+### 7. Add validation to training script
+**Key Functions:**
+- `validate_epoch()` - validation loop with metrics
+- Update `ScoreDataset` to support train/val splits
+- Add validation metrics to logging
+- Update checkpoint saving to track best validation performance
+
+**Implementation Notes:**
+- Start with simple train/val split (e.g., 80/20)
+- Add validation metrics (MAE, MSE, R²)
+- Update logging to include validation metrics
+- Save best model based on validation performance
+- Consider k-fold cross validation for small datasets
+
+### 8. Implement evaluation metrics and visualization (`score_evaluation.py`)
 **Key Functions:**
 - `evaluate_model()`
