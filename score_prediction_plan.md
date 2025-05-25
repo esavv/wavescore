@@ -87,35 +87,19 @@ start_time,end_time,score
 
 This approach keeps score data co-located with ride timing data for easy management.
 
-## Implementation Plan
+## Implementation Plan Summary
 
-**Note**: For each new file, we will include example command-line usage documentation to facilitate testing and experimentation during development.
+1. Set up training infrastructure (`score_train.py`)
+2. Create inference pipeline (`score_inference.py`)
+3. Set up model abstraction (`score_model.py`)
+4. Implement data loading pipeline (`score_dataset.py`)
+5. Configure frame sampling and preprocessing
+6. Extend shared infrastructure (shared files)
+7. Implement evaluation metrics and visualization (`score_evaluation.py`)
 
-### 1. Set up model abstraction (`score_model.py`)
-**Key Functions:**
-- `VideoScorePredictor` class - main model wrapper
-- `load_timesformer()` - initialize TimeSformer with pre-trained weights
-- `load_video_swin()` - initialize Video Swin Transformer with pre-trained weights
-- `create_regression_head()` - add score prediction layer
-- `freeze_backbone_layers()` - optional layer freezing for transfer learning
+## Implementation Plan Details
 
-### 2. Implement data loading pipeline (`score_dataset.py`)
-**Key Functions:**
-- `ScoreDataset` class - PyTorch dataset for video-score pairs
-- `sample_frames()` - extract frames at fixed rate from videos
-- `preprocess_frames()` - resize, normalize, convert to tensor
-- `load_score_labels()` - load scores from ride_times.csv files
-- `get_video_score_pairs()` - map videos to their scores
-- `parse_ride_times_with_scores()` - read CSV with new score column
-
-### 3. Configure frame sampling and preprocessing
-**Key Functions (in `score_dataset.py`):**
-- `extract_frames_at_rate()` - sample frames at specified FPS
-- `handle_variable_length()` - manage different video durations
-- `apply_transforms()` - data augmentation transforms
-- `create_data_loaders()` - train/val/test split and DataLoader creation
-
-### 4. Set up training infrastructure (`score_train.py`)
+### 1. Set up training infrastructure (`score_train.py`)
 **Key Functions:**
 - `train_epoch()` - single epoch training loop
 - `validate_epoch()` - validation loop with metrics
@@ -124,13 +108,22 @@ This approach keeps score data co-located with ride timing data for easy managem
 - `calculate_metrics()` - MAE, MSE, R² score calculation
 - `save_training_progress()` - logging and checkpoint saving
 
-### 5. Extend shared infrastructure (shared files)
-**Updates to existing files:**
-- `checkpoints.py` - add score model checkpoint functions
-- `model_logging.py` - add score training log format
-- `utils.py` - add score-specific utility functions
+**Usage:**
+- Run from command line: `python score_train.py --mode [dev|prod]`
+- Script prompts user to:
+  - Choose between training new model or resuming from checkpoint
+  - Select model type (TimeSformer or Video Swin)
+- Training progress logged to console and saved checkpoints
+- Dev mode uses smaller dataset for faster iteration
+- Prod mode uses full dataset for final training
 
-### 6. Create inference pipeline (`score_inference.py`)
+**Implementation Notes:**
+- Start with skeleton of training script following pattern of existing train.py
+- Define clear interfaces needed from model and dataset classes
+- Implement training loop structure before model/dataset implementation
+- Add placeholder calls to model and dataset that will be implemented later
+
+### 2. Create inference pipeline (`score_inference.py`)
 **Key Functions:**
 - `ScorePredictor` class - simplified inference wrapper
 - `predict_single_video()` - score prediction for one video
@@ -138,63 +131,81 @@ This approach keeps score data co-located with ride timing data for easy managem
 - `load_trained_model()` - load model from checkpoint
 - `visualize_prediction()` - show video with predicted score
 
+**Usage:**
+- Run from command line: `python score_inference.py`
+- Script prompts user to:
+  - Select which model checkpoint to use for inference
+- Video path for inference is hard-coded in the script
+- Output: predicted score and optional visualization
+
+**Implementation Notes:**
+- Follow similar patterns to training script
+- Use same model and dataset interfaces as training
+- Ensure consistent checkpoint handling
+- Add placeholder calls to model and dataset that will be implemented later
+
+### 3. Set up model abstraction (`score_model.py`)
+**Key Functions:**
+- `VideoScorePredictor` class - main model wrapper
+- `load_timesformer()` - initialize TimeSformer with pre-trained weights
+- `load_video_swin()` - initialize Video Swin Transformer with pre-trained weights
+- `create_regression_head()` - add score prediction layer
+- `freeze_backbone_layers()` - optional layer freezing for transfer learning
+
+**Usage:**
+- Imported by `score_train.py` and `score_inference.py`
+- Example usage in training script:
+```python
+from score_model import VideoScorePredictor
+
+# Initialize model
+model = VideoScorePredictor(model_type='timesformer', variant='base')
+model.load_timesformer()  # Load pre-trained weights
+model.create_regression_head()  # Add score prediction layer
+```
+
+### 4. Implement data loading pipeline (`score_dataset.py`)
+**Key Functions:**
+- `ScoreDataset` class - PyTorch dataset for video-score pairs
+- `sample_frames()` - extract frames at fixed rate from videos
+- `preprocess_frames()` - resize, normalize, convert to tensor
+- `load_score_labels()` - load scores from ride_times.csv files
+- `get_video_score_pairs()` - map videos to their scores
+- `parse_ride_times_with_scores()` - read CSV with new score column
+
+**Usage:**
+- Imported by `score_train.py` and `score_inference.py`
+- Example usage in training script:
+```python
+from score_dataset import ScoreDataset
+
+# Create dataset pointing to root directory of all heats
+dataset = ScoreDataset(
+    root_dir="../data/heats",  # Root directory containing all heat directories
+    transform=None,  # Optional video transforms
+    mode='train'  # 'train', 'val', or 'test'
+)
+```
+
+The dataset will:
+1. Recursively find all heat directories under root_dir
+2. For each heat directory, read the ride_times.csv file to get scores
+3. Map each video to its corresponding score
+4. Handle train/val/test splits internally
+
+### 5. Configure frame sampling and preprocessing
+**Key Functions (in `score_dataset.py`):**
+- `extract_frames_at_rate()` - sample frames at specified FPS
+- `handle_variable_length()` - manage different video durations
+- `apply_transforms()` - data augmentation transforms
+- `create_data_loaders()` - train/val/test split and DataLoader creation
+
+### 6. Extend shared infrastructure (shared files)
+**Updates to existing files:**
+- `checkpoints.py` - add score model checkpoint functions
+- `model_logging.py` - add score training log format
+- `utils.py` - add score-specific utility functions
+
 ### 7. Implement evaluation metrics and visualization (`score_evaluation.py`)
 **Key Functions:**
-- `evaluate_model()` - comprehensive model evaluation
-- `plot_score_predictions()` - scatter plot of predicted vs actual scores
-- `analyze_score_distribution()` - distribution analysis
-- `calculate_judge_agreement()` - compare model to human variability
-
-## File Structure
-```
-src/
-├── score_model.py          # Score model architecture
-├── score_dataset.py        # Score data loading and preprocessing
-├── score_train.py          # Score training loop and evaluation
-├── score_inference.py      # Score inference pipeline
-├── score_evaluation.py     # Score evaluation and visualization
-├── checkpoints.py          # Shared checkpoint management (EXTENDED)
-├── model_logging.py        # Shared training logs (EXTENDED)
-└── utils.py                # Shared utilities (EXTENDED)
-```
-
-## Shared Infrastructure Extensions
-
-### `checkpoints.py`
-- Add score model save/load functions
-- Maintain backward compatibility with maneuver model checkpoints
-- Support different model types in same interface
-
-### `model_logging.py`
-- Add score training log format
-- Support regression metrics (MAE, MSE, R²)
-- Maintain consistent logging structure
-
-### `utils.py`
-- Add score validation functions
-- Add score formatting utilities
-- Add score dataset statistics functions
-
-## Dependencies to Add
-- `timm` (for TimeSformer)
-- `transformers` (for Video Swin Transformer)
-- `decord` or `av` (for efficient video loading)
-- Additional video processing libraries as needed
-
-## Future Considerations
-
-### Multi-task Learning
-- Potential to combine with maneuver detection
-- Shared backbone for both tasks
-- Separate heads for maneuvers and scoring
-
-### Data Augmentation
-- Temporal augmentation
-- Spatial augmentation
-- Score-aware augmentation
-
-### Model Evaluation
-- Cross-validation strategy
-- Comparison with human judges
-- Error analysis
-- Visualization of model attention 
+- `evaluate_model()`
