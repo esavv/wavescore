@@ -94,7 +94,7 @@ This approach keeps score data co-located with ride timing data for easy managem
 3. [COMPLETED] Set up model abstraction (`score_model.py`)
 4. [COMPLETED] Implement data loading pipeline (`score_dataset.py`)
 5. [COMPLETED] Implement variable-length video batching support (`collate.py`)
-6. Update data augmentation for score prediction compatibility (`augment_data.py`)
+6. [COMPLETED] Update data augmentation for score prediction compatibility (`augment_data.py`)
 7. Extend shared infrastructure (shared files)
 8. Add validation to training script
 9. Implement evaluation metrics and visualization (`score_evaluation.py`)
