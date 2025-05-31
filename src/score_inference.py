@@ -5,10 +5,8 @@
 # src $ python score_inference.py --mode dev
 
 import argparse, os, sys, torch
-# TODO: Implement VideoScorePredictor class
 from score_model import VideoScorePredictor
-# TODO: Implement ScoreDataset class for video preprocessing
-from score_dataset import ScoreDataset
+from score_dataset import load_video_for_inference
 from checkpoints import load_checkpoint
 
 # Set device to GPU if available, otherwise use CPU
@@ -50,8 +48,6 @@ def run_inference(video_path, model_filename, mode='dev'):
         
         # Load and preprocess the video
         print('Loading and preprocessing video...')
-        # TODO: Implement video loading and preprocessing
-        # For now, we'll use a placeholder approach similar to the dataset
         video_tensor = load_video_for_inference(video_path, mode=mode)
         video_tensor = video_tensor.to(device)
 
@@ -68,23 +64,6 @@ def run_inference(video_path, model_filename, mode='dev'):
     except Exception as e:
         print(f"Error during inference: {str(e)}")
         raise
-
-def load_video_for_inference(video_path, mode='dev'):
-    """Load and preprocess video for inference."""
-    # TODO: Implement proper video loading using ScoreDataset or similar approach
-    # This is a placeholder that will be replaced when we implement the dataset
-    print(f"TODO: Implement video loading for {video_path}")
-    
-    # For now, return a dummy tensor with the expected shape
-    # Shape: (batch_size, num_frames, channels, height, width)
-    if mode == 'dev':
-        # Smaller tensor for dev mode
-        dummy_tensor = torch.randn(1, 8, 3, 224, 224)
-    else:
-        # Larger tensor for prod mode
-        dummy_tensor = torch.randn(1, 16, 3, 224, 224)
-    
-    return dummy_tensor
 
 def infer_video_score(model, video_tensor):
     """Run inference on a single video."""
