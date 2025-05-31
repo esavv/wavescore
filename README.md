@@ -10,7 +10,7 @@ This application will allow users to upload videos of themselves surfing and get
 
 ## Roadmap
 
-### Things to Work on Next
+### Upcoming Tasks
 Last updated: 2025/05/31
    - [IN PROGRESS] Build score prediction model: Infer wave score from raw video
    - Build web app as a client of the model inference API
@@ -22,7 +22,7 @@ Last updated: 2025/05/31
    - API cleanup: Remove the Google Cloud base64 account key if no longer necessary
    - iOS code cleanup: Refactor toast & other logic in ContentView
 
-### Things Recently Completed
+### Completed Tasks
    - [2025/05/20] Model training & inference deployed on AWS, Heroku abandoned
    - [2025/05/17] Maneuver prediction model works pretty well on training data (switched to 3D CNN model, data augmentation, power75 class weight correction, pretrained model layer freezing)
    - [2025/05/01] Model optimization: Pad video frames to make them square before the resizing in train.py
