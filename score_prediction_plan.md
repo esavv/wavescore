@@ -90,13 +90,14 @@ This approach keeps score data co-located with ride timing data for easy managem
 ## Implementation Plan Summary
 
 1. [COMPLETED] Set up training infrastructure (`score_train.py`)
-2. Create inference pipeline (`score_inference.py`)
-3. Set up model abstraction (`score_model.py`)
-4. Implement data loading pipeline (`score_dataset.py`)
-5. Configure frame sampling and preprocessing
-6. Extend shared infrastructure (shared files)
-7. Add validation to training script
-8. Implement evaluation metrics and visualization (`score_evaluation.py`)
+2. [COMPlETED] Create inference pipeline (`score_inference.py`)
+3. [COMPLETED] Set up model abstraction (`score_model.py`)
+4. [COMPLETED] Implement data loading pipeline (`score_dataset.py`)
+5. [COMPLETED] Implement variable-length video batching support (`collate.py`)
+6. [COMPLETED] Update data augmentation for score prediction compatibility (`augment_data.py`)
+7. Extend shared infrastructure (shared files)
+8. Add validation to training script
+9. Implement evaluation metrics and visualization (`score_evaluation.py`)
 
 ## Implementation Plan Details
 
@@ -194,14 +195,91 @@ The dataset will:
 3. Map each video to its corresponding score
 4. Handle train/val/test splits internally
 
-### 5. Configure frame sampling and preprocessing
-**Key Functions (in `score_dataset.py`):**
-- `extract_frames_at_rate()` - sample frames at specified FPS
-- `handle_variable_length()` - manage different video durations
-- `apply_transforms()` - data augmentation transforms
-- `create_data_loaders()` - train/val/test split and DataLoader creation
+### 5. Implement variable-length video batching support (`collate.py`)
+**Key Functions:**
+- `collate_variable_length_videos()` - custom collate function for DataLoader to handle variable-length videos
+- `pad_sequence_batch()` - pad videos in a batch to the same length
+- `create_attention_mask()` - create attention masks for padded sequences
 
-### 6. Extend shared infrastructure (shared files)
+**Purpose:**
+The current dataset implementation uses sample rates instead of fixed frame counts, resulting in variable-length video tensors (e.g., 15 frames vs 50 frames). PyTorch's default DataLoader cannot batch these together because tensor dimensions must match for stacking.
+
+**Technical Challenge:**
+- Video A: `[15, 3, 224, 224]` (short ride)
+- Video B: `[50, 3, 224, 224]` (long ride)
+- Default batching fails: cannot stack tensors with different first dimensions
+
+**Solution Approach:**
+1. **Custom Collate Function**: Implement a function that receives a list of variable-length videos and scores
+2. **Dynamic Padding**: Pad shorter videos to match the longest video in each batch
+3. **Attention Masks**: Create masks to tell TimeSformer which frames are real vs padded
+4. **Efficient Batching**: Only pad to the maximum length within each batch (not globally)
+5. **Update score_train.py**: Modify DataLoader creation to conditionally use collate function when batch_size > 1
+
+**Usage:**
+- Imported by `score_train.py` and integrated with DataLoader when batch_size > 1
+- Example usage in training script:
+```python
+from collate import collate_variable_length_videos
+
+# Use collate function only when batch_size > 1
+if batch_size > 1:
+    dataloader = DataLoader(
+        dataset, 
+        batch_size=batch_size, 
+        collate_fn=collate_variable_length_videos
+    )
+else:
+    # batch_size = 1 works fine with default collating
+    dataloader = DataLoader(dataset, batch_size=1)
+```
+
+**Integration with score_train.py:**
+- Update DataLoader creation logic to conditionally use collate function
+- Add import statement for collate_variable_length_videos
+- Apply collate function when batch_size > 1 (required for variable-length videos)
+- Use default collating when batch_size = 1 (no batching conflicts)
+
+**Benefits:**
+- Enables batch training with batch_size > 1
+- Preserves variable-length advantages of transformer architecture
+- More efficient than forcing batch_size=1
+- Maintains temporal fidelity of original videos
+
+**Implementation Notes:**
+- TimeSformer supports attention masks for handling padded sequences
+- Padding should use zeros or repeat last frame
+- Masks should be boolean tensors indicating valid vs padded positions
+- Function should handle both videos and scores in batch format
+
+### 6. Update data augmentation for score prediction compatibility (`augment_data.py`)
+**Key Functions:**
+- `copy_score_data()` - copy ride_times.csv and ride videos to augmented heat directories
+- `augment_heat_for_score_prediction()` - extend existing augmentation to handle score prediction files
+- `validate_augmented_score_data()` - verify augmented heats work with ScoreDataset
+
+**Purpose:**
+The existing `augment_data.py` handles maneuver prediction data augmentation but needs updates to support score prediction. Score prediction requires `ride_times.csv` files and individual ride videos (`{heat_id}_{ride_idx}.mp4`) to be copied to augmented heat directories.
+
+**Current Gap:**
+- `augment_data.py` currently augments frame sequences for maneuver prediction
+- Score prediction needs: `ride_times.csv` + individual ride videos
+- Augmented heats must be compatible with `ScoreDataset` expectations
+
+**Solution Approach:**
+1. **Extend heat augmentation**: When creating augmented heat directories, copy score prediction files
+2. **Copy ride_times.csv**: Ensure score labels are preserved in augmented heats
+3. **Copy ride videos**: Copy `{heat_id}_{ride_idx}.mp4` files to augmented heat structure
+4. **Maintain compatibility**: Augmented heats should work seamlessly with `ScoreDataset`
+
+**Implementation Notes:**
+- Update existing `augment_data()` function to handle score prediction files
+- Add logic to copy `ride_times.csv` from original to augmented heat directories
+- Add logic to copy ride videos from `rides/{idx}/{heat_id}_{idx}.mp4` structure
+- Ensure augmented heat naming conventions work with ScoreDataset path expectations
+- Test that `ScoreDataset` can load augmented heats without modification
+
+### 7. Extend shared infrastructure (shared files)
 **Updates to existing files:**
 - `checkpoints.py` - add score model checkpoint functions
 - `model_logging.py` - add score training log format
@@ -221,7 +299,7 @@ The dataset will:
 - Add proper time tracking for training sessions
 - Handle case where validation is not performed
 
-### 7. Add validation to training script
+### 8. Add validation to training script
 **Key Functions:**
 - `validate_epoch()` - validation loop with metrics
 - Update `ScoreDataset` to support train/val splits
@@ -235,6 +313,6 @@ The dataset will:
 - Save best model based on validation performance
 - Consider k-fold cross validation for small datasets
 
-### 8. Implement evaluation metrics and visualization (`score_evaluation.py`)
+### 9. Implement evaluation metrics and visualization (`score_evaluation.py`)
 **Key Functions:**
 - `evaluate_model()`

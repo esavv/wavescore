@@ -10,10 +10,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from datetime import datetime
 
-# TODO: Implement VideoScorePredictor class
 from score_model import VideoScorePredictor
-# TODO: Implement ScoreDataset class
 from score_dataset import ScoreDataset
+from collate import collate_variable_length_videos
 from checkpoints import save_checkpoint, load_checkpoint, get_available_checkpoints
 from model_logging import write_training_log
 
@@ -34,12 +33,27 @@ def parse_args():
 def train_epoch(model, train_loader, criterion, optimizer, device):
     model.train()
     total_loss = 0
-    for batch_idx, (videos, scores) in enumerate(train_loader):
-        videos = videos.to(device)
-        scores = scores.to(device)
+    for batch_idx, batch_data in enumerate(train_loader):
+        # Handle different batch formats based on collate function usage
+        if len(batch_data) == 3:
+            # batch_size > 1: using collate function returns (videos, scores, attention_mask)
+            videos, scores, attention_mask = batch_data
+            videos = videos.to(device)
+            scores = scores.to(device)
+            attention_mask = attention_mask.to(device)
+            
+            # TODO: Pass attention_mask to model when TimeSformer supports it
+            # For now, we'll just use the padded videos
+            outputs = model(videos)
+        else:
+            # batch_size = 1: default collating returns (videos, scores)
+            videos, scores = batch_data
+            videos = videos.to(device) 
+            scores = scores.to(device)
+            
+            outputs = model(videos)
         
         optimizer.zero_grad()
-        outputs = model(videos)
         loss = criterion(outputs, scores)
         loss.backward()
         optimizer.step()
@@ -151,16 +165,27 @@ def main():
     
     # Initialize model
     print('> Initializing model...')
-    # TODO: Implement VideoScorePredictor class with timesformer backbone and freeze_backbone parameter
     model = VideoScorePredictor(model_type='timesformer', variant='base', freeze_backbone=freeze_backbone)
     model = model.to(device)
     
     # Initialize dataset and dataloader
     print('> Loading dataset...')
-    # TODO: Implement ScoreDataset class for loading and preprocessing surf heat videos
     dataset = ScoreDataset(root_dir="../data/heats", transform=None)
     print('> Creating dataloader...')
-    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    
+    # Use custom collate function for variable-length videos when batch_size > 1
+    if batch_size > 1:
+        train_loader = DataLoader(
+            dataset, 
+            batch_size=batch_size, 
+            shuffle=True,
+            collate_fn=collate_variable_length_videos
+        )
+        print(f'>   Using custom collate function for batch_size={batch_size}')
+    else:
+        # batch_size = 1 works fine with default collating
+        train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        print(f'>   Using default collating for batch_size={batch_size}')
     
     # Initialize optimizer and loss function
     print('> Setting up optimizer and loss function...')

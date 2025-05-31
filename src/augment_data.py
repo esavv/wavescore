@@ -135,8 +135,8 @@ def process_ride_directory(src_ride_dir, transform_type, heat_id, dest_rides_dir
             
         frames = load_video(video_file)
         transform_name = VALID_TRANSFORMATIONS[transform_type]
-        # Just use the ride number for the transformed video name
-        output_path = dest_ride_dir / f"{heat_id}_{transform_name}_{ride_num}.mp4"
+        # Create augmented video with naming pattern that ScoreDataset expects: {heat_id}_{ride_num}.mp4
+        output_path = dest_ride_dir / f"{heat_id}_{ride_num}.mp4"
         if not output_path.exists():
             transformed_frames = transform_frames(frames, transform_type)
             save_video(transformed_frames, output_path)
@@ -186,11 +186,19 @@ def process_heat_directory(heat_dir, transform_type=None):
         
         print(f"Creating transformed heat directory: {dest_heat_dir}")
         
+        # Copy ride_times.csv for score prediction compatibility
+        src_ride_times = heat_dir / 'ride_times.csv'
+        if src_ride_times.exists():
+            dest_ride_times = dest_heat_dir / 'ride_times.csv'
+            shutil.copy2(src_ride_times, dest_ride_times)
+        
         # Process each ride directory
         for src_ride_dir in src_rides_dir.glob('*'):
             if src_ride_dir.is_dir():
                 print(f"Processing ride: {src_ride_dir.name}")
-                process_ride_directory(src_ride_dir, t_type, heat_id, dest_rides_dir)
+                # Use augmented heat_id for video naming: "123_flipped" instead of "123"
+                augmented_heat_id = f"{heat_id}_{transform_name}"
+                process_ride_directory(src_ride_dir, t_type, augmented_heat_id, dest_rides_dir)
 
 def cleanup_augmented_heats():
     """Remove all augmented heat directories."""
