@@ -91,7 +91,7 @@ This approach keeps score data co-located with ride timing data for easy managem
 
 1. [COMPLETED] Set up training infrastructure (`score_train.py`)
 2. [COMPlETED] Create inference pipeline (`score_inference.py`)
-3. Set up model abstraction (`score_model.py`)
+3. [COMPLETED] Set up model abstraction (`score_model.py`)
 4. Implement data loading pipeline (`score_dataset.py`)
 5. Configure frame sampling and preprocessing
 6. Extend shared infrastructure (shared files)
