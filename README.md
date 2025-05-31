@@ -11,34 +11,20 @@ This application will allow users to upload videos of themselves surfing and get
 ## Roadmap
 
 ### Things to Work on Next
-Last updated: 2025/05/05
-   - Get 1st part of 2-part model working well locally
-      - (DONE) Get a little bit more data (but still not much)
-      - (DONE) Try training the CNN+LSTM in prod mode, RGB, non-trivial hyperparameters
-      - (DONE) Switch to 3D CNN because previous approach learned only spatial features within a frame sequence and attempted to learn temporal feature across sequences, but it's more important to learn temporal features *within* a sequence
-      - Even with 3D CNN model isn't learning much. Not enough data. Some things to try:
-         - Vastly reduce pretrained model params given low amount of data, freeze 3D CNN layers. As we continue testing the frozen model:
-            - Run inference on the 20250506_2042 model
-            - Disable the learning rate scheduler
-            - Visualize how loss evolves over each epoch, and log overall loss
-         - Experiment with data augmentation to artificially increase my data
-         - If even this doesn't help much, we need more data. We need to make data labeling easier, so switch to labeling a ride video as a sequence of maneuvers (maybe with 0-1 timestamps per maneuver)
-         - Consider switching to a TCN or a Transformer / seq2seq approach
-   - Deploy model inference in the cloud (either Heroku or AWS)
-      - We spent some time on this on 12/29/24. We uploaded the 46MB model to S3 to save slug size on Heroku, only to find that PyTorch & other packages increase our slug size to 3GB+
-      - Some approaches for moving forward:
-         - Find & install a CPU-only version of PyTorch that I can run both locally on my Mac and on Heroku. Might not be officially supported anymore, but [see here](https://stackoverflow.com/questions/51730880/where-do-i-get-a-cpu-only-version-of-pytorch)
-         - Dockerize my application (at least the API code) so I can develop locally on Linux & use a CPU-only version of PyTorch that is officially supported
-         - Abandon deploying my model to Heroku since it doesn't even work yet and it'll likely get so big that the previous approaches are only temporary workarounds. Instead, deploy my model to AWS or similar and expose an API to my Heroku service for calling inference   - Deploy model training in the cloud
-         - Might be overkill to have Heroku run my API and AWS run model training + inference. Maybe just deploy it all to AWS.
-   - Build 2nd part of 2-part model: Infer wave score from maneuvers performed
-   - Build 1-part model: Infer score from raw video, no intermediate maneuver labeling
+Last updated: 2025/05/31
+   - [IN PROGRESS] Build score prediction model: Infer wave score from raw video
+   - Build web app as a client of the model inference API
+   - Consider generating progressive score prediction: show user how predicted score changes as video progresses
+   - Consider migrating maneuver prediction to TCN architecture to predict sequence of maneuvers from single video
+   - Consider streamlining data labeling workflow & updating maneuver taxonomy for falls / failed moves
    - Migrate data from directory system to postgres + blob storage (S3)
    - API cleanup: Raise appropriate errors in api/video_content and api/video_overlay if key files are missing
    - API cleanup: Remove the Google Cloud base64 account key if no longer necessary
    - iOS code cleanup: Refactor toast & other logic in ContentView
 
 ### Things Recently Completed
+   - [2025/05/20] Model training & inference deployed on AWS, Heroku abandoned
+   - [2025/05/17] Maneuver prediction model works pretty well on training data (switched to 3D CNN model, data augmentation, power75 class weight correction, pretrained model layer freezing)
    - [2025/05/01] Model optimization: Pad video frames to make them square before the resizing in train.py
    - [2025/04/30] Refactoring: Refactor redundant code across inference.py, maneuver_sequencing.py, and dataset.py into common functions in utils.py
    - [2025/04/17] Switch API to SSE to display upload progress to user (checking if surf video, analyzing, annotating video...).
