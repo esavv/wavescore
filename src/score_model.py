@@ -86,40 +86,28 @@ class VideoScorePredictor(nn.Module):
         
         print("✓ Backbone layers frozen successfully")
     
-    def forward(self, pixel_values):
+    def forward(self, pixel_values, attention_mask=None):
         """
         Forward pass for score prediction.
         
         Args:
             pixel_values: Input tensor of shape [batch_size, num_frames, channels, height, width]
-                         or [batch_size, channels, num_frames, height, width] depending on model
+            attention_mask: Boolean tensor of shape [batch_size, num_frames] indicating real vs padded frames
             
         Returns:
             scores: Predicted scores tensor of shape [batch_size, 1] with values in range [0.0, 10.0]
         """
         
-        # Ensure pixel_values has the correct format for the backbone
-        if self.model_type == 'timesformer':
-            # TimeSformer expects [batch_size, num_frames, channels, height, width]
-            if pixel_values.dim() == 5 and pixel_values.shape[2] == 3:
-                # If input is [batch_size, channels, num_frames, height, width], permute
-                pixel_values = pixel_values.permute(0, 2, 1, 3, 4)
-            
-            # For TimeSformer, we need to flatten the temporal dimension
-            batch_size, num_frames, channels, height, width = pixel_values.shape
-            pixel_values = pixel_values.view(batch_size * num_frames, channels, height, width)
+        print(f"Input tensor shape: {pixel_values.shape}")
         
         # Forward pass through backbone
         if self.model_type == 'timesformer':
-            outputs = self.backbone(pixel_values=pixel_values)
+            outputs = self.backbone(pixel_values=pixel_values)  # TimeSformer doesn't use attention masks
             # Get the pooled output (CLS token representation)
-            features = outputs.last_hidden_state[:, 0]  # Shape: [batch_size * num_frames, hidden_size]
-            
-            # Pool temporal features (average across frames)
-            features = features.view(batch_size, num_frames, -1).mean(dim=1)  # Shape: [batch_size, hidden_size]
+            features = outputs.last_hidden_state[:, 0]  # Shape: [batch_size, hidden_size]
             
         elif self.model_type == 'video_swin':
-            outputs = self.backbone(pixel_values=pixel_values)
+            outputs = self.backbone(pixel_values=pixel_values, attention_mask=attention_mask)
             # Get the pooled output
             features = outputs.last_hidden_state.mean(dim=1)  # Global average pooling
         
