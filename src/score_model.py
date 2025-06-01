@@ -104,10 +104,18 @@ class VideoScorePredictor(nn.Module):
     def _apply_temporal_pooling(self, frame_embeddings):
         """Apply the selected temporal pooling strategy to frame embeddings."""
         if self.pooling_type == 'attention':
-            # Attention-based pooling
-            attention_weights = self.temporal_attention(frame_embeddings)  # [batch_size, num_frames, 1]
+            # Reshape to [batch_size * num_frames, hidden_size] for linear layer
+            batch_size, num_frames, hidden_size = frame_embeddings.shape
+            reshaped_embeddings = frame_embeddings.view(-1, hidden_size)
+            
+            # Apply attention
+            attention_weights = self.temporal_attention(reshaped_embeddings)  # [batch_size * num_frames, 1]
+            attention_weights = attention_weights.view(batch_size, num_frames, 1)  # [batch_size, num_frames, 1]
             attention_weights = F.softmax(attention_weights, dim=1)  # Normalize weights
+            
+            # Weighted sum
             pooled_embeddings = torch.sum(frame_embeddings * attention_weights, dim=1)  # [batch_size, hidden_size]
+            
         elif self.pooling_type == 'mean':
             # Mean pooling
             pooled_embeddings = frame_embeddings.mean(dim=1)  # [batch_size, hidden_size]
@@ -135,7 +143,8 @@ class VideoScorePredictor(nn.Module):
         frames = frames.view(-1, *frames.shape[2:])  # [batch_size * num_frames, channels, height, width]
         
         # Get frame embeddings
-        frame_embeddings = self.encoder(frames).last_hidden_state  # [batch_size * num_frames, hidden_size]
+        encoder_output = self.encoder(frames)
+        frame_embeddings = encoder_output.pooler_output if hasattr(encoder_output, 'pooler_output') else encoder_output.last_hidden_state[:, 0, :]
         
         # Reshape back to separate frames
         frame_embeddings = frame_embeddings.view(batch_size, num_frames, -1)  # [batch_size, num_frames, hidden_size]

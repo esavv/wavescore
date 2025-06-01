@@ -230,18 +230,24 @@ def main():
         epoch_times.append(epoch_duration)
         total_elapsed_time += epoch_duration
         
+        # Store loss for this epoch
+        epoch_losses.append(train_loss)
+        
         # Log training progress
         write_training_log(
+            log_filename=os.path.join('../logs', f'score_training_{timestamp}.log'),
             timestamp=timestamp,
-            epoch=epoch,
-            train_loss=train_loss,
-            val_loss=None,  # We're not doing validation
-            epoch_time=epoch_duration,
-            total_time=total_elapsed_time,
-            model_type='score_prediction',
             mode=args.mode,
             batch_size=batch_size,
-            learning_rate=learning_rate
+            learning_rate=learning_rate,
+            num_epochs=num_epochs,
+            total_elapsed_time=total_elapsed_time,
+            epoch_losses=epoch_losses,
+            epoch_times=epoch_times,
+            model_type='score',
+            variant=args.variant,
+            loss_function=loss_function,
+            freeze_backbone=freeze_backbone
         )
         
         # Save checkpoint after each epoch
@@ -254,24 +260,23 @@ def main():
             'learning_rate': learning_rate,
             'num_epochs': num_epochs,
             'freeze_backbone': freeze_backbone,
-            'loss_function': loss_function
+            'loss_function': loss_function,
+            'model_name': 'score_model'  # Add model name to config
         }
         training_history = {
             'epoch_losses': epoch_losses,
             'epoch_times': epoch_times,
-            'total_elapsed_time': total_elapsed_time
+            'total_elapsed_time': total_elapsed_time,
+            'current_loss': train_loss  # Add current loss to history
         }
-        checkpoint_path = save_checkpoint(
-            model.state_dict(),
-            optimizer.state_dict(),
-            epoch,
-            train_loss,
-            'score_model',
-            timestamp=timestamp,
-            training_config=training_config,
-            training_history=training_history
-        )
-        print(f"    >  Model checkpoint saved: {checkpoint_path}")
+        
+        # Save checkpoint for each epoch except the last one
+        if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
+            checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, None, training_config, training_history=training_history)
+            print(f"    >  Model checkpoint saved: {checkpoint_path}")
+        else:
+            model_filename = save_checkpoint(model, optimizer, epoch, timestamp, None, training_config, is_final=True, training_history=training_history)
+            print(f"    >  Final model saved: {model_filename}")
         
         # Reset epoch timer for next epoch
         epoch_start_time = time.time()
