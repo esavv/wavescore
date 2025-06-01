@@ -7,7 +7,7 @@ from PIL import Image
 import torchvision.transforms.functional as F
 
 class ScoreDataset(Dataset):
-    def __init__(self, root_dir, transform=None, mode='train', dev_mode='dev'):
+    def __init__(self, root_dir, transform=None, mode='train', dev_mode='dev', model_type='clip'):
         """
         Dataset for loading surf videos with their corresponding scores.
         
@@ -16,26 +16,24 @@ class ScoreDataset(Dataset):
             transform: Optional video transforms
             mode: 'train', 'val', or 'test' for data splitting
             dev_mode: 'dev' or 'prod' for development vs production settings
+            model_type: 'clip' or 'vit' to specify model-specific processing
         """
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
         self.dev_mode = dev_mode
+        self.model_type = model_type
         
         # Video processing settings based on dev_mode
         if dev_mode == 'dev':
-            self.frame_size = 224
+            self.frame_size = 224  # Standard size for CLIP/ViT
             self.sample_rate = 0.10  # Keep 10% of frames (every 10th frame) for faster processing
         else:  # prod mode
-            self.frame_size = 224
+            self.frame_size = 224  # Standard size for CLIP/ViT
             self.sample_rate = 0.33  # Keep 33% of frames (every 3rd frame) for better temporal resolution
         
         # Load all video-score pairs
         self.samples = self._load_video_score_pairs()
-        
-        # TODO: Implement train/val/test splitting later when validation is needed
-        # For now, use full dataset for training
-        # self.samples = self._split_data(self.samples, mode)
         
         print(f"> Loaded {len(self.samples)} video-score pairs (full dataset)")
     
@@ -206,7 +204,7 @@ class ScoreDataset(Dataset):
             
             processed_frames.append(processed_frame)
         
-        # Stack frames: shape [num_frames, channels, height, width] - variable num_frames
+        # Stack frames: shape [num_frames, channels, height, width]
         video_tensor = torch.stack(processed_frames)
         
         return video_tensor
@@ -243,28 +241,16 @@ class ScoreDataset(Dataset):
         """Get a video-score pair."""
         sample = self.samples[idx]
         
-        try:
-            # Load video frames
-            frames = self._sample_frames_from_video(sample['video_path'])
-            
-            # Preprocess frames
-            video_tensor = self._preprocess_frames(frames)
-            
-            # Get score as tensor
-            score = torch.tensor(sample['score'], dtype=torch.float32)
-            
-            # Apply transform if provided
-            if self.transform:
-                video_tensor = self.transform(video_tensor)
-            
-            return video_tensor, score
-            
-        except Exception as e:
-            print(f"Error loading sample {idx}: {e}")
-            # Return dummy data in case of error - single frame
-            dummy_video = torch.zeros((1, 3, self.frame_size, self.frame_size))
-            dummy_score = torch.tensor(0.0, dtype=torch.float32)
-            return dummy_video, dummy_score
+        # Sample frames from video
+        frames = self._sample_frames_from_video(sample['video_path'])
+        
+        # Preprocess frames
+        video_tensor = self._preprocess_frames(frames)
+        
+        # Convert score to float32 tensor
+        score = torch.tensor(sample['score'], dtype=torch.float32)
+        
+        return video_tensor, score
 
 def load_video_for_inference(video_path, mode='dev'):
     """

@@ -6,44 +6,61 @@ This document outlines the plan for implementing a deep learning model to predic
 ## Architecture Approach
 
 ### Model Type
-We will use a video transformer architecture, specifically focusing on two pre-trained models:
-- TimeSformer
-- Video Swin Transformer
+We will use a frame-based approach with temporal pooling:
+- CLIP or ViT for frame-level feature extraction
+- Temporal pooling (mean, max, or attention-based) for sequence-level features
+- Simple MLP for final score prediction
 
-These models were chosen because they:
-- Can handle variable-length video inputs naturally
-- Have pre-trained weights available
-- Are well-documented for transfer learning
-- Have reasonable model sizes for local development
-- Can capture both spatial and temporal features effectively
+This approach was chosen because it:
+- Naturally handles variable-length videos without padding
+- Leverages state-of-the-art image understanding models
+- Is simpler to implement and debug
+- Has proven effective in similar video understanding tasks
+- Allows flexible temporal modeling through different pooling strategies
+
+### Previous Approach (Not Used)
+We initially considered video transformer architectures (TimeSformer, Video Swin) because they:
+- Claimed to handle variable-length video inputs
+- Had pre-trained weights available
+- Were well-documented for transfer learning
+- Had reasonable model sizes for local development
+- Could capture both spatial and temporal features
+
+However, we found that:
+- These models don't actually support variable-length videos out of the box
+- They require padding and attention masks, which complicates the implementation
+- The attention mask mechanism isn't as straightforward as documented
+- The models are more complex than needed for our use case
 
 ### Model Abstraction
 We will implement a flexible architecture that allows easy experimentation with different pre-trained models:
 
 ```python
 class VideoScorePredictor(nn.Module):
-    def __init__(self, model_type='timesformer', variant='base'):
-        # Initialize either TimeSformer or Video Swin Transformer
+    def __init__(self, model_type='clip', variant='base'):
+        # Initialize either CLIP or ViT
+        # Add temporal pooling layer
         # Add regression head for score prediction
 ```
 
 This abstraction allows us to:
-- Switch between TimeSformer and Video Swin Transformer
-- Experiment with different model variants (base/large)
+- Switch between CLIP and ViT
+- Experiment with different temporal pooling strategies
 - Keep the interface consistent regardless of the underlying model
 
 ## Input Processing
 
 ### Variable Length Handling
-- No padding required due to transformer architecture
 - Sample frames at a fixed rate (e.g., 1 frame per second)
-- Feed exact number of frames to model
-- Attention mechanism handles variable lengths naturally
+- Process each frame through image encoder
+- Apply temporal pooling over frame embeddings
+- No padding required - natural handling of variable lengths
 
 ### Frame Processing
-- Frame resolution: TBD (likely 224x224 or 384x384)
-- Frame sampling rate: TBD (to be determined based on experimentation)
+- Frame resolution: 224x224 (standard for CLIP/ViT)
+- Frame sampling rate: TBD
 - Color channels: RGB
+- Normalization: Model-specific preprocessing
 
 ## Score Prediction
 
@@ -59,9 +76,9 @@ This abstraction allows us to:
 ## Training Strategy
 
 ### Transfer Learning
-- Start with pre-trained weights
+- Start with pre-trained CLIP/ViT weights
 - Fine-tune on surfing data
-- Option to freeze early layers
+- Option to freeze encoder layers
 
 ### Regularization
 - Dropout
@@ -89,15 +106,23 @@ This approach keeps score data co-located with ride timing data for easy managem
 
 ## Implementation Plan Summary
 
+### Completed Tasks
 1. [COMPLETED] Set up training infrastructure (`score_train.py`)
-2. [COMPlETED] Create inference pipeline (`score_inference.py`)
+2. [COMPLETED] Create inference pipeline (`score_inference.py`)
 3. [COMPLETED] Set up model abstraction (`score_model.py`)
 4. [COMPLETED] Implement data loading pipeline (`score_dataset.py`)
 5. [COMPLETED] Implement variable-length video batching support (`collate.py`)
 6. [COMPLETED] Update data augmentation for score prediction compatibility (`augment_data.py`)
-7. Extend shared infrastructure (shared files)
-8. Add validation to training script
-9. Implement evaluation metrics and visualization (`score_evaluation.py`)
+
+### Pivot to Frame-Based Approach
+After implementing the initial video transformer approach, we discovered limitations with variable-length video handling. We are pivoting to a frame-based approach using CLIP/ViT with temporal pooling.
+
+### New Tasks
+7. [COMPLETED] Implement new frame-based architecture (`score_model.py`)
+8. [COMPLETED] Adapt dataset for frame-based approach (`score_dataset.py`)
+9. [COMPLETED] Adapt training pipeline for frame-based model (`score_train.py`)
+10. [COMPLETED] Adapt inference pipeline for frame-based model (`score_inference.py`)
+11. [COMPLETED] Clean up deprecated code
 
 ## Implementation Plan Details
 
@@ -279,40 +304,45 @@ The existing `augment_data.py` handles maneuver prediction data augmentation but
 - Ensure augmented heat naming conventions work with ScoreDataset path expectations
 - Test that `ScoreDataset` can load augmented heats without modification
 
-### 7. Extend shared infrastructure (shared files)
-**Updates to existing files:**
-- `checkpoints.py` - add score model checkpoint functions
-- `model_logging.py` - add score training log format
-- `utils.py` - add score-specific utility functions
-
+### 7. Implement new frame-based architecture (`score_model.py`)
 **Key Functions:**
-- Update `model_logging.py` to handle score prediction:
-  - Add support for score prediction model type
-  - Handle case where validation metrics are not present
-  - Ensure consistent logging format with maneuver prediction
-  - Add proper time tracking for training sessions
+- `VideoScorePredictor` class - main model wrapper
+- `_initialize_encoder()` - initialize CLIP or ViT
+- `_create_temporal_pooling()` - create pooling layer (attention, mean, or max)
+- `_create_regression_head()` - add score prediction layer
+- `forward()` - process frames through encoder, pooling, and head
 
 **Implementation Notes:**
-- Keep logging format consistent with existing maneuver prediction
-- Add new model type 'score_prediction' to logging system
-- Ensure backward compatibility with existing logs
-- Add proper time tracking for training sessions
-- Handle case where validation is not performed
+- Use CLIP or ViT from Hugging Face transformers
+- Implement temporal pooling strategies within the model:
+  - Attention-based pooling (default)
+  - Mean pooling (simpler alternative)
+  - Max pooling (alternative)
+- Keep regression head similar to current implementation
+- Remove all padding/attention mask logic
 
-### 8. Add validation to training script
-**Key Functions:**
-- `validate_epoch()` - validation loop with metrics
-- Update `ScoreDataset` to support train/val splits
-- Add validation metrics to logging
-- Update checkpoint saving to track best validation performance
+### 8. Adapt dataset for frame-based approach (`score_dataset.py`)
+**Changes Required:**
+- Remove padding and attention mask logic
+- Keep frame sampling and preprocessing
+- Update `__getitem__` to return only frames and score
+- Remove `_pad_video` method
+- Update frame preprocessing for CLIP/ViT requirements
 
-**Implementation Notes:**
-- Start with simple train/val split (e.g., 80/20)
-- Add validation metrics (MAE, MSE, R²)
-- Update logging to include validation metrics
-- Save best model based on validation performance
-- Consider k-fold cross validation for small datasets
+### 9. Adapt training pipeline for frame-based model (`score_train.py`)
+**Changes Required:**
+- Remove custom collate function
+- Update DataLoader creation
+- Adapt training loop for frame-based model
+- Keep checkpoint and logging functionality
 
-### 9. Implement evaluation metrics and visualization (`score_evaluation.py`)
-**Key Functions:**
-- `evaluate_model()`
+### 10. Adapt inference pipeline for frame-based model (`score_inference.py`)
+**Changes Required:**
+- Remove attention mask handling
+- Update model loading for new architecture
+- Keep score clamping and output formatting
+
+### 11. Clean up deprecated code
+**Files to Remove:**
+- `collate.py` - no longer needed
+- Remove padding/attention mask code from other files

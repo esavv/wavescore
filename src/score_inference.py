@@ -30,16 +30,17 @@ def run_inference(video_path, model_filename, mode='dev'):
 
         # Load the saved model
         print('Loading the model...')
-        # TODO: Load training config from checkpoint to get model parameters
         model_state, optimizer_state, start_epoch, timestamp, training_config, training_history = load_checkpoint(model_path)
         
         # Extract model configuration from training config
+        model_type = training_config.get('model_type', 'clip')
+        variant = training_config.get('variant', 'base')
         freeze_backbone = training_config.get('freeze_backbone', True)
         
         # Initialize model with same configuration as training
         model = VideoScorePredictor(
-            model_type='timesformer', 
-            variant='base', 
+            model_type=model_type,
+            variant=variant,
             freeze_backbone=freeze_backbone
         )
         model.load_state_dict(model_state)
@@ -57,6 +58,7 @@ def run_inference(video_path, model_filename, mode='dev'):
         
         print(f"\n=== INFERENCE RESULTS ===")
         print(f"Video: {os.path.basename(video_path)}")
+        print(f"Model: {model_type.upper()}-{variant}")
         print(f"Predicted score: {predicted_score:.2f}/10.0")
         
         return predicted_score

@@ -51,7 +51,7 @@ def save_checkpoint(model, optimizer, epoch, timestamp, class_distribution, trai
         optimizer: The optimizer to save
         epoch: Current epoch number
         timestamp: Training session timestamp
-        class_distribution: Distribution of classes in training data (deprecated, kept for backward compatibility)
+        class_distribution: Distribution of classes in training data (for maneuver prediction)
         training_config: Dict containing training hyperparameters
         is_final: Whether this is the final model (True) or a checkpoint (False)
         training_history: Dictionary containing epoch_losses, epoch_times, and total_elapsed_time
@@ -65,10 +65,13 @@ def save_checkpoint(model, optimizer, epoch, timestamp, class_distribution, trai
         'training_history': training_history
     }
     
+    # Get model name from config
+    model_name = training_config.get('model_name', 'maneuver_model')
+    
     if is_final:
-        filename = f"../models/surf_maneuver_model_{timestamp}.pth"
+        filename = f"../models/{model_name}_{timestamp}.pth"
     else:
-        filename = f"../models/surf_maneuver_model_{timestamp}_checkpoint_epoch_{epoch+1}.pth"
+        filename = f"../models/{model_name}_{timestamp}_checkpoint_epoch_{epoch+1}.pth"
     
     torch.save(checkpoint, filename)
     return filename

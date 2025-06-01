@@ -4,7 +4,7 @@
 # Usage:
 #     python score_train.py --mode [dev|prod]
 
-import argparse, os, pytz, sys
+import argparse, os, pytz, sys, time
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -12,7 +12,6 @@ from datetime import datetime
 
 from score_model import VideoScorePredictor
 from score_dataset import ScoreDataset
-from collate import collate_variable_length_videos
 from checkpoints import save_checkpoint, load_checkpoint, get_available_checkpoints
 from model_logging import write_training_log
 
@@ -28,30 +27,24 @@ def parse_args():
                       help='Unfreeze the backbone of the model to train all parameters. Default is False (backbone frozen).')
     parser.add_argument('--loss', type=str, choices=['mse', 'mae', 'huber'], default='mse',
                       help='loss function to use (default: mse)')
+    parser.add_argument('--model_type', type=str, choices=['clip', 'vit'], default='clip',
+                      help='model type to use (default: clip)')
+    parser.add_argument('--variant', type=str, choices=['base', 'large'], default='base',
+                      help='model variant to use (default: base)')
     return parser.parse_args()
 
 def train_epoch(model, train_loader, criterion, optimizer, device):
     model.train()
     total_loss = 0
+    
     for batch_idx, batch_data in enumerate(train_loader):
-        # Handle different batch formats based on collate function usage
-        if len(batch_data) == 3:
-            # batch_size > 1: using collate function returns (videos, scores, attention_mask)
-            videos, scores, attention_mask = batch_data
-            videos = videos.to(device)
-            scores = scores.to(device)
-            attention_mask = attention_mask.to(device)
-            
-            # TODO: Pass attention_mask to model when TimeSformer supports it
-            # For now, we'll just use the padded videos
-            outputs = model(videos)
-        else:
-            # batch_size = 1: default collating returns (videos, scores)
-            videos, scores = batch_data
-            videos = videos.to(device) 
-            scores = scores.to(device)
-            
-            outputs = model(videos)
+        # Unpack batch data (videos, scores)
+        videos, scores = batch_data
+        videos = videos.to(device)
+        scores = scores.to(device)
+        
+        # Forward pass
+        outputs = model(videos)
         
         optimizer.zero_grad()
         loss = criterion(outputs, scores)
@@ -100,7 +93,7 @@ def main():
             batch_size = 8
             learning_rate = 0.005
             num_epochs = 10
-
+        
         # Generate new timestamp for fresh training
         est = pytz.timezone('US/Eastern')
         now = datetime.now(est)
@@ -165,27 +158,29 @@ def main():
     
     # Initialize model
     print('> Initializing model...')
-    model = VideoScorePredictor(model_type='timesformer', variant='base', freeze_backbone=freeze_backbone)
+    model = VideoScorePredictor(
+        model_type=args.model_type,
+        variant=args.variant,
+        freeze_backbone=freeze_backbone
+    )
     model = model.to(device)
     
     # Initialize dataset and dataloader
     print('> Loading dataset...')
-    dataset = ScoreDataset(root_dir="../data/heats", transform=None)
+    dataset = ScoreDataset(
+        root_dir="../data/heats",
+        transform=None,
+        model_type=args.model_type
+    )
     print('> Creating dataloader...')
     
-    # Use custom collate function for variable-length videos when batch_size > 1
-    if batch_size > 1:
-        train_loader = DataLoader(
-            dataset, 
-            batch_size=batch_size, 
-            shuffle=True,
-            collate_fn=collate_variable_length_videos
-        )
-        print(f'>   Using custom collate function for batch_size={batch_size}')
-    else:
-        # batch_size = 1 works fine with default collating
-        train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        print(f'>   Using default collating for batch_size={batch_size}')
+    # Create dataloader with fixed batch size
+    train_loader = DataLoader(
+        dataset, 
+        batch_size=batch_size, 
+        shuffle=True
+    )
+    print(f'>   Using batch_size={batch_size}')
     
     # Initialize optimizer and loss function
     print('> Setting up optimizer and loss function...')
@@ -210,6 +205,7 @@ def main():
     # Print final configuration
     print('\n>  Training configuration:')
     print('>    Mode:', args.mode)
+    print('>    Model:', f"{args.model_type.upper()}-{args.variant}")
     print('>    Batch size:', batch_size)
     print('>    Learning rate:', learning_rate)
     print('>    Number of epochs:', num_epochs)
@@ -219,6 +215,7 @@ def main():
     
     # Training loop
     print('> Starting training loop...')
+    epoch_start_time = time.time()  # Track time for this epoch
     
     for epoch in range(start_epoch, num_epochs):
         print(f'\nEpoch {epoch+1}/{num_epochs}')
@@ -228,51 +225,61 @@ def main():
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
         print(f'> Training loss: {train_loss:.4f}')
         
-        # Update training history
+        # Calculate time for this epoch and update total
+        epoch_duration = time.time() - epoch_start_time
+        epoch_times.append(epoch_duration)
+        total_elapsed_time += epoch_duration
+        
+        # Store loss for this epoch
         epoch_losses.append(train_loss)
-        epoch_times.append(0.0)  # TODO: Implement proper time tracking
-        total_elapsed_time += 0.0  # TODO: Implement proper time tracking
         
         # Log training progress
         write_training_log(
+            log_filename=os.path.join('../logs', f'score_training_{timestamp}.log'),
             timestamp=timestamp,
-            epoch=epoch,
-            train_loss=train_loss,
-            val_loss=None,  # We're not doing validation
-            epoch_time=0.0,  # TODO: Implement proper time tracking
-            total_time=total_elapsed_time,
-            model_type='score_prediction',
             mode=args.mode,
             batch_size=batch_size,
-            learning_rate=learning_rate
+            learning_rate=learning_rate,
+            num_epochs=num_epochs,
+            total_elapsed_time=total_elapsed_time,
+            epoch_losses=epoch_losses,
+            epoch_times=epoch_times,
+            model_type='score',
+            variant=args.variant,
+            loss_function=loss_function,
+            freeze_backbone=freeze_backbone
         )
         
         # Save checkpoint after each epoch
         print('> Saving checkpoint...')
         training_config = {
             'mode': args.mode,
+            'model_type': args.model_type,
+            'variant': args.variant,
             'batch_size': batch_size,
             'learning_rate': learning_rate,
             'num_epochs': num_epochs,
             'freeze_backbone': freeze_backbone,
-            'loss_function': loss_function
+            'loss_function': loss_function,
+            'model_name': 'score_model'  # Add model name to config
         }
         training_history = {
             'epoch_losses': epoch_losses,
             'epoch_times': epoch_times,
-            'total_elapsed_time': total_elapsed_time
+            'total_elapsed_time': total_elapsed_time,
+            'current_loss': train_loss  # Add current loss to history
         }
-        checkpoint_path = save_checkpoint(
-            model.state_dict(),
-            optimizer.state_dict(),
-            epoch,
-            train_loss,
-            'score_model',
-            timestamp=timestamp,
-            training_config=training_config,
-            training_history=training_history
-        )
-        print(f"    >  Model checkpoint saved: {checkpoint_path}")
+        
+        # Save checkpoint for each epoch except the last one
+        if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
+            checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, None, training_config, training_history=training_history)
+            print(f"    >  Model checkpoint saved: {checkpoint_path}")
+        else:
+            model_filename = save_checkpoint(model, optimizer, epoch, timestamp, None, training_config, is_final=True, training_history=training_history)
+            print(f"    >  Final model saved: {model_filename}")
+        
+        # Reset epoch timer for next epoch
+        epoch_start_time = time.time()
     
     print('\n> Training complete!')
 
