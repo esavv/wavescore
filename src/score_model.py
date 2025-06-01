@@ -1,21 +1,21 @@
+import torch
 import torch.nn as nn
-from transformers import TimesformerModel
-from transformers import VideoMAEModel
+import torch.nn.functional as F
+from transformers import CLIPVisionModel, ViTModel
 
 class VideoScorePredictor(nn.Module):
-    def __init__(self, model_type='timesformer', variant='base', freeze_backbone=True, dropout_rate=0.5):
+    def __init__(self, model_type='clip', variant='base', freeze_backbone=True, dropout_rate=0.5, pooling_type='attention'):
         super(VideoScorePredictor, self).__init__()
         self.model_type = model_type
         self.variant = variant
         self.freeze_backbone = freeze_backbone
+        self.pooling_type = pooling_type
         
-        # Initialize the backbone model
-        if model_type == 'timesformer':
-            self._initialize_timesformer()
-        elif model_type == 'video_swin':
-            self._initialize_video_swin()
-        else:
-            raise ValueError(f"Unsupported model_type: {model_type}. Choose 'timesformer' or 'video_swin'")
+        # Initialize the image encoder
+        self._initialize_encoder()
+        
+        # Create temporal pooling layer
+        self._create_temporal_pooling()
         
         # Create regression head
         self._create_regression_head(dropout_rate)
@@ -24,42 +24,57 @@ class VideoScorePredictor(nn.Module):
         if freeze_backbone:
             self._freeze_backbone_layers()
     
-    def _initialize_timesformer(self):
-        """Initialize TimeSformer backbone with pre-trained weights."""
-        print(f"Loading TimeSformer-{self.variant} backbone...")
+    def _initialize_encoder(self):
+        """Initialize CLIP or ViT encoder with pre-trained weights."""
+        print(f"Loading {self.model_type.upper()}-{self.variant} encoder...")
         
-        # Choose model variant
-        if self.variant == 'base':
-            model_name = "facebook/timesformer-base-finetuned-k400"
-            self.hidden_size = 768
-        elif self.variant == 'large':
-            # Note: Using base model for now, can be updated when large is available
-            model_name = "facebook/timesformer-base-finetuned-k400"
-            self.hidden_size = 768
+        if self.model_type == 'clip':
+            if self.variant == 'base':
+                model_name = "openai/clip-vit-base-patch32"
+                self.hidden_size = 768
+            elif self.variant == 'large':
+                model_name = "openai/clip-vit-large-patch14"
+                self.hidden_size = 1024
+            else:
+                raise ValueError(f"Unsupported CLIP variant: {self.variant}")
+            
+            self.encoder = CLIPVisionModel.from_pretrained(model_name)
+            
+        elif self.model_type == 'vit':
+            if self.variant == 'base':
+                model_name = "google/vit-base-patch16-224"
+                self.hidden_size = 768
+            elif self.variant == 'large':
+                model_name = "google/vit-large-patch16-224"
+                self.hidden_size = 1024
+            else:
+                raise ValueError(f"Unsupported ViT variant: {self.variant}")
+            
+            self.encoder = ViTModel.from_pretrained(model_name)
+            
         else:
-            raise ValueError(f"Unsupported TimeSformer variant: {self.variant}")
+            raise ValueError(f"Unsupported model_type: {self.model_type}. Choose 'clip' or 'vit'")
         
-        # Load the pre-trained model
-        self.backbone = TimesformerModel.from_pretrained(model_name)
-        
-        print(f"✓ TimeSformer backbone loaded successfully")
+        print(f"✓ {self.model_type.upper()} encoder loaded successfully")
     
-    def _initialize_video_swin(self):
-        """Initialize Video Swin Transformer backbone with pre-trained weights."""
-        print(f"Loading Video Swin Transformer-{self.variant} backbone...")
+    def _create_temporal_pooling(self):
+        """Create temporal pooling layer for aggregating frame embeddings."""
+        print(f"Creating {self.pooling_type} temporal pooling layer...")
         
-        # For now, use VideoMAE as a placeholder for Video Swin
-        # This can be updated when Video Swin is available in transformers
-        if self.variant == 'base':
-            model_name = "MCG-NJU/videomae-base"
-            self.hidden_size = 768
+        if self.pooling_type == 'attention':
+            # Attention-based pooling
+            self.temporal_attention = nn.Sequential(
+                nn.Linear(self.hidden_size, self.hidden_size // 2),
+                nn.Tanh(),
+                nn.Linear(self.hidden_size // 2, 1)
+            )
+        elif self.pooling_type in ['mean', 'max']:
+            # No learnable parameters for mean/max pooling
+            pass
         else:
-            raise ValueError(f"Unsupported Video Swin variant: {self.variant}")
+            raise ValueError(f"Unsupported pooling_type: {self.pooling_type}. Choose 'attention', 'mean', or 'max'")
         
-        # Load the pre-trained model
-        self.backbone = VideoMAEModel.from_pretrained(model_name)
-        
-        print(f"✓ Video Swin backbone loaded successfully")
+        print(f"✓ {self.pooling_type} temporal pooling layer created successfully")
     
     def _create_regression_head(self, dropout_rate):
         """Create regression head for score prediction."""
@@ -78,41 +93,58 @@ class VideoScorePredictor(nn.Module):
         print("✓ Regression head created successfully")
     
     def _freeze_backbone_layers(self):
-        """Freeze backbone layers for transfer learning."""
-        print("Freezing backbone layers...")
+        """Freeze encoder layers for transfer learning."""
+        print("Freezing encoder layers...")
         
-        for param in self.backbone.parameters():
+        for param in self.encoder.parameters():
             param.requires_grad = False
         
-        print("✓ Backbone layers frozen successfully")
+        print("✓ Encoder layers frozen successfully")
     
-    def forward(self, pixel_values, attention_mask=None):
+    def _apply_temporal_pooling(self, frame_embeddings):
+        """Apply the selected temporal pooling strategy to frame embeddings."""
+        if self.pooling_type == 'attention':
+            # Attention-based pooling
+            attention_weights = self.temporal_attention(frame_embeddings)  # [batch_size, num_frames, 1]
+            attention_weights = F.softmax(attention_weights, dim=1)  # Normalize weights
+            pooled_embeddings = torch.sum(frame_embeddings * attention_weights, dim=1)  # [batch_size, hidden_size]
+        elif self.pooling_type == 'mean':
+            # Mean pooling
+            pooled_embeddings = frame_embeddings.mean(dim=1)  # [batch_size, hidden_size]
+        elif self.pooling_type == 'max':
+            # Max pooling
+            pooled_embeddings = frame_embeddings.max(dim=1)[0]  # [batch_size, hidden_size]
+        else:
+            raise ValueError(f"Unsupported pooling_type: {self.pooling_type}")
+        
+        return pooled_embeddings
+    
+    def forward(self, frames):
         """
         Forward pass for score prediction.
         
         Args:
-            pixel_values: Input tensor of shape [batch_size, num_frames, channels, height, width]
-            attention_mask: Boolean tensor of shape [batch_size, num_frames] indicating real vs padded frames
+            frames: Input tensor of shape [batch_size, num_frames, channels, height, width]
             
         Returns:
-            scores: Predicted scores tensor of shape [batch_size, 1] with values in range [0.0, 10.0]
+            scores: Predicted scores tensor of shape [batch_size] with values in range [0.0, 10.0]
         """
+        batch_size, num_frames = frames.shape[:2]
         
-        print(f"Input tensor shape: {pixel_values.shape}")
+        # Reshape to process all frames at once
+        frames = frames.view(-1, *frames.shape[2:])  # [batch_size * num_frames, channels, height, width]
         
-        # Forward pass through backbone
-        if self.model_type == 'timesformer':
-            outputs = self.backbone(pixel_values=pixel_values)  # TimeSformer doesn't use attention masks
-            # Get the pooled output (CLS token representation)
-            features = outputs.last_hidden_state[:, 0]  # Shape: [batch_size, hidden_size]
-            
-        elif self.model_type == 'video_swin':
-            outputs = self.backbone(pixel_values=pixel_values, attention_mask=attention_mask)
-            # Get the pooled output
-            features = outputs.last_hidden_state.mean(dim=1)  # Global average pooling
+        # Get frame embeddings
+        frame_embeddings = self.encoder(frames).last_hidden_state  # [batch_size * num_frames, hidden_size]
+        
+        # Reshape back to separate frames
+        frame_embeddings = frame_embeddings.view(batch_size, num_frames, -1)  # [batch_size, num_frames, hidden_size]
+        
+        # Apply temporal pooling
+        pooled_embeddings = self._apply_temporal_pooling(frame_embeddings)
         
         # Forward pass through regression head
-        scores = self.regression_head(features)
+        scores = self.regression_head(pooled_embeddings)
         
         # Scale scores from [0, 1] to [0, 10]
         scores = scores * 10.0

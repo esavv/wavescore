@@ -118,7 +118,7 @@ This approach keeps score data co-located with ride timing data for easy managem
 After implementing the initial video transformer approach, we discovered limitations with variable-length video handling. We are pivoting to a frame-based approach using CLIP/ViT with temporal pooling.
 
 ### New Tasks
-7. Implement new frame-based architecture (`score_model.py`)
+7. [COMPLETED] Implement new frame-based architecture (`score_model.py`)
 8. Adapt dataset for frame-based approach (`score_dataset.py`)
 9. Adapt training pipeline for frame-based model (`score_train.py`)
 10. Adapt inference pipeline for frame-based model (`score_inference.py`)
