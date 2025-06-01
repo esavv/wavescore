@@ -119,8 +119,8 @@ After implementing the initial video transformer approach, we discovered limitat
 
 ### New Tasks
 7. [COMPLETED] Implement new frame-based architecture (`score_model.py`)
-8. Adapt dataset for frame-based approach (`score_dataset.py`)
-9. Adapt training pipeline for frame-based model (`score_train.py`)
+8. [COMPLETED] Adapt dataset for frame-based approach (`score_dataset.py`)
+9. [COMPLETED] Adapt training pipeline for frame-based model (`score_train.py`)
 10. Adapt inference pipeline for frame-based model (`score_inference.py`)
 11. Clean up deprecated code
 
