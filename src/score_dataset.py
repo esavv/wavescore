@@ -7,7 +7,7 @@ from PIL import Image
 import torchvision.transforms.functional as F
 
 class ScoreDataset(Dataset):
-    def __init__(self, root_dir, transform=None, mode='train', dev_mode='dev', model_type='timesformer'):
+    def __init__(self, root_dir, transform=None, mode='train', dev_mode='dev', model_type='clip'):
         """
         Dataset for loading surf videos with their corresponding scores.
         
@@ -16,7 +16,7 @@ class ScoreDataset(Dataset):
             transform: Optional video transforms
             mode: 'train', 'val', or 'test' for data splitting
             dev_mode: 'dev' or 'prod' for development vs production settings
-            model_type: 'timesformer' or 'video_swin' to specify model-specific processing
+            model_type: 'clip' or 'vit' to specify model-specific processing
         """
         self.root_dir = root_dir
         self.transform = transform
@@ -26,22 +26,14 @@ class ScoreDataset(Dataset):
         
         # Video processing settings based on dev_mode
         if dev_mode == 'dev':
-            self.frame_size = 224
+            self.frame_size = 224  # Standard size for CLIP/ViT
             self.sample_rate = 0.10  # Keep 10% of frames (every 10th frame) for faster processing
         else:  # prod mode
-            self.frame_size = 224
+            self.frame_size = 224  # Standard size for CLIP/ViT
             self.sample_rate = 0.33  # Keep 33% of frames (every 3rd frame) for better temporal resolution
         
         # Load all video-score pairs
         self.samples = self._load_video_score_pairs()
-        
-        # Find the maximum number of frames across all videos
-        self.max_frames = self._find_max_frames()
-        print(f"> Maximum video length: {self.max_frames} frames")
-        
-        # TODO: Implement train/val/test splitting later when validation is needed
-        # For now, use full dataset for training
-        # self.samples = self._split_data(self.samples, mode)
         
         print(f"> Loaded {len(self.samples)} video-score pairs (full dataset)")
     
@@ -215,13 +207,6 @@ class ScoreDataset(Dataset):
         # Stack frames: shape [num_frames, channels, height, width]
         video_tensor = torch.stack(processed_frames)
         
-        # Model-specific tensor format handling
-        if self.model_type == 'timesformer':
-            # TimeSformer expects [batch_size, num_frames, channels, height, width]
-            # No need to permute since we already have [num_frames, channels, height, width]
-            # DataLoader will add batch dimension
-            pass
-        
         return video_tensor
     
     def _preserve_aspect_ratio_resize(self, image, target_size):
@@ -249,68 +234,6 @@ class ScoreDataset(Dataset):
         
         return tensor_image
     
-    def _find_max_frames(self):
-        """Find the maximum number of frames across all videos in the dataset."""
-        max_frames = 0
-        max_video_info = None
-        
-        for sample in self.samples:
-            frames = self._sample_frames_from_video(sample['video_path'])
-            num_frames = len(frames)
-            if num_frames > max_frames:
-                max_frames = num_frames
-                # Get video duration
-                cap = cv2.VideoCapture(sample['video_path'])
-                fps = cap.get(cv2.CAP_PROP_FPS)
-                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                duration = total_frames / fps if fps > 0 else 0
-                cap.release()
-                
-                max_video_info = {
-                    'path': sample['video_path'],
-                    'duration': duration,
-                    'total_frames': total_frames,
-                    'sampled_frames': num_frames
-                }
-        
-        if max_video_info:
-            print(f"> Longest video: {max_video_info['path']}")
-            print(f">   Duration: {max_video_info['duration']:.1f} seconds")
-            print(f">   Total frames: {max_video_info['total_frames']}")
-            print(f">   Sampled frames: {max_video_info['sampled_frames']} (using {self.sample_rate*100:.0f}% of frames)")
-        
-        return max_frames
-    
-    def _pad_video(self, video_tensor):
-        """
-        Pad a video tensor to the maximum length.
-        
-        Args:
-            video_tensor: Tensor of shape [num_frames, channels, height, width]
-            
-        Returns:
-            padded_video: Tensor of shape [max_frames, channels, height, width]
-            attention_mask: Boolean tensor of shape [max_frames] indicating real vs padded frames
-        """
-        num_frames = video_tensor.shape[0]
-        
-        # Create attention mask
-        attention_mask = torch.zeros(self.max_frames, dtype=torch.bool)
-        attention_mask[:num_frames] = True
-        
-        # Pad video if needed
-        if num_frames < self.max_frames:
-            padding = torch.zeros(
-                self.max_frames - num_frames,
-                video_tensor.shape[1],
-                video_tensor.shape[2],
-                video_tensor.shape[3],
-                dtype=video_tensor.dtype
-            )
-            video_tensor = torch.cat([video_tensor, padding], dim=0)
-        
-        return video_tensor, attention_mask
-    
     def __len__(self):
         return len(self.samples)
     
@@ -324,13 +247,10 @@ class ScoreDataset(Dataset):
         # Preprocess frames
         video_tensor = self._preprocess_frames(frames)
         
-        # Pad video to maximum length
-        video_tensor, attention_mask = self._pad_video(video_tensor)
-        
         # Convert score to float32 tensor
         score = torch.tensor(sample['score'], dtype=torch.float32)
         
-        return video_tensor, attention_mask, score
+        return video_tensor, score
 
 def load_video_for_inference(video_path, mode='dev'):
     """
