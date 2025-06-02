@@ -38,4 +38,9 @@ Improvement over random: 12.7%
 
 Inference Notes
 -------------
+Video: 1Zj_jAPToxI_6_inf.mp4
+Model: CLIP-base
+Predicted score: 6.54/10.00 (Actual score: 8.33)
 
+Honestly, not bad. We got it to output something believable. Might be good to try it on more videos.
+Might also be good to train for a full 20 epochs and/or adjust learning rate.
