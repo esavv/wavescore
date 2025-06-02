@@ -56,10 +56,21 @@ def run_inference(video_path, model_filename, mode='dev'):
         print('Running inference...')
         predicted_score = infer_video_score(model, video_tensor)
         
+        # Load actual score if available
+        actual_score = None
+        score_path = os.path.join(os.path.dirname(video_path), 'score.csv')
+        if os.path.exists(score_path):
+            with open(score_path, 'r') as f:
+                next(f)  # Skip header
+                actual_score = float(next(f).strip())
+        
         print(f"\n=== INFERENCE RESULTS ===")
         print(f"Video: {os.path.basename(video_path)}")
         print(f"Model: {model_type.upper()}-{variant}")
-        print(f"Predicted score: {predicted_score:.2f}/10.0")
+        if actual_score is not None:
+            print(f"Predicted score: {predicted_score:.2f}/10.00 (Actual score: {actual_score:.2f})")
+        else:
+            print(f"Predicted score: {predicted_score:.2f}/10.00")
         
         return predicted_score
 
@@ -114,5 +125,4 @@ if __name__ == "__main__":
 
     # Set video path and run inference
     video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-    predicted_score = run_inference(video_path, model_filename, mode)
-    print(f"\nFinal prediction: {predicted_score:.2f}/10.0") 
+    run_inference(video_path, model_filename, mode) 

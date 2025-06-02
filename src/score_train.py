@@ -14,6 +14,7 @@ from score_model import VideoScorePredictor
 from score_dataset import ScoreDataset
 from checkpoints import save_checkpoint, load_checkpoint, get_available_checkpoints
 from model_logging import write_training_log
+from utils import collate_variable_length_videos
 
 # Constants for model choice
 TRAIN_FROM_SCRATCH = 1
@@ -90,9 +91,9 @@ def main():
         num_epochs = 1
         loss_function = args.loss
         if args.mode == 'prod':
-            batch_size = 8
+            batch_size = 4
             learning_rate = 0.005
-            num_epochs = 10
+            num_epochs = 2
         
         # Generate new timestamp for fresh training
         est = pytz.timezone('US/Eastern')
@@ -178,7 +179,8 @@ def main():
     train_loader = DataLoader(
         dataset, 
         batch_size=batch_size, 
-        shuffle=True
+        shuffle=True,
+        collate_fn=collate_variable_length_videos if batch_size > 1 else None
     )
     print(f'>   Using batch_size={batch_size}')
     

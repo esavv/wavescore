@@ -55,7 +55,7 @@ class VideoScorePredictor(nn.Module):
         else:
             raise ValueError(f"Unsupported model_type: {self.model_type}. Choose 'clip' or 'vit'")
         
-        print(f"✓ {self.model_type.upper()} encoder loaded successfully")
+        print(f"  ✓ {self.model_type.upper()} encoder loaded successfully")
     
     def _create_temporal_pooling(self):
         """Create temporal pooling layer for aggregating frame embeddings."""
@@ -74,7 +74,7 @@ class VideoScorePredictor(nn.Module):
         else:
             raise ValueError(f"Unsupported pooling_type: {self.pooling_type}. Choose 'attention', 'mean', or 'max'")
         
-        print(f"✓ {self.pooling_type} temporal pooling layer created successfully")
+        print(f"  ✓ {self.pooling_type} temporal pooling layer created successfully")
     
     def _create_regression_head(self, dropout_rate):
         """Create regression head for score prediction."""
@@ -90,7 +90,7 @@ class VideoScorePredictor(nn.Module):
             nn.Sigmoid()  # Sigmoid to ensure output is between 0 and 1, then scale to 0-10
         )
         
-        print("✓ Regression head created successfully")
+        print("  ✓ Regression head created successfully")
     
     def _freeze_backbone_layers(self):
         """Freeze encoder layers for transfer learning."""
@@ -99,7 +99,7 @@ class VideoScorePredictor(nn.Module):
         for param in self.encoder.parameters():
             param.requires_grad = False
         
-        print("✓ Encoder layers frozen successfully")
+        print("  ✓ Encoder layers frozen successfully")
     
     def _apply_temporal_pooling(self, frame_embeddings):
         """Apply the selected temporal pooling strategy to frame embeddings."""

@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+# This script generates augmented versions of surf videos for training data.
+# It applies various transformations (flips, rotations, brightness adjustments) to create
+# additional training examples while preserving the original data structure.
+
+# Usage:
+#     # Generate all possible augmentations for all heats
+#     python augment_data.py
+#
+#     # Generate only flipped versions of a specific heat
+#     python augment_data.py --heat 1Zj_jAPToxI_6 --transform flip
+#
+#     # Remove all augmented heat directories
+#     python augment_data.py --cleanup
 
 import argparse, cv2, shutil
 import numpy as np
