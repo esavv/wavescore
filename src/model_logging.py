@@ -52,7 +52,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         f.write("------------\n")
         f.write(f"Mode: {mode}\n")
         if model_type == "score":
-            f.write(f"Model: {variant.upper()}-{variant}\n")
+            f.write(f"Model: {model_type.upper()}-{variant}\n")
         f.write(f"Batch size: {batch_size}\n")
         f.write(f"Learning rate: {learning_rate}\n")
         f.write(f"Number of epochs: {num_epochs}\n")
