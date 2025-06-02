@@ -305,3 +305,42 @@ def distribution_outdated():
     saved_total = sum(saved_dist.values())
     
     return current_total != saved_total
+
+def collate_variable_length_videos(batch):
+    """
+    Custom collate function for DataLoader to handle variable-length videos.
+    Pads shorter videos to match the length of the longest video in the batch.
+    
+    Args:
+        batch: List of (video, score) tuples where videos may have different lengths
+        
+    Returns:
+        videos: Padded video tensor of shape [batch_size, max_frames, channels, height, width]
+        scores: Score tensor of shape [batch_size]
+    """
+    # Separate videos and scores
+    videos, scores = zip(*batch)
+    
+    # Get the maximum number of frames in this batch
+    max_frames = max(video.shape[0] for video in videos)
+    
+    # Pad each video to max_frames
+    padded_videos = []
+    for video in videos:
+        if video.shape[0] < max_frames:
+            # Calculate padding needed
+            pad_size = max_frames - video.shape[0]
+            # Pad with zeros at the end
+            padded_video = torch.cat([
+                video,
+                torch.zeros(pad_size, *video.shape[1:], device=video.device)
+            ])
+            padded_videos.append(padded_video)
+        else:
+            padded_videos.append(video)
+    
+    # Stack videos and scores into batches
+    videos_batch = torch.stack(padded_videos)
+    scores_batch = torch.stack(scores)
+    
+    return videos_batch, scores_batch
