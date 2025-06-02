@@ -7,22 +7,24 @@ from PIL import Image
 import torchvision.transforms.functional as F
 
 class ScoreDataset(Dataset):
-    def __init__(self, root_dir, transform=None, mode='train', dev_mode='dev', model_type='clip'):
+    def __init__(self, root_dir, transform=None, mode='train', dev_mode='dev', model_type='clip', labeled=True):
         """
         Dataset for loading surf videos with their corresponding scores.
         
         Args:
-            root_dir: Root directory containing heat directories (e.g., "../data/heats")
+            root_dir: Root directory containing heat directories (e.g., "../data/heats") or path to single video
             transform: Optional video transforms
             mode: 'train', 'val', or 'test' for data splitting
             dev_mode: 'dev' or 'prod' for development vs production settings
             model_type: 'clip' or 'vit' to specify model-specific processing
+            labeled: Whether this is a labeled dataset (True) or unlabeled (False)
         """
         self.root_dir = root_dir
         self.transform = transform
         self.mode = mode
         self.dev_mode = dev_mode
         self.model_type = model_type
+        self.labeled = labeled
         
         # Video processing settings based on dev_mode
         if dev_mode == 'dev':
@@ -32,10 +34,11 @@ class ScoreDataset(Dataset):
             self.frame_size = 224  # Standard size for CLIP/ViT
             self.sample_rate = 0.33  # Keep 33% of frames (every 3rd frame) for better temporal resolution
         
-        # Load all video-score pairs
-        self.samples = self._load_video_score_pairs()
+        # Load all video-score pairs if this is a labeled dataset
+        self.samples = self._load_video_score_pairs() if labeled else [{'video_path': root_dir}]
         
-        print(f"> Loaded {len(self.samples)} video-score pairs (full dataset)")
+        if labeled:
+            print(f"> Loaded {len(self.samples)} video-score pairs (full dataset)")
     
     def _load_video_score_pairs(self):
         """Load all video-score pairs from the heats directory."""
@@ -238,7 +241,7 @@ class ScoreDataset(Dataset):
         return len(self.samples)
     
     def __getitem__(self, idx):
-        """Get a video-score pair."""
+        """Get a video-score pair or just video for unlabeled data."""
         sample = self.samples[idx]
         
         # Sample frames from video
@@ -247,10 +250,12 @@ class ScoreDataset(Dataset):
         # Preprocess frames
         video_tensor = self._preprocess_frames(frames)
         
-        # Convert score to float32 tensor
-        score = torch.tensor(sample['score'], dtype=torch.float32)
-        
-        return video_tensor, score
+        if self.labeled:
+            # Convert score to float32 tensor
+            score = torch.tensor(sample['score'], dtype=torch.float32)
+            return video_tensor, score
+        else:
+            return video_tensor
 
 def load_video_for_inference(video_path, mode='dev'):
     """
@@ -263,15 +268,15 @@ def load_video_for_inference(video_path, mode='dev'):
     Returns:
         torch.Tensor: Preprocessed video tensor [1, num_frames, channels, height, width]
     """
-    # Create a temporary dataset instance for preprocessing
+    # Create a dataset instance for preprocessing
     temp_dataset = ScoreDataset(
-        root_dir="", 
-        dev_mode=mode
+        root_dir=video_path,
+        dev_mode=mode,
+        labeled=False
     )
     
-    # Load and preprocess the video
-    frames = temp_dataset._sample_frames_from_video(video_path)
-    video_tensor = temp_dataset._preprocess_frames(frames)
+    # Get the processed video tensor
+    video_tensor = temp_dataset[0]  # Get first (and only) item
     
     # Add batch dimension
     video_tensor = video_tensor.unsqueeze(0)
