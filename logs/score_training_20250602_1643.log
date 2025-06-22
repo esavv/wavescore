@@ -1,0 +1,59 @@
+Training Log: score_model_20250602_1643.pth
+================================================
+
+Configuration
+------------
+Mode: prod
+Model: BASE-base
+Batch size: 32
+Learning rate: 0.005
+Number of epochs: 10
+Loss function: MSE
+Backbone frozen: True
+
+Training Progress
+----------------
+Total training time: 0h 15m 25.7s
+
+Epoch Results
+-------------
+ Epoch       Loss         Time   Cumulative
+------------------------------------------
+     1    19.3628  0h 1m 37.2s  0h 1m 37.2s
+     2     8.4262  0h 1m 32.1s   0h 3m 9.4s
+     3    12.2203  0h 1m 32.3s  0h 4m 41.7s
+     4     8.7113  0h 1m 32.3s  0h 6m 14.0s
+     5     8.8654  0h 1m 31.5s  0h 7m 45.5s
+     6     7.4165  0h 1m 31.8s  0h 9m 17.3s
+     7     5.6870  0h 1m 31.7s 0h 10m 49.0s
+     8     6.0168  0h 1m 32.3s 0h 12m 21.4s
+     9     5.0515  0h 1m 31.9s 0h 13m 53.3s
+    10     4.3628  0h 1m 32.4s 0h 15m 25.7s
+
+Final Results
+------------
+Final loss: 4.3628
+Random guessing baseline (MSE): 5.0000
+Improvement over random: 12.7%
+
+Inference Notes
+-------------
+Video: 1Zj_jAPToxI_6_inf.mp4
+Model: CLIP-base
+Predicted score: 6.54/10.00 (Actual score: 8.33)
+
+Video: _Lwdbce6a4E_1.mp4
+Model: CLIP-base
+Predicted score: 8.41/10.00 (Actual score: 9.23)
+
+Video: kl6bwSUqUw4_7.mp4
+Model: CLIP-base
+Predicted score: 5.04/10.00 (Actual score: 1.33)
+
+Video: kl6bwSUqUw4_14.mp4
+Model: CLIP-base
+Predicted score: 5.43/10.00 (Actual score: 5.33)
+
+Honestly, not bad. We got it to output something believable. It made decent predictions for
+3 of the 4 videos, just the 5.04 on the 1.33 video is not great. Might be good to train for
+a full 20 epochs and/or adjust learning rate.
