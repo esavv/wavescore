@@ -420,7 +420,8 @@ write_training_log(
     epoch_losses=epoch_losses,
     epoch_times=epoch_times,
     final_lr=optimizer.param_groups[0]['lr'],
-    is_old_format=is_old_format
+    is_old_format=is_old_format,
+    scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None
 )
 
 print(f"Training log saved to: {log_filename}")

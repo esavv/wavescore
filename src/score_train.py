@@ -266,7 +266,8 @@ def main():
             model_type='score',
             variant=args.variant,
             loss_function=loss_function,
-            freeze_backbone=freeze_backbone
+            freeze_backbone=freeze_backbone,
+            scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None
         )
         
         # Save checkpoint after each epoch

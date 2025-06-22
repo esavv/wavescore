@@ -11,7 +11,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
                       model_type='maneuver', variant='base', loss_function='mse',
                       freeze_backbone=True, use_focal_loss=False, weight_method=None,
                       focal_gamma=None, class_distribution=None, maneuver_names=None,
-                      final_lr=None, is_old_format=False):
+                      final_lr=None, is_old_format=False, scheduler_params=None):
     """Write a comprehensive training log file.
     
     Args:
@@ -35,6 +35,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         maneuver_names: Mapping of class IDs to maneuver names (for maneuver prediction)
         final_lr: Final learning rate
         is_old_format: Whether training resumed from old format checkpoint
+        scheduler_params: Parameters for the scheduler
     """
     with open(log_filename, 'w') as f:
         # Write header
@@ -66,7 +67,12 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         else:
             f.write(f"Loss function: {loss_function.upper()}\n")
         
-        f.write(f"Backbone frozen: {freeze_backbone}\n\n")
+        f.write(f"Backbone frozen: {freeze_backbone}\n")
+        f.write(f"Use scheduler: {scheduler_params is not None}\n")
+        if scheduler_params:
+            f.write(f"  Scheduler factor: {scheduler_params.get('factor', 'N/A')}\n")
+            f.write(f"  Scheduler patience: {scheduler_params.get('patience', 'N/A')}\n")
+        f.write("\n")
         
         # Class distribution section (only for maneuver prediction)
         if model_type == "maneuver" and class_distribution and maneuver_names:
