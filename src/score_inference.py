@@ -10,14 +10,11 @@ from score_dataset import load_video_for_inference
 from score_model import VideoScorePredictor
 from utils import setDevice
 
-# Set device to GPU if available, otherwise use CPU
-device = setDevice()
-
-def run_inference(video_path, model_filename, mode='dev'):
+def run_inference(video_paths, model_filename, mode='dev'):
     try:
-        # Load the video target for inference
-        print('Loading target video...')
-        
+        # Set device to GPU if available, otherwise use CPU
+        device = setDevice()
+
         # Retrieve the model from locally. TODO: Support S3 retrieval
         print('Retrieving the model...')
         model_dir = "../models/"
@@ -25,7 +22,7 @@ def run_inference(video_path, model_filename, mode='dev'):
 
         # Load the saved model
         print('Loading the model...')
-        model_state, optimizer_state, start_epoch, timestamp, training_config, training_history = load_checkpoint(model_path)
+        model_state, _, _, _, training_config, _ = load_checkpoint(model_path)
         
         # Extract model configuration from training config
         model_type = training_config.get('model_type', 'clip')
@@ -42,32 +39,32 @@ def run_inference(video_path, model_filename, mode='dev'):
         model.to(device)
         model.eval()
         
-        # Load and preprocess the video
-        print('Loading and preprocessing video...')
-        video_tensor = load_video_for_inference(video_path, mode=mode)
-        video_tensor = video_tensor.to(device)
+        for video_path in video_paths:        
+            # Load and preprocess the video
+            print('Loading and preprocessing video...')
+            video_tensor = load_video_for_inference(video_path, mode=mode)
+            video_tensor = video_tensor.to(device)
 
-        # Run inference on the video
-        print('Running inference...')
-        predicted_score = infer_video_score(model, video_tensor)
-        
-        # Load actual score if available
-        actual_score = None
-        score_path = os.path.join(os.path.dirname(video_path), 'score.csv')
-        if os.path.exists(score_path):
-            with open(score_path, 'r') as f:
-                next(f)  # Skip header
-                actual_score = float(next(f).strip())
-        
-        print(f"\n=== INFERENCE RESULTS ===")
-        print(f"Video: {os.path.basename(video_path)}")
-        print(f"Model: {model_type.upper()}-{variant}")
-        if actual_score is not None:
-            print(f"Predicted score: {predicted_score:.2f}/10.00 (Actual score: {actual_score:.2f})")
-        else:
-            print(f"Predicted score: {predicted_score:.2f}/10.00")
-        
-        return predicted_score
+            # Run inference on the video
+            print('Running inference...')
+            predicted_score = infer_video_score(model, video_tensor)
+            
+            # Load actual score if available
+            actual_score = None
+            score_path = os.path.join(os.path.dirname(video_path), 'score.csv')
+            if os.path.exists(score_path):
+                with open(score_path, 'r') as f:
+                    next(f)  # Skip header
+                    actual_score = float(next(f).strip())
+            
+            print(f"\n=== INFERENCE RESULTS ===")
+            print(f"Video: {os.path.basename(video_path)}")
+            print(f"Model: {model_type.upper()}-{variant}")
+            if actual_score is not None:
+                print(f"Predicted score: {predicted_score:.2f}/10.00 (Actual score: {actual_score:.2f})\n")
+            else:
+                print(f"Predicted score: {predicted_score:.2f}/10.00\n")
+        return
 
     except Exception as e:
         print(f"Error during inference: {str(e)}")
@@ -125,7 +122,4 @@ if __name__ == "__main__":
         "../data/inference_vids/kl6bwSUqUw4_7_inf/kl6bwSUqUw4_7.mp4",
         "../data/inference_vids/kl6bwSUqUw4_14_inf/kl6bwSUqUw4_14.mp4"
     ]
-    
-    for video_path in video_paths:
-        run_inference(video_path, model_filename, mode)
-        print()
+    run_inference(video_paths, model_filename, mode)
