@@ -14,7 +14,7 @@ from checkpoints import get_available_checkpoints, load_checkpoint, save_checkpo
 from model_logging import write_training_log
 from score_model import VideoScorePredictor
 from score_dataset import ScoreDataset
-from utils import collate_variable_length_videos, setDevice
+from utils import collate_variable_length_videos, setDevice, format_time
 
 # Constants for model choice
 TRAIN_FROM_SCRATCH = 1
@@ -247,6 +247,11 @@ def main():
         if scheduler is not None:
             scheduler.step(train_loss)
         
+        # Print average loss and time taken for the epoch
+        print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {format_time(epoch_duration)}. Average Loss: {train_loss:.4f}")    
+        print(f"    >  Current learning rate: {optimizer.param_groups[0]['lr']}")
+        print(f"    >  Total training time so far: {format_time(total_elapsed_time)}")
+        
         # Log training progress
         write_training_log(
             log_filename=os.path.join('../logs', f'score_training_{timestamp}.log'),
@@ -297,6 +302,9 @@ def main():
         epoch_start_time = time.time()
     
     print('\n> Training complete!')
+    
+    print(f"Training log saved to: ../logs/score_training_{timestamp}.log")
+    print(f"Total training time: {format_time(total_elapsed_time)}")
 
 if __name__ == '__main__':
     main() 
