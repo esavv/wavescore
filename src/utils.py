@@ -13,13 +13,13 @@ def setDevice():
     print('>  Configuring device...')
     if torch.cuda.is_available():
         device = torch.device("cuda")
-        print('>  Using CUDA (NVIDIA GPU) acceleration')
+        print('  >  Using CUDA (NVIDIA GPU) acceleration')
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
-        print('>  Using MPS (Apple Silicon GPU) acceleration')
+        print('  >  Using MPS (Apple Silicon GPU) acceleration')
     else:
         device = torch.device("cpu")
-        print('>  Using CPU')
+        print('  >  Using CPU')
     return device
 
 def format_time(seconds):
