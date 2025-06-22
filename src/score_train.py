@@ -10,11 +10,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from datetime import datetime
 
+from checkpoints import get_available_checkpoints, load_checkpoint, save_checkpoint
+from model_logging import write_training_log
 from score_model import VideoScorePredictor
 from score_dataset import ScoreDataset
-from checkpoints import save_checkpoint, load_checkpoint, get_available_checkpoints
-from model_logging import write_training_log
-from utils import collate_variable_length_videos
+from utils import collate_variable_length_videos, setDevice
 
 # Constants for model choice
 TRAIN_FROM_SCRATCH = 1
@@ -149,13 +149,7 @@ def main():
             sys.exit(1)
     
     # Setup device
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
-    else:
-        device = torch.device('cpu')
-    print(f'> Using device: {device}')
+    device = setDevice()
     
     # Initialize model
     print('> Initializing model...')

@@ -1,8 +1,26 @@
 import csv, cv2, json, math, os, torch
 import pandas as pd
 import torchvision.transforms.functional as F
-from PIL import Image
 from collections import Counter
+from PIL import Image
+
+def setDevice():
+    """Set device to GPU if available, otherwise use CPU.
+    
+    Returns:
+        torch.device: The selected device (mps, cuda, or cpu)
+    """
+    print('>  Configuring device...')
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print('>  Using CUDA (NVIDIA GPU) acceleration')
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print('>  Using MPS (Apple Silicon GPU) acceleration')
+    else:
+        device = torch.device("cpu")
+        print('>  Using CPU')
+    return device
 
 def format_time(seconds):
     """Format time in seconds to hours, minutes, seconds.

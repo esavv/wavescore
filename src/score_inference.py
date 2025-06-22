@@ -5,18 +5,13 @@
 # src $ python score_inference.py --mode dev
 
 import argparse, os, sys, torch
-from score_model import VideoScorePredictor
-from score_dataset import load_video_for_inference
 from checkpoints import load_checkpoint
+from score_dataset import load_video_for_inference
+from score_model import VideoScorePredictor
+from utils import setDevice
 
 # Set device to GPU if available, otherwise use CPU
-print('score_inference: Configuring device & model transforms...')
-if torch.cuda.is_available():
-    device = torch.device('cuda')
-elif torch.backends.mps.is_available():
-    device = torch.device('mps')
-else:
-    device = torch.device('cpu')
+device = setDevice()
 
 def run_inference(video_path, model_filename, mode='dev'):
     try:
@@ -133,4 +128,4 @@ if __name__ == "__main__":
     
     for video_path in video_paths:
         run_inference(video_path, model_filename, mode)
-        print("\n")
+        print()
