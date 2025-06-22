@@ -123,6 +123,14 @@ if __name__ == "__main__":
         except ValueError:
             print("Please enter a valid number")
 
-    # Set video path and run inference
-    video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-    run_inference(video_path, model_filename, mode) 
+    # Run inference on test videos (from training data)
+    video_paths = [
+        "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4",
+        "../data/inference_vids/_Lwdbce6a4E_1_inf/_Lwdbce6a4E_1.mp4",
+        "../data/inference_vids/kl6bwSUqUw4_7_inf/kl6bwSUqUw4_7.mp4",
+        "../data/inference_vids/kl6bwSUqUw4_14_inf/kl6bwSUqUw4_14.mp4"
+    ]
+    
+    for video_path in video_paths:
+        run_inference(video_path, model_filename, mode)
+        print("\n")

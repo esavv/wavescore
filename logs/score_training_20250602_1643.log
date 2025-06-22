@@ -42,5 +42,18 @@ Video: 1Zj_jAPToxI_6_inf.mp4
 Model: CLIP-base
 Predicted score: 6.54/10.00 (Actual score: 8.33)
 
-Honestly, not bad. We got it to output something believable. Might be good to try it on more videos.
-Might also be good to train for a full 20 epochs and/or adjust learning rate.
+Video: _Lwdbce6a4E_1.mp4
+Model: CLIP-base
+Predicted score: 8.41/10.00 (Actual score: 9.23)
+
+Video: kl6bwSUqUw4_7.mp4
+Model: CLIP-base
+Predicted score: 5.04/10.00 (Actual score: 1.33)
+
+Video: kl6bwSUqUw4_14.mp4
+Model: CLIP-base
+Predicted score: 5.43/10.00 (Actual score: 5.33)
+
+Honestly, not bad. We got it to output something believable. It made decent predictions for
+3 of the 4 videos, just the 5.04 on the 1.33 video is not great. Might be good to train for
+a full 20 epochs and/or adjust learning rate.
