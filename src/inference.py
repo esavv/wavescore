@@ -5,18 +5,17 @@
 # src $ python inference.py --mode dev
 
 import argparse, csv, os, shutil, sys, torch
-from model import SurfManeuverModel
-from utils import sequence_video_frames, load_frames_from_sequence, load_maneuver_taxonomy
 from checkpoints import load_checkpoint
+from model import SurfManeuverModel
+from utils import (
+    load_frames_from_sequence, 
+    load_maneuver_taxonomy, 
+    sequence_video_frames, 
+    setDevice
+)
 
 # Set device to GPU if available, otherwise use CPU
-print('inference: Configuring device & model transforms...')
-if torch.cuda.is_available():
-    device = torch.device('cuda')
-elif torch.backends.mps.is_available():
-    device = torch.device('mps')
-else:
-    device = torch.device('cpu')
+device = setDevice()
 
 def run_inference(video_path, model_filename, mode='dev'):
     try:

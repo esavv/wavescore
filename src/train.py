@@ -19,11 +19,19 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from datetime import datetime
 from collections import Counter
+
+from checkpoints import get_available_checkpoints, load_checkpoint, save_checkpoint
 from dataset import SurfManeuverDataset
 from model import SurfManeuverModel
-from utils import load_maneuver_taxonomy, save_class_distribution, load_class_distribution, distribution_outdated, format_time
-from checkpoints import get_available_checkpoints, save_checkpoint, load_checkpoint
 from model_logging import write_training_log
+from utils import (
+    distribution_outdated, 
+    format_time,
+    load_maneuver_taxonomy, 
+    load_class_distribution, 
+    save_class_distribution, 
+    setDevice
+)
 
 # Set up command-line arguments
 parser = argparse.ArgumentParser(description='Train a surf maneuver detection model.')
@@ -138,16 +146,7 @@ if model_choice == RESUME_FROM_CHECKPOINT:
         sys.exit(1)
 
 # Set device to GPU if available, otherwise use CPU
-print('>  Configuring device...')
-if torch.backends.mps.is_available():
-    device = torch.device("mps")
-    print('>  Using MPS (Apple Silicon GPU) acceleration')
-elif torch.cuda.is_available():
-    device = torch.device("cuda")
-    print('>  Using CUDA (NVIDIA GPU) acceleration')
-else:
-    device = torch.device("cpu")
-    print('>  Using CPU for computation')
+device = setDevice()
 
 # Data preparation
 print('>  Loading dataset...')

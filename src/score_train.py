@@ -10,11 +10,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from datetime import datetime
 
+from checkpoints import get_available_checkpoints, load_checkpoint, save_checkpoint
+from model_logging import write_training_log
 from score_model import VideoScorePredictor
 from score_dataset import ScoreDataset
-from checkpoints import save_checkpoint, load_checkpoint, get_available_checkpoints
-from model_logging import write_training_log
-from utils import collate_variable_length_videos
+from utils import collate_variable_length_videos, setDevice
 
 # Constants for model choice
 TRAIN_FROM_SCRATCH = 1
@@ -32,6 +32,7 @@ def parse_args():
                       help='model type to use (default: clip)')
     parser.add_argument('--variant', type=str, choices=['base', 'large'], default='base',
                       help='model variant to use (default: base)')
+    parser.add_argument('--use_scheduler', action='store_true', help='Use learning rate scheduler. Disabled by default for initial training.')
     return parser.parse_args()
 
 def train_epoch(model, train_loader, criterion, optimizer, device):
@@ -62,6 +63,7 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
 def main():
     args = parse_args()
     freeze_backbone = not args.unfreeze_backbone  # Invert the flag to get freeze_backbone
+    use_scheduler = args.use_scheduler
     
     print(f'> Starting score prediction training in {args.mode} mode')
     
@@ -141,6 +143,7 @@ def main():
             num_epochs = training_config['num_epochs']
             freeze_backbone = training_config['freeze_backbone']
             loss_function = training_config['loss_function']
+            use_scheduler = training_config['use_scheduler']
             
             print(f"Resuming from epoch {start_epoch}")
             print(f"Previous training time: {total_elapsed_time:.2f} seconds")
@@ -149,13 +152,7 @@ def main():
             sys.exit(1)
     
     # Setup device
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
-    else:
-        device = torch.device('cpu')
-    print(f'> Using device: {device}')
+    device = setDevice()
     
     # Initialize model
     print('> Initializing model...')
@@ -204,6 +201,16 @@ def main():
         model.load_state_dict(model_state)
         optimizer.load_state_dict(optimizer_state)
     
+    # Add learning rate scheduler for better convergence
+    scheduler = None
+    if use_scheduler:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, 
+            mode='min', 
+            factor=0.5, 
+            patience=3
+        )
+    
     # Print final configuration
     print('\n>  Training configuration:')
     print('>    Mode:', args.mode)
@@ -213,6 +220,7 @@ def main():
     print('>    Number of epochs:', num_epochs)
     print('>    Loss function:', loss_name)
     print('>    Backbone frozen:', freeze_backbone)
+    print('>    Learning rate scheduler:', 'Enabled' if use_scheduler else 'Disabled')
     print()
     
     # Training loop
@@ -234,6 +242,10 @@ def main():
         
         # Store loss for this epoch
         epoch_losses.append(train_loss)
+        
+        # Update learning rate based on loss
+        if scheduler is not None:
+            scheduler.step(train_loss)
         
         # Log training progress
         write_training_log(
@@ -263,6 +275,7 @@ def main():
             'num_epochs': num_epochs,
             'freeze_backbone': freeze_backbone,
             'loss_function': loss_function,
+            'use_scheduler': use_scheduler,
             'model_name': 'score_model'  # Add model name to config
         }
         training_history = {
