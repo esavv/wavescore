@@ -208,7 +208,7 @@ def main():
             optimizer, 
             mode='min', 
             factor=0.5, 
-            patience=3
+            patience=1
         )
     
     # Print final configuration
