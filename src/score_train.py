@@ -248,9 +248,10 @@ def main():
             scheduler.step(train_loss)
         
         # Print average loss and time taken for the epoch
-        print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {format_time(epoch_duration)}. Average Loss: {train_loss:.4f}")    
-        print(f"    >  Current learning rate: {optimizer.param_groups[0]['lr']}")
+        print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {format_time(epoch_duration)}")    
         print(f"    >  Total training time so far: {format_time(total_elapsed_time)}")
+        if scheduler is not None:
+            print(f"    >  Current learning rate: {optimizer.param_groups[0]['lr']}")
         
         # Log training progress
         write_training_log(
@@ -271,7 +272,6 @@ def main():
         )
         
         # Save checkpoint after each epoch
-        print('> Saving checkpoint...')
         training_config = {
             'mode': args.mode,
             'model_type': args.model_type,
@@ -293,19 +293,19 @@ def main():
         
         # Save checkpoint for each epoch except the last one
         if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
+            print('> Saving checkpoint...')
             checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, None, training_config, training_history=training_history)
             print(f"    >  Model checkpoint saved: {checkpoint_path}")
         else:
             model_filename = save_checkpoint(model, optimizer, epoch, timestamp, None, training_config, is_final=True, training_history=training_history)
-            print(f"    >  Final model saved: {model_filename}")
         
         # Reset epoch timer for next epoch
         epoch_start_time = time.time()
     
-    print('\n> Training complete!')
-    
-    print(f"Training log saved to: ../logs/score_training_{timestamp}.log")
-    print(f"Total training time: {format_time(total_elapsed_time)}")
+    print('\nTraining complete!')
+    print(f"> Final model saved to: {model_filename}")
+    print(f"> Training log saved to: ../logs/score_training_{timestamp}.log")
+    print(f"> Total training time: {format_time(total_elapsed_time)}")
 
 if __name__ == '__main__':
     main() 
