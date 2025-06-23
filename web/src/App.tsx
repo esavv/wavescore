@@ -17,7 +17,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-200">
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Upload a surf video</h1>
         <input
