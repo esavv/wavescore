@@ -8,12 +8,12 @@ import argparse, os, sys, torch
 from checkpoints import load_checkpoint
 from score_dataset import load_video_for_inference
 from score_model import VideoScorePredictor
-from utils import setDevice
+from utils import set_device
 
 def run_inference(video_paths, model_filename, mode='dev'):
     try:
         # Set device to GPU if available, otherwise use CPU
-        device = setDevice()
+        device = set_device()
 
         # Retrieve the model from locally. TODO: Support S3 retrieval
         print('Retrieving the model...')

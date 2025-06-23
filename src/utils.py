@@ -1,10 +1,11 @@
 import csv, cv2, json, math, os, torch
+import platform, requests, subprocess
 import pandas as pd
 import torchvision.transforms.functional as F
 from collections import Counter
 from PIL import Image
 
-def setDevice():
+def set_device():
     """Set device to GPU if available, otherwise use CPU.
     
     Returns:
@@ -362,3 +363,55 @@ def collate_variable_length_videos(batch):
     scores_batch = torch.stack(scores)
     
     return videos_batch, scores_batch
+
+def get_ec2_instance_type():
+    """
+    Get the AWS EC2 instance type by querying the instance metadata service.
+    
+    Returns:
+        str: Instance type (e.g., 'g5.xlarge', 't3.medium') or None if not on EC2
+    """
+    try:
+        response = requests.get('http://169.254.169.254/latest/meta-data/instance-type', timeout=1)
+        return response.text
+    except:
+        return None
+    
+def get_machine_info():
+    """
+    Get a human-readable description of the current machine.
+    
+    Detects:
+        - AWS EC2 instances (e.g., 'AWS g5.xlarge')
+        - macOS machines with model info (e.g., 'macOS MacBookAir10,1')
+        - Generic Linux/Windows systems
+    
+    Returns:
+        str: Machine description (e.g., 'AWS g5.xlarge', 'macOS MacBookAir10,1', 'Linux x86_64')
+    """
+    system = platform.system()
+    machine = platform.machine()
+    
+    if system == "Darwin":  # macOS
+        try:
+            # Get Mac model using sysctl
+            result = subprocess.run(['sysctl', '-n', 'hw.model'], capture_output=True, text=True)
+            mac_model = result.stdout.strip()
+            return f"macOS {mac_model}"
+        except:
+            return f"macOS {machine}"
+    
+    elif system == "Linux":
+        try:
+            # Try to get AWS instance type first
+            ec2_type = get_ec2_instance_type()
+            if ec2_type:
+                return f"AWS {ec2_type}"
+            
+            # Fallback to generic Linux info
+            return f"Linux {machine}"
+        except:
+            return f"Linux {machine}"
+    
+    else:
+        return f"{system} {machine}"

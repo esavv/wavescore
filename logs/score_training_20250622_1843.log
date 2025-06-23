@@ -1,0 +1,53 @@
+Training Log: score_model_20250622_1843.pth
+================================================
+
+Configuration
+------------
+Mode: prod
+Model: SCORE-base
+Batch size: 32
+Learning rate: 0.005
+Number of epochs: 20
+Loss function: MSE
+Backbone frozen: True
+
+Training Progress
+----------------
+Total training time: 0h 30m 54.9s
+
+Epoch Results
+-------------
+ Epoch       Loss         Time   Cumulative
+------------------------------------------
+     1    29.9343  0h 1m 34.4s  0h 1m 34.4s
+     2    31.7892  0h 1m 33.4s   0h 3m 7.8s
+     3    32.7300  0h 1m 32.4s  0h 4m 40.2s
+     4    29.4739  0h 1m 32.7s  0h 6m 12.9s
+     5    30.6597  0h 1m 31.4s  0h 7m 44.3s
+     6    31.1577  0h 1m 32.2s  0h 9m 16.5s
+     7    32.1269  0h 1m 33.9s 0h 10m 50.3s
+     8    29.1674  0h 1m 33.2s 0h 12m 23.5s
+     9    30.5261  0h 1m 32.1s 0h 13m 55.7s
+    10    28.5895  0h 1m 34.0s 0h 15m 29.7s
+    11    29.6777  0h 1m 33.5s  0h 17m 3.1s
+    12    27.4774  0h 1m 31.9s 0h 18m 35.1s
+    13    32.6243  0h 1m 32.4s  0h 20m 7.5s
+    14    28.7967  0h 1m 32.8s 0h 21m 40.3s
+    15    31.1232  0h 1m 32.1s 0h 23m 12.3s
+    16    30.4029  0h 1m 32.5s 0h 24m 44.8s
+    17    30.4765  0h 1m 32.7s 0h 26m 17.6s
+    18    29.2996  0h 1m 31.7s 0h 27m 49.2s
+    19    30.1197  0h 1m 33.0s 0h 29m 22.2s
+    20    29.9697  0h 1m 32.8s 0h 30m 54.9s
+
+Final Results
+------------
+Final loss: 29.9697
+Random guessing baseline (MSE): 5.0000
+Improvement over random: -499.4%
+
+Inference Notes
+-------------
+Tried training a model with learning rate scheduler, but the losses were bad
+and not improving.
+

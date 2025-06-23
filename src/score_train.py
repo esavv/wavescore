@@ -14,7 +14,12 @@ from checkpoints import get_available_checkpoints, load_checkpoint, save_checkpo
 from model_logging import write_training_log
 from score_model import VideoScorePredictor
 from score_dataset import ScoreDataset
-from utils import collate_variable_length_videos, setDevice
+from utils import (
+    collate_variable_length_videos,
+    format_time,
+    get_machine_info,
+    set_device
+)
 
 # Constants for model choice
 TRAIN_FROM_SCRATCH = 1
@@ -64,6 +69,7 @@ def main():
     args = parse_args()
     freeze_backbone = not args.unfreeze_backbone  # Invert the flag to get freeze_backbone
     use_scheduler = args.use_scheduler
+    machine_info = get_machine_info()
     
     print(f'> Starting score prediction training in {args.mode} mode')
     
@@ -152,7 +158,7 @@ def main():
             sys.exit(1)
     
     # Setup device
-    device = setDevice()
+    device = set_device()
     
     # Initialize model
     print('> Initializing model...')
@@ -208,12 +214,13 @@ def main():
             optimizer, 
             mode='min', 
             factor=0.5, 
-            patience=3
+            patience=1
         )
     
     # Print final configuration
     print('\n>  Training configuration:')
     print('>    Mode:', args.mode)
+    print('>    Machine:', machine_info)
     print('>    Model:', f"{args.model_type.upper()}-{args.variant}")
     print('>    Batch size:', batch_size)
     print('>    Learning rate:', learning_rate)
@@ -247,6 +254,12 @@ def main():
         if scheduler is not None:
             scheduler.step(train_loss)
         
+        # Print average loss and time taken for the epoch
+        print(f"    >  Epoch [{epoch+1}/{num_epochs}] completed in {format_time(epoch_duration)}")    
+        print(f"    >  Total training time so far: {format_time(total_elapsed_time)}")
+        if scheduler is not None:
+            print(f"    >  Current learning rate: {optimizer.param_groups[0]['lr']}")
+        
         # Log training progress
         write_training_log(
             log_filename=os.path.join('../logs', f'score_training_{timestamp}.log'),
@@ -259,13 +272,15 @@ def main():
             epoch_losses=epoch_losses,
             epoch_times=epoch_times,
             model_type='score',
-            variant=args.variant,
+            model_info=f"{args.model_type.upper()}-{args.variant}",
             loss_function=loss_function,
-            freeze_backbone=freeze_backbone
+            freeze_backbone=freeze_backbone,
+            scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None,
+            dataset_info=dataset.dataset_info,
+            machine_info=machine_info
         )
         
         # Save checkpoint after each epoch
-        print('> Saving checkpoint...')
         training_config = {
             'mode': args.mode,
             'model_type': args.model_type,
@@ -287,16 +302,19 @@ def main():
         
         # Save checkpoint for each epoch except the last one
         if epoch < num_epochs - 1:  # Skip the last epoch as it will be saved as the final model
+            print('> Saving checkpoint...')
             checkpoint_path = save_checkpoint(model, optimizer, epoch, timestamp, None, training_config, training_history=training_history)
             print(f"    >  Model checkpoint saved: {checkpoint_path}")
         else:
             model_filename = save_checkpoint(model, optimizer, epoch, timestamp, None, training_config, is_final=True, training_history=training_history)
-            print(f"    >  Final model saved: {model_filename}")
         
         # Reset epoch timer for next epoch
         epoch_start_time = time.time()
     
-    print('\n> Training complete!')
+    print('\nTraining complete!')
+    print(f"> Final model saved to: {model_filename}")
+    print(f"> Training log saved to: ../logs/score_training_{timestamp}.log")
+    print(f"> Total training time: {format_time(total_elapsed_time)}")
 
 if __name__ == '__main__':
     main() 

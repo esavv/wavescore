@@ -30,7 +30,7 @@ from utils import (
     load_maneuver_taxonomy, 
     load_class_distribution, 
     save_class_distribution, 
-    setDevice
+    set_device
 )
 
 # Set up command-line arguments
@@ -146,7 +146,7 @@ if model_choice == RESUME_FROM_CHECKPOINT:
         sys.exit(1)
 
 # Set device to GPU if available, otherwise use CPU
-device = setDevice()
+device = set_device()
 
 # Data preparation
 print('>  Loading dataset...')
@@ -420,7 +420,10 @@ write_training_log(
     epoch_losses=epoch_losses,
     epoch_times=epoch_times,
     final_lr=optimizer.param_groups[0]['lr'],
-    is_old_format=is_old_format
+    is_old_format=is_old_format,
+    model_type='maneuver',
+    model_info='R3D-18',
+    scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None
 )
 
 print(f"Training log saved to: {log_filename}")

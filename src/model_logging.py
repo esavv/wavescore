@@ -8,10 +8,10 @@ from utils import format_time
 
 def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate, num_epochs,
                       total_elapsed_time, epoch_losses, epoch_times,
-                      model_type='maneuver', variant='base', loss_function='mse',
+                      model_type, model_info, loss_function='mse',
                       freeze_backbone=True, use_focal_loss=False, weight_method=None,
                       focal_gamma=None, class_distribution=None, maneuver_names=None,
-                      final_lr=None, is_old_format=False):
+                      final_lr=None, is_old_format=False, scheduler_params=None, dataset_info=None, machine_info=None):
     """Write a comprehensive training log file.
     
     Args:
@@ -25,7 +25,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         epoch_losses: List of loss values per epoch
         epoch_times: List of time taken per epoch
         model_type: Type of model ('maneuver' or 'score')
-        variant: Model variant ('base' or 'large')
+        model_info: String describing the model (e.g., 'CLIP-base', 'R3D-18')
         loss_function: Loss function used ('mse', 'mae', 'huber', or 'cross_entropy')
         freeze_backbone: Whether model backbone was frozen
         use_focal_loss: Whether Focal Loss was used (for maneuver prediction)
@@ -35,6 +35,9 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         maneuver_names: Mapping of class IDs to maneuver names (for maneuver prediction)
         final_lr: Final learning rate
         is_old_format: Whether training resumed from old format checkpoint
+        scheduler_params: Parameters for the scheduler
+        dataset_info: Information about the training dataset
+        machine_info: Information about the training machine
     """
     with open(log_filename, 'w') as f:
         # Write header
@@ -47,12 +50,20 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
             f.write("Note: Resumed from old format checkpoint (no training state saved).\n")
             f.write("Training time and loss history only includes the resumed portion of training.\n\n")
         
+        # Training Data section
+        if dataset_info:
+            f.write("Training Data\n")
+            f.write("------------\n")
+            f.write(dataset_info)
+            f.write("\n\n")
+        
         # Configuration section
         f.write("Configuration\n")
         f.write("------------\n")
         f.write(f"Mode: {mode}\n")
-        if model_type == "score":
-            f.write(f"Model: {model_type.upper()}-{variant}\n")
+        if machine_info:
+            f.write(f"Machine: {machine_info}\n")
+        f.write(f"Model: {model_info}\n")
         f.write(f"Batch size: {batch_size}\n")
         f.write(f"Learning rate: {learning_rate}\n")
         f.write(f"Number of epochs: {num_epochs}\n")
@@ -66,7 +77,12 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         else:
             f.write(f"Loss function: {loss_function.upper()}\n")
         
-        f.write(f"Backbone frozen: {freeze_backbone}\n\n")
+        f.write(f"Backbone frozen: {freeze_backbone}\n")
+        f.write(f"Use scheduler: {scheduler_params is not None}\n")
+        if scheduler_params:
+            f.write(f"  Scheduler factor: {scheduler_params.get('factor', 'N/A')}\n")
+            f.write(f"  Scheduler patience: {scheduler_params.get('patience', 'N/A')}\n")
+        f.write("\n")
         
         # Class distribution section (only for maneuver prediction)
         if model_type == "maneuver" and class_distribution and maneuver_names:
