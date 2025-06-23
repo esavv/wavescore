@@ -79,6 +79,7 @@ module.exports = {
 ### 4. Create Minimal UI in `App.tsx`
 
 Include:
+- Delete src/App.css; not needed with tailwind
 - File upload input
 - Submit button
 - Stub area to stream analysis results (hook up SSE later)
