@@ -11,7 +11,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
                       model_type, model_info, loss_function='mse',
                       freeze_backbone=True, use_focal_loss=False, weight_method=None,
                       focal_gamma=None, class_distribution=None, maneuver_names=None,
-                      final_lr=None, is_old_format=False, scheduler_params=None):
+                      final_lr=None, is_old_format=False, scheduler_params=None, dataset_info=None):
     """Write a comprehensive training log file.
     
     Args:
@@ -36,6 +36,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         final_lr: Final learning rate
         is_old_format: Whether training resumed from old format checkpoint
         scheduler_params: Parameters for the scheduler
+        dataset_info: Information about the training dataset
     """
     with open(log_filename, 'w') as f:
         # Write header
@@ -47,6 +48,13 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         if is_old_format:
             f.write("Note: Resumed from old format checkpoint (no training state saved).\n")
             f.write("Training time and loss history only includes the resumed portion of training.\n\n")
+        
+        # Training Data section
+        if dataset_info:
+            f.write("Training Data\n")
+            f.write("------------\n")
+            f.write(dataset_info)
+            f.write("\n\n")
         
         # Configuration section
         f.write("Configuration\n")

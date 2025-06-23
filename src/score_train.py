@@ -268,7 +268,8 @@ def main():
             model_info=f"{args.model_type.upper()}-{args.variant}",
             loss_function=loss_function,
             freeze_backbone=freeze_backbone,
-            scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None
+            scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None,
+            dataset_info=dataset.dataset_info
         )
         
         # Save checkpoint after each epoch

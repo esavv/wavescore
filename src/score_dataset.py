@@ -35,7 +35,11 @@ class ScoreDataset(Dataset):
             self.sample_rate = 0.33  # Keep 33% of frames (every 3rd frame) for better temporal resolution
         
         # Load all video-score pairs if this is a labeled dataset
-        self.samples = self._load_video_score_pairs() if labeled else [{'video_path': root_dir}]
+        if labeled:
+            self.samples, self.dataset_info = self._load_video_score_pairs()
+        else:
+            self.samples = [{'video_path': root_dir}]
+            self.dataset_info = ""
         
         if labeled:
             print(f"> Loaded {len(self.samples)} video-score pairs (full dataset)")
@@ -43,6 +47,7 @@ class ScoreDataset(Dataset):
     def _load_video_score_pairs(self):
         """Load all video-score pairs from the heats directory."""
         samples = []
+        dataset_info_lines = []
         
         print(f"> Loading video-score pairs from {self.root_dir}")
         
@@ -59,6 +64,7 @@ class ScoreDataset(Dataset):
             # Skip if ride_times.csv doesn't exist
             if not os.path.exists(ride_times_path):
                 print(f"  Warning: No ride_times.csv found in {heat_path}")
+                dataset_info_lines.append(f"  Warning: No ride_times.csv found in {heat_path}")
                 continue
             
             # Load score labels from ride_times.csv
@@ -66,9 +72,11 @@ class ScoreDataset(Dataset):
                 scores_df = self._parse_ride_times_with_scores(ride_times_path)
                 if scores_df is None:
                     print(f"  Warning: No scores found in {ride_times_path}")
+                    dataset_info_lines.append(f"  Warning: No scores found in {ride_times_path}")
                     continue
             except Exception as e:
                 print(f"  Error loading scores from {ride_times_path}: {e}")
+                dataset_info_lines.append(f"  Error loading scores from {ride_times_path}: {e}")
                 continue
             
             # Match each ride video with its score
@@ -86,10 +94,12 @@ class ScoreDataset(Dataset):
                     heat_samples += 1
                 else:
                     print(f"  Warning: Video not found: {video_path}")
+                    dataset_info_lines.append(f"  Warning: Video not found: {video_path}")
             
             print(f"  Heat '{heat_id}': {heat_samples} video-score pairs")
+            dataset_info_lines.append(f"  Heat '{heat_id}': {heat_samples} video-score pairs")
         
-        return samples
+        return samples, '\n'.join(dataset_info_lines)
     
     def _parse_ride_times_with_scores(self, csv_path):
         """Parse ride_times.csv file and extract scores from the third column."""
