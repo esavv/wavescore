@@ -80,8 +80,8 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         f.write(f"Backbone frozen: {freeze_backbone}\n")
         f.write(f"Use scheduler: {scheduler_params is not None}\n")
         if scheduler_params:
-            f.write(f"Scheduler factor: {scheduler_params.get('factor', 'N/A')}\n")
-            f.write(f"Scheduler patience: {scheduler_params.get('patience', 'N/A')}\n")
+            f.write(f"  Scheduler factor: {scheduler_params.get('factor', 'N/A')}\n")
+            f.write(f"  Scheduler patience: {scheduler_params.get('patience', 'N/A')}\n")
         f.write("\n")
         
         # Class distribution section (only for maneuver prediction)
