@@ -8,7 +8,7 @@ from utils import format_time
 
 def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate, num_epochs,
                       total_elapsed_time, epoch_losses, epoch_times,
-                      model_type='maneuver', variant='base', loss_function='mse',
+                      model_type, model_info, loss_function='mse',
                       freeze_backbone=True, use_focal_loss=False, weight_method=None,
                       focal_gamma=None, class_distribution=None, maneuver_names=None,
                       final_lr=None, is_old_format=False, scheduler_params=None):
@@ -25,7 +25,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         epoch_losses: List of loss values per epoch
         epoch_times: List of time taken per epoch
         model_type: Type of model ('maneuver' or 'score')
-        variant: Model variant ('base' or 'large')
+        model_info: String describing the model (e.g., 'CLIP-base', 'R3D-18')
         loss_function: Loss function used ('mse', 'mae', 'huber', or 'cross_entropy')
         freeze_backbone: Whether model backbone was frozen
         use_focal_loss: Whether Focal Loss was used (for maneuver prediction)
@@ -53,7 +53,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         f.write("------------\n")
         f.write(f"Mode: {mode}\n")
         if model_type == "score":
-            f.write(f"Model: {model_type.upper()}-{variant}\n")
+            f.write(f"Model: {model_info}\n")
         f.write(f"Batch size: {batch_size}\n")
         f.write(f"Learning rate: {learning_rate}\n")
         f.write(f"Number of epochs: {num_epochs}\n")

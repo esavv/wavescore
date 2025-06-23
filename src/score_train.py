@@ -265,7 +265,7 @@ def main():
             epoch_losses=epoch_losses,
             epoch_times=epoch_times,
             model_type='score',
-            variant=args.variant,
+            model_info=f"{args.model_type.upper()}-{args.variant}",
             loss_function=loss_function,
             freeze_backbone=freeze_backbone,
             scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None

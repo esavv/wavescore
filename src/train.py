@@ -421,6 +421,8 @@ write_training_log(
     epoch_times=epoch_times,
     final_lr=optimizer.param_groups[0]['lr'],
     is_old_format=is_old_format,
+    model_type='maneuver',
+    model_info='R3D-18',
     scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None
 )
 
