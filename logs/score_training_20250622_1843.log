@@ -48,4 +48,6 @@ Improvement over random: -499.4%
 
 Inference Notes
 -------------
+Tried training a model with learning rate scheduler, but the losses were bad
+and not improving.
 
