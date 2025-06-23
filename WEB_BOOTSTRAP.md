@@ -40,7 +40,7 @@ npx tailwindcss init -p
 
 - In `tailwind.config.js`, set the `content` array:
 ```js
-type module.exports = {
+export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -59,7 +59,24 @@ type module.exports = {
 @tailwind utilities;
 ```
 
-### 3. Create Minimal UI in `App.tsx`
+### 3. Add CSS Linting with Stylelint (Tailwind Compatible)
+
+```bash
+npm install -D stylelint stylelint-config-standard stylelint-config-tailwindcss
+```
+
+- In your project root, create a `stylelint.config.cjs` file with:
+```js
+module.exports = {
+  extends: [
+    "stylelint-config-standard",
+    "stylelint-config-tailwindcss"
+  ],
+  rules: {}
+}
+```
+
+### 4. Create Minimal UI in `App.tsx`
 
 Include:
 - File upload input
@@ -67,7 +84,7 @@ Include:
 - Stub area to stream analysis results (hook up SSE later)
 - Tailwind styles for layout & polish
 
-### 4. Run Locally
+### 5. Run Locally
 
 ```bash
 npm run dev
@@ -75,7 +92,7 @@ npm run dev
 
 This starts the development server (usually at `http://localhost:5173`). Your app will hot-reload as you make changes.
 
-### 5. Deploy with Vercel
+### 6. Deploy with Vercel
 
 - Go to [https://vercel.com](https://vercel.com)
 - Sign in with GitHub
