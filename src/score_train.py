@@ -14,7 +14,12 @@ from checkpoints import get_available_checkpoints, load_checkpoint, save_checkpo
 from model_logging import write_training_log
 from score_model import VideoScorePredictor
 from score_dataset import ScoreDataset
-from utils import collate_variable_length_videos, set_device, format_time
+from utils import (
+    collate_variable_length_videos,
+    format_time,
+    get_machine_info,
+    set_device
+)
 
 # Constants for model choice
 TRAIN_FROM_SCRATCH = 1
@@ -64,6 +69,7 @@ def main():
     args = parse_args()
     freeze_backbone = not args.unfreeze_backbone  # Invert the flag to get freeze_backbone
     use_scheduler = args.use_scheduler
+    machine_info = get_machine_info()
     
     print(f'> Starting score prediction training in {args.mode} mode')
     
@@ -214,6 +220,7 @@ def main():
     # Print final configuration
     print('\n>  Training configuration:')
     print('>    Mode:', args.mode)
+    print('>    Machine:', machine_info)
     print('>    Model:', f"{args.model_type.upper()}-{args.variant}")
     print('>    Batch size:', batch_size)
     print('>    Learning rate:', learning_rate)
@@ -269,7 +276,8 @@ def main():
             loss_function=loss_function,
             freeze_backbone=freeze_backbone,
             scheduler_params={'factor': 0.5, 'patience': 1} if use_scheduler else None,
-            dataset_info=dataset.dataset_info
+            dataset_info=dataset.dataset_info,
+            machine_info=machine_info
         )
         
         # Save checkpoint after each epoch

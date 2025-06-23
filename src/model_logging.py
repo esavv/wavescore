@@ -11,7 +11,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
                       model_type, model_info, loss_function='mse',
                       freeze_backbone=True, use_focal_loss=False, weight_method=None,
                       focal_gamma=None, class_distribution=None, maneuver_names=None,
-                      final_lr=None, is_old_format=False, scheduler_params=None, dataset_info=None):
+                      final_lr=None, is_old_format=False, scheduler_params=None, dataset_info=None, machine_info=None):
     """Write a comprehensive training log file.
     
     Args:
@@ -37,6 +37,7 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         is_old_format: Whether training resumed from old format checkpoint
         scheduler_params: Parameters for the scheduler
         dataset_info: Information about the training dataset
+        machine_info: Information about the training machine
     """
     with open(log_filename, 'w') as f:
         # Write header
@@ -60,8 +61,9 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         f.write("Configuration\n")
         f.write("------------\n")
         f.write(f"Mode: {mode}\n")
-        if model_type == "score":
-            f.write(f"Model: {model_info}\n")
+        if machine_info:
+            f.write(f"Machine: {machine_info}\n")
+        f.write(f"Model: {model_info}\n")
         f.write(f"Batch size: {batch_size}\n")
         f.write(f"Learning rate: {learning_rate}\n")
         f.write(f"Number of epochs: {num_epochs}\n")
@@ -78,8 +80,8 @@ def write_training_log(log_filename, timestamp, mode, batch_size, learning_rate,
         f.write(f"Backbone frozen: {freeze_backbone}\n")
         f.write(f"Use scheduler: {scheduler_params is not None}\n")
         if scheduler_params:
-            f.write(f"  Scheduler factor: {scheduler_params.get('factor', 'N/A')}\n")
-            f.write(f"  Scheduler patience: {scheduler_params.get('patience', 'N/A')}\n")
+            f.write(f"Scheduler factor: {scheduler_params.get('factor', 'N/A')}\n")
+            f.write(f"Scheduler patience: {scheduler_params.get('patience', 'N/A')}\n")
         f.write("\n")
         
         # Class distribution section (only for maneuver prediction)
