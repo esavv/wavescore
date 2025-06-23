@@ -11,11 +11,11 @@ from utils import (
     load_frames_from_sequence, 
     load_maneuver_taxonomy, 
     sequence_video_frames, 
-    setDevice
+    set_device
 )
 
 # Set device to GPU if available, otherwise use CPU
-device = setDevice()
+device = set_device()
 
 def run_inference(video_path, model_filename, mode='dev'):
     try:

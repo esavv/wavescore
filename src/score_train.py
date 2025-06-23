@@ -14,7 +14,7 @@ from checkpoints import get_available_checkpoints, load_checkpoint, save_checkpo
 from model_logging import write_training_log
 from score_model import VideoScorePredictor
 from score_dataset import ScoreDataset
-from utils import collate_variable_length_videos, setDevice, format_time
+from utils import collate_variable_length_videos, set_device, format_time
 
 # Constants for model choice
 TRAIN_FROM_SCRATCH = 1
@@ -152,7 +152,7 @@ def main():
             sys.exit(1)
     
     # Setup device
-    device = setDevice()
+    device = set_device()
     
     # Initialize model
     print('> Initializing model...')

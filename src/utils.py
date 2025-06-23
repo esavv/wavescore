@@ -4,7 +4,7 @@ import torchvision.transforms.functional as F
 from collections import Counter
 from PIL import Image
 
-def setDevice():
+def set_device():
     """Set device to GPU if available, otherwise use CPU.
     
     Returns:

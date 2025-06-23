@@ -30,7 +30,7 @@ from utils import (
     load_maneuver_taxonomy, 
     load_class_distribution, 
     save_class_distribution, 
-    setDevice
+    set_device
 )
 
 # Set up command-line arguments
@@ -146,7 +146,7 @@ if model_choice == RESUME_FROM_CHECKPOINT:
         sys.exit(1)
 
 # Set device to GPU if available, otherwise use CPU
-device = setDevice()
+device = set_device()
 
 # Data preparation
 print('>  Loading dataset...')
