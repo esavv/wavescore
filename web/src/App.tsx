@@ -197,17 +197,24 @@ export default function App() {
           <div className="text-gray-600 text-center mb-6">
             <p className="mb-4 text-lg">{analysisResult?.message}</p>
             {analysisResult?.video_url && (
-              <div className="mt-4">
+              <div className="mt-4 w-full">
+                <video 
+                  controls 
+                  className="w-full rounded-lg shadow-md mb-6"
+                  preload="metadata"
+                >
+                  <source src={analysisResult.video_url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
                 <a 
                   href={analysisResult.video_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  download
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-full text-base font-semibold hover:bg-blue-700 transition-colors"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  View Annotated Video
+                  Save Video
                 </a>
               </div>
             )}
