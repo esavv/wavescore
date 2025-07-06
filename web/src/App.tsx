@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { UPLOAD_VIDEO_ENDPOINT } from "./constants";
 
 type AppState = 'upload' | 'interim' | 'results' | 'error';
 
@@ -39,7 +40,7 @@ export default function App() {
     formData.append('file', file);
 
     try {
-      const response = await fetch('https://87a6-2600-4041-5986-7c00-d854-165c-efca-f1c5.ngrok-free.app/upload_video_sse', {
+      const response = await fetch(UPLOAD_VIDEO_ENDPOINT, {
         method: 'POST',
         body: formData,
       });
