@@ -97,6 +97,7 @@ def process_video_stream(video_path):
         }
         yield f"data: {json.dumps(result)}\n\n"
     else:
+        print("Not a surf video! Exiting...")
         result = {
             "status": "user_error",
             "message": "Video does not seem to be a surf video. Please try another video."
