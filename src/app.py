@@ -2,8 +2,10 @@
 import os, time, json
 import verify_video, modify_video, inference
 from flask import Flask, request, jsonify, Response
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, origins=["http://localhost:5173", "https://www.wavescore.xyz/"])
 
 @app.route('/upload_video_sse', methods=['POST'])
 def upload_video_sse():
