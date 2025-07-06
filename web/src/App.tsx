@@ -87,8 +87,16 @@ export default function App() {
                 setAppState('results');
                 setIsUploading(false);
                 return;
-              } else if (data.status === 'error') {
-                throw new Error(data.message || 'Analysis failed. Please try again.');
+              } else if (data.status === 'server_error') {
+                setError('Something went wrong. Please try again.');
+                setAppState('upload');
+                setIsUploading(false);
+                return;
+              } else if (data.status === 'user_error') {
+                setError(data.message);
+                setAppState('upload');
+                setIsUploading(false);
+                return;
               }
             } catch (e) {
               console.error('Error parsing SSE data:', e);
