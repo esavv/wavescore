@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173", "https://www.wavescore.xyz/"])
+CORS(app, origins=["http://localhost:5173", "https://www.wavescore.xyz/", "https://*.vercel.app/"])
 
 @app.route('/upload_video_sse', methods=['POST'])
 def upload_video_sse():
