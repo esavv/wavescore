@@ -5,7 +5,24 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173", "https://www.wavescore.xyz/"])
+
+def is_allowed_origin(origin):
+    allowed_origins = [
+        "http://localhost:5173",
+        "https://www.wavescore.xyz"
+    ]
+    
+    # Check exact matches first
+    if origin in allowed_origins:
+        return True
+    
+    # Check Vercel preview URLs with more specific pattern
+    if origin.startswith("https://wavescore-") and origin.endswith("-esav-projects.vercel.app"):
+        return True
+    
+    return False
+
+CORS(app, origins=is_allowed_origin)
 
 @app.route('/upload_video_sse', methods=['POST'])
 def upload_video_sse():
