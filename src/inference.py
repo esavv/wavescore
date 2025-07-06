@@ -36,6 +36,8 @@ def run_inference(video_path, model_filename, mode='dev'):
         model_state = load_checkpoint(model_path)[0]  # Only get the model state
         model.load_state_dict(model_state)
         
+        model = model.to(device) 
+               
         model.eval()
         
         # Extract frames from the video
