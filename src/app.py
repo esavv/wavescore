@@ -29,13 +29,14 @@ def process_video_stream(video_path):
         "message": "Checking if video is a surf video..."
     }
     yield f"data: {json.dumps(result)}\n\n"
+    
     try:
         is_surf = verify_video.is_surf_video(video_path)
     except Exception as e:
         print(f"Error during video verification: {str(e)}")
         result = {
-            "status": "error",
-            "message": "Internal error encountered, exiting..."
+            "status": "server_error",
+            "message": "Internal server error"
         }
         yield f"data: {json.dumps(result)}\n\n"
         return
@@ -63,8 +64,8 @@ def process_video_stream(video_path):
         except Exception as e:
             print(f"Error during inference: {str(e)}")
             result = {
-                "status": "error",
-                "message": "Internal error encountered, exiting..."
+                "status": "server_error",
+                "message": "Internal server error"
             }
             yield f"data: {json.dumps(result)}\n\n"
             return
@@ -97,7 +98,7 @@ def process_video_stream(video_path):
         yield f"data: {json.dumps(result)}\n\n"
     else:
         result = {
-            "status": "error",
+            "status": "user_error",
             "message": "Video does not seem to be a surf video. Please try another video."
         }
         yield f"data: {json.dumps(result)}\n\n"
@@ -128,13 +129,14 @@ def process_video_stream_hardcode(video_path):
         "message": "Checking if video is a surf video..."
     }
     yield f"data: {json.dumps(result)}\n\n"
+    
     try:
         is_surf = verify_video.is_surf_video(video_path)
     except Exception as e:
         print(f"Error during video verification: {str(e)}")
         result = {
-            "status": "error",
-            "message": "Internal error encountered, exiting..."
+            "status": "server_error",
+            "message": "Internal server error"
         }
         yield f"data: {json.dumps(result)}\n\n"
         return
@@ -177,7 +179,7 @@ def process_video_stream_hardcode(video_path):
         yield f"data: {json.dumps(result)}\n\n"
     else:
         result = {
-            "status": "error",
+            "status": "user_error",
             "message": "Video does not seem to be a surf video. Please try another video."
         }
         yield f"data: {json.dumps(result)}\n\n"
