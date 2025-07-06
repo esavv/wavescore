@@ -1,39 +1,257 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
+
+type AppState = 'upload' | 'interim' | 'results';
+
+interface AnalysisResult {
+  message: string;
+  video_url?: string;
+}
 
 export default function App() {
+  const [appState, setAppState] = useState<AppState>('upload');
+  const [sseMessages, setSseMessages] = useState<string[]>([]);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const validateFile = (file: File): string | null => {
+    // Check file type
+    if (!file.type.startsWith('video/')) {
+      return 'Please select a video file (MP4, MOV, AVI, etc.)';
+    }
+    
+    // Check file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      return 'File size must be less than 50MB';
+    }
+    
+    return null;
+  };
+
+  const uploadVideo = async (file: File) => {
+    setIsUploading(true);
+    setError(null);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('https://87a6-2600-4041-5986-7c00-d854-165c-efca-f1c5.ngrok-free.app/upload_video_sse', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        if (response.status === 413) {
+          throw new Error('File too large. Please try a smaller video file.');
+        } else if (response.status === 415) {
+          throw new Error('Unsupported file type. Please upload a video file.');
+        } else if (response.status >= 500) {
+          throw new Error('Server error. Please try again later.');
+        } else {
+          throw new Error(`Upload failed (${response.status}). Please try again.`);
+        }
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response from server. Please try again.');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.status === 'interim') {
+                setSseMessages(prev => [...prev, data.message]);
+              } else if (data.status === 'success') {
+                setAnalysisResult({
+                  message: data.message,
+                  video_url: data.video_url
+                });
+                setAppState('results');
+                setIsUploading(false);
+                return;
+              } else if (data.status === 'error') {
+                throw new Error(data.message || 'Analysis failed. Please try again.');
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+              // Continue processing other messages
+            }
+          }
+        }
+      }
+      
+      // If we get here without success, something went wrong
+      throw new Error('Analysis incomplete. Please try again.');
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
+      setAppState('upload');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileSelect = async (file: File) => {
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    
+    setAppState('interim');
+    setSseMessages([]);
+    setAnalysisResult(null);
+    setError(null);
+    
+    // Start upload process
+    await uploadVideo(file);
+  };
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
   };
 
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    // TODO: handle dropped files
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
+  const handleUploadAnother = () => {
+    setAppState('upload');
+    setSseMessages([]);
+    setAnalysisResult(null);
+    setError(null);
+  };
+
+  // Render different states
+  if (appState === 'interim') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">Analyzing Video...</h1>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <div className="text-gray-600 text-center mb-4">
+            {sseMessages.length > 0 ? (
+              <p className="font-medium">{sseMessages[sseMessages.length - 1]}</p>
+            ) : (
+              <p>Starting analysis...</p>
+            )}
+          </div>
+          {sseMessages.length > 1 && (
+            <div className="text-sm text-gray-500 text-center">
+              <p>Previous steps:</p>
+              <ul className="mt-1 space-y-1">
+                {sseMessages.slice(0, -1).map((msg, index) => (
+                  <li key={index} className="text-gray-400">✓ {msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (appState === 'results') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
+          <div className="text-green-600 mb-4">
+            <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">Analysis Complete!</h1>
+          <div className="text-gray-600 text-center mb-6">
+            <p className="mb-4 text-lg">{analysisResult?.message}</p>
+            {analysisResult?.video_url && (
+              <div className="mt-4">
+                <a 
+                  href={analysisResult.video_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  View Annotated Video
+                </a>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleUploadAnother}
+            className="px-6 py-3 bg-gray-600 text-white rounded-full text-base font-semibold hover:bg-gray-700 transition-colors"
+          >
+            Upload Another Video
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Upload state (default)
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-200">
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Upload a surf video</h1>
+        
+        {error && (
+          <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+        
         <input
           ref={fileInputRef}
           type="file"
           accept="video/*"
+          onChange={handleFileInputChange}
           className="hidden"
         />
         <button
           onClick={handleButtonClick}
-          className="mb-4 px-5 py-2 bg-white border border-gray-300 text-blue-600 rounded-full text-base font-semibold flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition"
+          disabled={isUploading}
+          className="mb-4 px-5 py-2 bg-white border border-gray-300 text-blue-600 rounded-full text-base font-semibold flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5m0 0l5 5m-5-5v12" />
           </svg>
-          Select a file
+          {isUploading ? 'Uploading...' : 'Select a file'}
         </button>
         <div className="text-gray-400 font-medium mb-4">or</div>
         <div
@@ -42,6 +260,11 @@ export default function App() {
           className="w-full flex flex-col items-center justify-center border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg py-8 cursor-pointer hover:bg-blue-200 transition"
         >
           <span className="text-blue-500 font-semibold">Drag and drop a file here</span>
+        </div>
+        
+        <div className="mt-4 text-xs text-gray-500 text-center">
+          <p>Supported formats: MP4, MOV, AVI, and other video files</p>
+          <p>Maximum file size: 50MB</p>
         </div>
       </div>
     </div>
