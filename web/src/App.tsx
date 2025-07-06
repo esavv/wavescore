@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 
-type AppState = 'upload' | 'interim' | 'results';
+type AppState = 'upload' | 'interim' | 'results' | 'error';
 
 interface AnalysisResult {
   message: string;
@@ -89,12 +89,12 @@ export default function App() {
                 return;
               } else if (data.status === 'server_error') {
                 setError('Something went wrong. Please try again.');
-                setAppState('upload');
+                setAppState('error');
                 setIsUploading(false);
                 return;
               } else if (data.status === 'user_error') {
                 setError(data.message);
-                setAppState('upload');
+                setAppState('error');
                 setIsUploading(false);
                 return;
               }
@@ -112,7 +112,7 @@ export default function App() {
     } catch (error) {
       console.error('Upload error:', error);
       setError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
-      setAppState('upload');
+      setAppState('error');
     } finally {
       setIsUploading(false);
     }
@@ -122,6 +122,7 @@ export default function App() {
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
+      setAppState('error');
       return;
     }
     
@@ -222,17 +223,35 @@ export default function App() {
     );
   }
 
+  if (appState === 'error') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-200">
+        <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
+          <div className="text-red-600 mb-4">
+            <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">Something went wrong</h1>
+          <div className="text-gray-600 text-center mb-6">
+            <p className="mb-4 text-lg">{error}</p>
+          </div>
+          <button
+            onClick={handleUploadAnother}
+            className="px-6 py-3 bg-gray-600 text-white rounded-full text-base font-semibold hover:bg-gray-700 transition-colors"
+          >
+            Upload Another Video
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Upload state (default)
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-200">
       <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Upload a surf video</h1>
-        
-        {error && (
-          <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
-          </div>
-        )}
         
         <input
           ref={fileInputRef}
