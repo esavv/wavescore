@@ -170,16 +170,6 @@ export default function App() {
               <p>Starting analysis...</p>
             )}
           </div>
-          {sseMessages.length > 1 && (
-            <div className="text-sm text-gray-500 text-center">
-              <p>Previous steps:</p>
-              <ul className="mt-1 space-y-1">
-                {sseMessages.slice(0, -1).map((msg, index) => (
-                  <li key={index} className="text-gray-400">✓ {msg}</li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </div>
     );
