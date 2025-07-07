@@ -39,6 +39,7 @@ def run_inference(video_paths, model_filename, mode='dev'):
         model.to(device)
         model.eval()
         
+        predicted_scores = []
         for video_path in video_paths:        
             # Load and preprocess the video
             print('Loading and preprocessing video...')
@@ -48,6 +49,7 @@ def run_inference(video_paths, model_filename, mode='dev'):
             # Run inference on the video
             print('Running inference...')
             predicted_score = infer_video_score(model, video_tensor)
+            predicted_scores.append(round(predicted_score, 2))
             
             # Load actual score if available
             actual_score = None
@@ -64,7 +66,7 @@ def run_inference(video_paths, model_filename, mode='dev'):
                 print(f"Predicted score: {predicted_score:.2f}/10.00 (Actual score: {actual_score:.2f})\n")
             else:
                 print(f"Predicted score: {predicted_score:.2f}/10.00\n")
-        return
+        return predicted_scores
 
     except Exception as e:
         print(f"Error during inference: {str(e)}")

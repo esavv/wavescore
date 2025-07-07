@@ -1,6 +1,5 @@
-# import inference
 import os, time, json
-import verify_video, modify_video, inference
+import verify_video, modify_video, inference, score_inference
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 
@@ -58,12 +57,12 @@ def process_video_stream(video_path):
 
         # Run inference
         s3_bucket_name = "wavescorevideos"
-        # model_url = "https://wavescorevideos.s3.us-east-1.amazonaws.com/surf_maneuver_model_20250518_2118.pth"
-        model_filename = "surf_maneuver_model_20250518_2118.pth"
+        # maneuver_model_url = "https://wavescorevideos.s3.us-east-1.amazonaws.com/surf_maneuver_model_20250518_2118.pth"
+        maneuver_model = "surf_maneuver_model_20250518_2118.pth"
         try:
-            maneuvers, _, _ = inference.run_inference(video_path, model_filename, mode='prod')
+            maneuvers, _, _ = inference.run_inference(video_path, maneuver_model, mode='prod')
         except Exception as e:
-            print(f"Error during inference: {str(e)}")
+            print(f"Error during maneuver inference: {str(e)}")
             result = {
                 "status": "server_error",
                 "message": "Internal server error"
@@ -76,10 +75,21 @@ def process_video_stream(video_path):
             "message": "Predicting score..."
         }
         yield f"data: {json.dumps(result)}\n\n"
-        time.sleep(2)
 
-        # "Predict" score
-        score = 8.5
+        # Predict score
+        score_model = "score_model_20250602_1643.pth"
+        # score = 8.5
+        try:
+            scores = score_inference.run_inference([video_path], score_model, mode='prod')
+            score = scores[0]
+        except Exception as e:
+            print(f"Error during score inference: {str(e)}")
+            result = {
+                "status": "server_error",
+                "message": "Internal server error"
+            }
+            yield f"data: {json.dumps(result)}\n\n"
+            return
 
         analysis = {'maneuvers': maneuvers, 'score': score}
 
