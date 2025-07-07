@@ -15,9 +15,10 @@ def upload_video_sse():
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
-    print('Received file: ' + file.filename)
+    print('Received video file: ' + file.filename)
     # Save the file temporarily
     video_path = f"/tmp/{file.filename}"  # or choose a path that works for you
+    print("Saving original video to: " + video_path)
     file.save(video_path)
     
     return Response(process_video_stream(video_path), content_type='text/event-stream')
@@ -105,6 +106,7 @@ def process_video_stream(video_path):
         yield f"data: {json.dumps(result)}\n\n"
 
     # Delete the temporary file after analyzing the video & returning to client
+    print("Deleting original local video at: " + video_path)
     if os.path.exists(video_path):
         os.remove(video_path)
 
