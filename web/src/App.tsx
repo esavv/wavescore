@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { UPLOAD_VIDEO_ENDPOINT } from "./constants";
+import { SixDotsRotate } from 'react-svg-spinners';
 
 type AppState = 'upload' | 'interim' | 'results' | 'error';
 
@@ -190,8 +191,9 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center bg-gray-200">
         <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Analyzing Video...</h1>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <div className="text-gray-600 text-center mb-4">
+          <SixDotsRotate color="#2563eb" width={48} height={48} className="mt-6 mb-6" />
+          <div className="text-gray-600 text-center">
+            <br />
             {sseMessages.length > 0 ? (
               <p className="font-medium">{sseMessages[sseMessages.length - 1]}</p>
             ) : (
