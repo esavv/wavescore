@@ -13,7 +13,7 @@ def is_surf_video(video_path):
     try:
         # Step 1: Extract random frames
         print("Extracting random frames from the video...")
-        frames = extract_random_frames(video_path, num_frames=5)
+        frames = extract_random_frames(video_path, num_frames=10)
 
         keyword_path = './apidata/google_cloud_vision_keywords.csv'
         file = csv.reader(open(keyword_path, 'r'))
@@ -21,16 +21,17 @@ def is_surf_video(video_path):
 
         result = False
         # Step 2: Analyze each extracted frame using Cloud Vision API
+        # Policy: Return True as soon as we detect surf content in a single frame
         for frame in frames:
-            print(f"  Analyzing {frame}...")
-            frame_labels = analyze_image(frame)
-
-            for label in frame_labels:
-                # Collect label description and its score
-                if label.score >= 0.8:
-                    if label.description in keywords:
+            if result != True:
+                print(f"  Analyzing {frame}...")
+                frame_labels = analyze_image(frame)
+                for label in frame_labels:
+                    # Collect label description and its score
+                    if label.description in keywords and label.score >= 0.8:
                         print("    Found relevant label: " + label.description)
                         result = True
+                        break
 
             # Delete the frame after analysis
             os.remove(frame)
