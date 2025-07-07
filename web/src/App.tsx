@@ -18,6 +18,7 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -154,6 +155,7 @@ export default function App() {
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDraggingFiles(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       handleFileSelect(files[0]);
@@ -162,6 +164,17 @@ export default function App() {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDraggingFiles(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    // Only reset if we're leaving the drop zone entirely (not just moving over a child)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDraggingFiles(false);
+    }
   };
 
   const handleUploadAnother = () => {
@@ -296,7 +309,12 @@ export default function App() {
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          className="w-full flex flex-col items-center justify-center border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg py-8 cursor-pointer hover:bg-blue-200 transition"
+          onDragLeave={handleDragLeave}
+          className={`w-full flex flex-col items-center justify-center border-2 border-dashed rounded-lg py-8 cursor-pointer transition ${
+            isDraggingFiles 
+              ? 'border-blue-500 bg-blue-200' 
+              : 'border-blue-300 bg-blue-50'
+          }`}
         >
           <span className="text-blue-500 font-semibold">Drag and drop a file here</span>
         </div>
