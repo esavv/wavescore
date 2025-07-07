@@ -6,6 +6,10 @@ type AppState = 'upload' | 'interim' | 'results' | 'error';
 interface AnalysisResult {
   message: string;
   video_url?: string;
+  analysis?: {
+    score: number;
+    maneuvers: Array<{name: string; start_time: number; end_time: number}>;
+  };
 }
 
 export default function App() {
@@ -83,7 +87,8 @@ export default function App() {
               } else if (data.status === 'success') {
                 setAnalysisResult({
                   message: data.message,
-                  video_url: data.video_url
+                  video_url: data.video_url,
+                  analysis: data.analysis
                 });
                 setAppState('results');
                 setIsUploading(false);
@@ -196,7 +201,16 @@ export default function App() {
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Analysis Complete!</h1>
           <div className="text-gray-600 text-center mb-6">
-            <p className="mb-4 text-lg">{analysisResult?.message}</p>
+            {analysisResult?.analysis && (
+              <div className="mb-4">
+                <p className="text-lg mb-2">
+                  <span className="font-semibold">Predicted score:</span> {analysisResult.analysis.score}
+                </p>
+                <p className="text-lg">
+                  <span className="font-semibold">Detected maneuvers:</span> {analysisResult.analysis.maneuvers.map(m => m.name.toLowerCase()).join(', ')}
+                </p>
+              </div>
+            )}
             {analysisResult?.video_url && (
               <div className="mt-4 w-full">
                 <video 
