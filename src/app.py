@@ -93,7 +93,8 @@ def process_video_stream(video_path):
         # Return the annotated video to the client
         result = {
             "status": "success",
-            "message": "Nice surfing!",
+            "message": "Analysis complete",
+            "analysis": analysis,
             "video_url": annotated_url
         }
         yield f"data: {json.dumps(result)}\n\n"
