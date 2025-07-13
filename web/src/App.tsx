@@ -1,11 +1,15 @@
 import { useRef, useState } from "react";
-import { UPLOAD_VIDEO_ENDPOINT } from "./constants";
+import { SixDotsRotate } from 'react-svg-spinners';
 
 type AppState = 'upload' | 'interim' | 'results' | 'error';
 
 interface AnalysisResult {
   message: string;
   video_url?: string;
+  analysis?: {
+    score: number;
+    maneuvers: Array<{name: string; start_time: number; end_time: number}>;
+  };
 }
 
 export default function App() {
@@ -14,6 +18,7 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,7 +45,7 @@ export default function App() {
     formData.append('file', file);
 
     try {
-      const response = await fetch(UPLOAD_VIDEO_ENDPOINT, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_ENDPOINT}`, {
         method: 'POST',
         body: formData,
       });
@@ -83,7 +88,8 @@ export default function App() {
               } else if (data.status === 'success') {
                 setAnalysisResult({
                   message: data.message,
-                  video_url: data.video_url
+                  video_url: data.video_url,
+                  analysis: data.analysis
                 });
                 setAppState('results');
                 setIsUploading(false);
@@ -149,6 +155,7 @@ export default function App() {
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDraggingFiles(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       handleFileSelect(files[0]);
@@ -157,6 +164,17 @@ export default function App() {
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDraggingFiles(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    // Only reset if we're leaving the drop zone entirely (not just moving over a child)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDraggingFiles(false);
+    }
   };
 
   const handleUploadAnother = () => {
@@ -172,8 +190,9 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center bg-gray-200">
         <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Analyzing Video...</h1>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <div className="text-gray-600 text-center mb-4">
+          <SixDotsRotate color="#2563eb" width={48} height={48} className="mt-6 mb-6" />
+          <div className="text-gray-600 text-center">
+            <br />
             {sseMessages.length > 0 ? (
               <p className="font-medium">{sseMessages[sseMessages.length - 1]}</p>
             ) : (
@@ -196,7 +215,16 @@ export default function App() {
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Analysis Complete!</h1>
           <div className="text-gray-600 text-center mb-6">
-            <p className="mb-4 text-lg">{analysisResult?.message}</p>
+            {analysisResult?.analysis && (
+              <div className="mb-4">
+                <p className="text-lg mb-2">
+                  <span className="font-semibold">Predicted score:</span> {analysisResult.analysis.score}
+                </p>
+                <p className="text-lg">
+                  <span className="font-semibold">Detected maneuvers:</span> {analysisResult.analysis.maneuvers.map(m => m.name.toLowerCase()).join(', ')}
+                </p>
+              </div>
+            )}
             {analysisResult?.video_url && (
               <div className="mt-4 w-full">
                 <video 
@@ -282,7 +310,12 @@ export default function App() {
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
-          className="w-full flex flex-col items-center justify-center border-2 border-dashed border-blue-300 bg-blue-50 rounded-lg py-8 cursor-pointer hover:bg-blue-200 transition"
+          onDragLeave={handleDragLeave}
+          className={`w-full flex flex-col items-center justify-center border-2 border-dashed rounded-lg py-8 cursor-pointer transition ${
+            isDraggingFiles 
+              ? 'border-blue-500 bg-blue-200' 
+              : 'border-blue-300 bg-blue-50'
+          }`}
         >
           <span className="text-blue-500 font-semibold">Drag and drop a file here</span>
         </div>

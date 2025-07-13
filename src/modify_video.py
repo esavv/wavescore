@@ -58,6 +58,7 @@ def annotate_video(input_path, bucket_name, analysis):
     input_ext = os.path.splitext(input_path)[1]
     output_name = input_name + "_annotated" + input_ext
     output_video_path = "/tmp/" + output_name
+    print("Saving annotated video to: " + output_video_path)
     video.write_videofile(output_video_path, codec='libx264')
 
     print('Uploading video to AWS...')
@@ -69,7 +70,7 @@ def annotate_video(input_path, bucket_name, analysis):
         print(f"File uploaded successfully! You can download it from:")
         video_url = f"https://{bucket_name}.s3.amazonaws.com/{output_name}"
         print(video_url)
-        print('Deleting local video at: ' + output_video_path)
+        print('Deleting annotated local video at: ' + output_video_path)
         os.remove(output_video_path)
     except FileNotFoundError:
         print(f"File not found: {output_video_path}")
