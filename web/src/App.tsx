@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { UPLOAD_VIDEO_ENDPOINT } from "./constants";
 import { SixDotsRotate } from 'react-svg-spinners';
 
 type AppState = 'upload' | 'interim' | 'results' | 'error';
@@ -46,7 +45,7 @@ export default function App() {
     formData.append('file', file);
 
     try {
-      const response = await fetch(UPLOAD_VIDEO_ENDPOINT, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_ENDPOINT}`, {
         method: 'POST',
         body: formData,
       });
