@@ -10,19 +10,19 @@ This application will allow users to upload videos of themselves surfing and get
 
 ## Roadmap
 
-### Upcoming Tasks
-Last updated: 2025/05/31
-   - [IN PROGRESS] Build score prediction model: Infer wave score from raw video
-   - Build web app as a client of the model inference API
-   - Consider generating progressive score prediction: show user how predicted score changes as video progresses
-   - Consider migrating maneuver prediction to TCN architecture to predict sequence of maneuvers from single video
-   - Consider streamlining data labeling workflow & updating maneuver taxonomy for falls / failed moves
+### Current & Upcoming Tasks
+Last updated: 2025/07/13
+   - [IN PROGRESS] Build web app as a client of the model inference API
+   - Remove ios client to focus on webapp
+   - Migrate maneuver prediction to TCN architecture to predict sequence of maneuvers from single video
+   - Streamline data labeling workflow & updating maneuver taxonomy for falls / failed moves
+   - Scale training data to improve predictions
+   - Scale API servers to allow concurrent users
+   - Generate progressive score prediction: show user how predicted score changes as video progresses
    - Migrate data from directory system to postgres + blob storage (S3)
-   - API cleanup: Raise appropriate errors in api/video_content and api/video_overlay if key files are missing
-   - API cleanup: Remove the Google Cloud base64 account key if no longer necessary
-   - iOS code cleanup: Refactor toast & other logic in ContentView
 
 ### Completed Tasks
+   - [2025/06/02] Build score prediction model: Infer wave score from raw video
    - [2025/05/20] Model training & inference deployed on AWS, Heroku abandoned
    - [2025/05/17] Maneuver prediction model works pretty well on training data (switched to 3D CNN model, data augmentation, power75 class weight correction, pretrained model layer freezing)
    - [2025/05/01] Model optimization: Pad video frames to make them square before the resizing in train.py
