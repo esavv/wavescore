@@ -12,6 +12,8 @@
 # src $ python clipify.py 123
 import csv, os, re, subprocess, sys
 
+data_dir = "../../data"
+
 # assert video ID command-line argument is provided
 if len(sys.argv) < 2:
     print("Error: Video ID not provided.")
@@ -19,7 +21,7 @@ if len(sys.argv) < 2:
 vid_id = sys.argv[1]
 
 # assert that the /data/heats/1Zj_jAPToxI directory exists
-heat_path = '../../data/heats/' + vid_id
+heat_path = data_dir + '/heats/' + vid_id
 if not os.path.exists(heat_path):
     print('Heat directory doesn\'t exist: ' + vid_id)
     sys.exit()

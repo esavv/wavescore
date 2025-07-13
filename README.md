@@ -96,9 +96,9 @@ This assumes we're in the main project directory & naively saves it there.
 ### Convert a longer surfing video into a sequence of ride clips
    - Suppose we have video `123.mp4`. First, ensure it exists at this path: `./data/heats/123/123.mp4`
    - Add a csv to the `/123` directory called `ride_times.csv` that contains the start & end timestamps for each ride to be clipped
-   - From the main project directory, run:
+   - From the `api` directory, run:
 ```bash  
-python3 src/clipify.py 123 
+python3 clipify.py 123 
 ```
    - This runs a python script that outputs the desired clips to this directory: `./data/heats/heat_123/rides/`
 

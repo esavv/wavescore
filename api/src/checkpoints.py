@@ -5,14 +5,10 @@ It supports both old format (just model state dict) and new format (full trainin
 """
 
 import os, re, torch
+from utils import set_device
 
-# Determine the device to use
-if torch.backends.mps.is_available():
-    device = torch.device("mps")
-elif torch.cuda.is_available():
-    device = torch.device("cuda")
-else:
-    device = torch.device("cpu")
+# Set device to GPU if available, otherwise use CPU
+device = set_device()
 
 checkpoint_dir = "../../models"
 
