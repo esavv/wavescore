@@ -3,8 +3,8 @@ from google.cloud import vision
 from google.api_core.exceptions import GoogleAPICallError, PermissionDenied
 
 print("video_content: Setting env variables...")
-if os.path.exists("./keys/google_cloud_account_key.json"):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./keys/google_cloud_account_key.json"
+if os.path.exists("../keys/google_cloud_account_key.json"):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../keys/google_cloud_account_key.json"
 #else:
     #TODO: raise an appropriate error
     #raise EnvironmentError("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 environment variable")

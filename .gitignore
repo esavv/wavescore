@@ -1,5 +1,5 @@
 .DS_Store
-api/__pycache__/
+api/src/__pycache__/
 api/keys/
 api/models/
 data/**/*.jpg
@@ -10,8 +10,6 @@ img/
 ios/wavescore.xcodeproj/
 ios/wavescore/.DS_Store
 models/
-src/__pycache__/
-src/keys/
 tmp/
 *.pem
 *.zip
