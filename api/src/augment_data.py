@@ -25,6 +25,8 @@ VALID_TRANSFORMATIONS = {
     'darken': 'bright_down'
 }
 
+heats_path = '../../data/heats'
+
 def load_frame_sequence(seq_dir):
     """Load all frames from a frame sequence directory."""
     frames = []
@@ -214,7 +216,7 @@ def process_heat_directory(heat_dir, transform_type=None):
 
 def cleanup_augmented_heats():
     """Remove all augmented heat directories."""
-    data_dir = Path('../data/heats')
+    data_dir = Path(heats_path)
     removed_count = 0
     
     # Get all augmented heat directories (those with transformation suffixes)
@@ -245,7 +247,7 @@ def main():
         cleanup_augmented_heats()
         return
         
-    data_dir = Path('../data/heats')
+    data_dir = Path(heats_path)
     
     # Build list of heats to process
     if args.heat:

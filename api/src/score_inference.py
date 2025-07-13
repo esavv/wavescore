@@ -10,6 +10,9 @@ from score_dataset import load_video_for_inference
 from score_model import VideoScorePredictor
 from utils import set_device
 
+model_dir = "../../models"
+data_dir = "../../data"
+
 def run_inference(video_paths, model_filename, mode='dev'):
     try:
         # Set device to GPU if available, otherwise use CPU
@@ -17,7 +20,6 @@ def run_inference(video_paths, model_filename, mode='dev'):
 
         # Retrieve the model from locally. TODO: Support S3 retrieval
         print('Retrieving the model...')
-        model_dir = "../models/"
         model_path = os.path.join(model_dir, model_filename)
 
         # Load the saved model
@@ -95,10 +97,9 @@ if __name__ == "__main__":
     mode = args.mode
 
     # List available models
-    model_dir = "../models/"
     models = sorted([f for f in os.listdir(model_dir) if f.endswith('.pth')])
     if not models:
-        print("Error: No model files found in ../models/")
+        print("Error: No model files found in " + model_dir)
         sys.exit(1)
 
     print("\nAvailable models:")
@@ -119,9 +120,9 @@ if __name__ == "__main__":
 
     # Run inference on test videos (from training data)
     video_paths = [
-        "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4",
-        "../data/inference_vids/_Lwdbce6a4E_1_inf/_Lwdbce6a4E_1.mp4",
-        "../data/inference_vids/kl6bwSUqUw4_7_inf/kl6bwSUqUw4_7.mp4",
-        "../data/inference_vids/kl6bwSUqUw4_14_inf/kl6bwSUqUw4_14.mp4"
+        data_dir + "/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4",
+        data_dir + "/inference_vids/_Lwdbce6a4E_1_inf/_Lwdbce6a4E_1.mp4",
+        data_dir + "/inference_vids/kl6bwSUqUw4_7_inf/kl6bwSUqUw4_7.mp4",
+        data_dir + "/inference_vids/kl6bwSUqUw4_14_inf/kl6bwSUqUw4_14.mp4"
     ]
     run_inference(video_paths, model_filename, mode)

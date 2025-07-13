@@ -14,6 +14,8 @@ elif torch.cuda.is_available():
 else:
     device = torch.device("cpu")
 
+checkpoint_dir = "../../models"
+
 def get_available_checkpoints():
     """List available checkpoints in the models directory.
     
@@ -23,7 +25,6 @@ def get_available_checkpoints():
             - timestamp: str
             - epoch: int
     """
-    checkpoint_dir = "../models"
     checkpoints = []
     
     # Get all .pth files with 'checkpoint' in the name
@@ -69,9 +70,9 @@ def save_checkpoint(model, optimizer, epoch, timestamp, class_distribution, trai
     model_name = training_config.get('model_name', 'maneuver_model')
     
     if is_final:
-        filename = f"../models/{model_name}_{timestamp}.pth"
+        filename = f"{checkpoint_dir}/{model_name}_{timestamp}.pth"
     else:
-        filename = f"../models/{model_name}_{timestamp}_checkpoint_epoch_{epoch+1}.pth"
+        filename = f"{checkpoint_dir}/{model_name}_{timestamp}_checkpoint_epoch_{epoch+1}.pth"
     
     torch.save(checkpoint, filename)
     return filename

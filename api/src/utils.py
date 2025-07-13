@@ -5,6 +5,8 @@ import torchvision.transforms.functional as F
 from collections import Counter
 from PIL import Image
 
+data_dir = "../../data"
+
 def set_device():
     """Set device to GPU if available, otherwise use CPU.
     
@@ -256,7 +258,7 @@ def load_maneuver_taxonomy():
         dict: Mapping of maneuver IDs to their names
     """
     taxonomy = {}
-    with open('../data/maneuver_taxonomy.csv', mode='r') as file:
+    with open(data_dir + '/maneuver_taxonomy.csv', mode='r') as file:
         reader = csv.DictReader(file)
         for row in reader:
             taxonomy[int(row['id'])] = row['name']
@@ -272,7 +274,7 @@ def save_class_distribution(class_distribution):
     dist_dict = dict(class_distribution)
     
     # Save to JSON file
-    with open('../data/class_distribution.json', 'w') as f:
+    with open(data_dir + '/class_distribution.json', 'w') as f:
         json.dump(dist_dict, f, indent=2)
 
 def load_class_distribution():
@@ -282,7 +284,7 @@ def load_class_distribution():
         Counter: Class distribution if file exists, None otherwise
     """
     try:
-        with open('../data/class_distribution.json', 'r') as f:
+        with open(data_dir + '/class_distribution.json', 'r') as f:
             dist_dict = json.load(f)
         # Convert string keys to integers
         return Counter({int(k): v for k, v in dist_dict.items()})
@@ -296,10 +298,10 @@ def get_total_samples_in_heats():
         int: Total number of samples
     """
     total = 0
-    heats_dir = "../data/heats"
+    heats_dir = data_dir + "/heats"
     
     # Walk through all subdirectories
-    for root, _, files in os.walk(heats_dir):
+    for _, _, files in os.walk(heats_dir):
         # Count sequence directories
         if any(f.endswith('.jpg') for f in files):
             total += 1

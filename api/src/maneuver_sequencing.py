@@ -8,6 +8,8 @@ import os, sys
 import pandas as pd
 from utils import sequence_video_frames, label_sequences_from_csv
 
+data_dir = '../../data'
+
 # assert video ID command-line argument is provided
 if len(sys.argv) < 2:
     print("Error: Video ID not provided.")
@@ -15,7 +17,7 @@ if len(sys.argv) < 2:
 vid_id = sys.argv[1]
 
 # assert that the /data/heats/1Zj_jAPToxI directory exists
-heat_path = os.path.join('..', 'data', 'heats', vid_id)
+heat_path = os.path.join(data_dir, 'heats', vid_id)
 if not os.path.exists(heat_path):
     print('Heat directory doesn\'t exist: ' + vid_id)
     sys.exit()

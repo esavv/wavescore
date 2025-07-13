@@ -267,27 +267,17 @@ def create_maneuver_compilations(base_data_dir, output_dir, verbose=False):
     print(f"Compilation complete! {len(sequences_by_maneuver)} videos created in {elapsed_time:.1f} seconds")
 
 if __name__ == "__main__":
-    # Set up paths relative to the script location
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(script_dir)
+    data_dir = "../../data"
+    output_dir = data_dir + "/sequence_vids"
     
     parser = argparse.ArgumentParser(description="Create compilation videos by maneuver type")
-    parser.add_argument("--data_dir", type=str, help="Base directory containing heat and ride data")
-    parser.add_argument("--output_dir", type=str, default=os.path.join(project_root, "data/sequence_vids"), 
-                        help="Directory to save compilation videos")
     parser.add_argument("--taxonomy_file", type=str, help="Path to maneuver taxonomy CSV file")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
     
-    # If data_dir not provided, use default relative to project root
-    if args.data_dir is None:
-        args.data_dir = os.path.join(project_root, "data")
-    
     if args.verbose:
-        print(f"Script directory: {script_dir}")
-        print(f"Project root: {project_root}")
-        print(f"Data directory: {args.data_dir}")
-        print(f"Output directory: {args.output_dir}")
+        print(f"Data directory: {data_dir}")
+        print(f"Output directory: {output_dir}")
     
-    create_maneuver_compilations(args.data_dir, args.output_dir, args.verbose)
-    print(f"Videos saved to: {args.output_dir}") 
+    create_maneuver_compilations(data_dir, output_dir, args.verbose)
+    print(f"Videos saved to: {output_dir}") 

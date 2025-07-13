@@ -17,6 +17,9 @@ from utils import (
 # Set device to GPU if available, otherwise use CPU
 device = set_device()
 
+model_dir = "../../models"
+data_dir = "../../data"
+
 def run_inference(video_path, model_filename, mode='dev'):
     try:
         # Load the video target for inference
@@ -25,7 +28,6 @@ def run_inference(video_path, model_filename, mode='dev'):
 
         # Retrieve the model from locally. TODO: Support S3 retrieval
         print('Retrieving the model...')
-        model_dir = "../models/"
         model_path = os.path.join(model_dir, model_filename)
 
         # Load the saved model
@@ -154,10 +156,9 @@ if __name__ == "__main__":
     mode = args.mode
 
     # List available models
-    model_dir = "../models/"
     models = sorted([f for f in os.listdir(model_dir) if f.endswith('.pth')])
     if not models:
-        print("Error: No model files found in ../models/")
+        print("Error: No model files found in " + model_dir)
         sys.exit(1)
 
     print("\nAvailable models:")
@@ -177,6 +178,6 @@ if __name__ == "__main__":
             print("Please enter a valid number")
 
     # Set video path and run inference
-    video_path = "../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
+    video_path = data_dir + "/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
     maneuvers, confidence_data, taxonomy = run_inference(video_path, model_filename, mode)
     print("\nPrediction dict: " + str(maneuvers))

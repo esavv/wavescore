@@ -19,7 +19,7 @@ if len(sys.argv) < 2:
 vid_id = sys.argv[1]
 
 # assert that the /data/heats/1Zj_jAPToxI directory exists
-heat_path = '../data/heats/' + vid_id
+heat_path = '../../data/heats/' + vid_id
 if not os.path.exists(heat_path):
     print('Heat directory doesn\'t exist: ' + vid_id)
     sys.exit()

@@ -51,6 +51,10 @@ focal_gamma = args.gamma
 freeze_backbone = not args.unfreeze_backbone  # Invert the flag to get freeze_backbone
 use_scheduler = args.use_scheduler
 
+data_dir = "../../data"
+logs_dir = "../../logs"
+models_dir = "../../models"
+
 # Model training choices
 TRAIN_FROM_SCRATCH = 1
 RESUME_FROM_CHECKPOINT = 2
@@ -113,7 +117,7 @@ if model_choice == RESUME_FROM_CHECKPOINT:
             print("Please enter a valid number")
     
     # Load checkpoint data
-    checkpoint_path = os.path.join("../models", selected_cp['filename'])
+    checkpoint_path = os.path.join(models_dir, selected_cp['filename'])
     print(f"\nLoading checkpoint: {checkpoint_path}")
     try:
         model_state, optimizer_state, start_epoch, timestamp, training_config, training_history = load_checkpoint(checkpoint_path)
@@ -150,7 +154,7 @@ device = set_device()
 
 # Data preparation
 print('>  Loading dataset...')
-dataset = SurfManeuverDataset(root_dir="../data/heats", transform=None, mode=mode)
+dataset = SurfManeuverDataset(root_dir=data_dir + "/heats", transform=None, mode=mode)
 print('>  Creating dataloader...')
 
 # Calculate or load class distribution
@@ -402,7 +406,7 @@ model_filename = save_checkpoint(model, optimizer, num_epochs - 1, timestamp, cl
 print(f"Final model saved: {model_filename}")
 
 # Write training log
-log_filename = f"../logs/training_{timestamp}.log"
+log_filename = f"{logs_dir}/training_{timestamp}.log"
 write_training_log(
     log_filename=log_filename,
     timestamp=timestamp,

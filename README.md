@@ -13,7 +13,10 @@ This application will allow users to upload videos of themselves surfing and get
 ### Current & Upcoming Tasks
 Last updated: 2025/07/13
    - [IN PROGRESS] Build web app as a client of the model inference API
-   - Remove ios client to focus on webapp
+   - Cleanup: Remove ios client to focus on webapp
+   - Cleanup: Organize `src` files into subdirectories
+   - Cleanup: Remove heroku references from readme
+   - Cleanup: Refactor `src` to use filepaths relative to the absolute path for the main directory
    - Migrate maneuver prediction to TCN architecture to predict sequence of maneuvers from single video
    - Streamline data labeling workflow & updating maneuver taxonomy for falls / failed moves
    - Scale training data to improve predictions
@@ -77,32 +80,32 @@ yt-dlp -f "mp4" -o "%(id)s.mp4" https://www.youtube.com/watch?v=1Zj_jAPToxI
 yt-dlp -f "mp4" -o "%(id)s.mp4" --download-sections "*00:30:00-01:00:00" https://www.youtube.com/watch?v=1Zj_jAPToxI
 ```
 
-### Download a YouTube video with script (recommended)
-From the `/wavescore/src` directory, run:
+### Download a YouTube video with script
+From the `./api/src` directory, run:
 ```bash
 python3 download_youtube.py <video_id>
 ```
-This script downloads the video (full or partial) and creates the required directory structure in `/data/heats/heat_<video_id>/` with the video file and a CSV template for ride times.
+This script downloads the video (full or partial) and creates the required directory structure in `./data/heats/heat_<video_id>/` with the video file and a CSV template for ride times.
 
 ### Clip a shorter video from a longer video and save it
-This assumes we're in the parent `/wavescore` directory & naively saves it there.
 ```bash  
 ffmpeg -i data/heats/heat_1Zj_jAPToxI/1Zj_jAPToxI.mp4 -ss 00:00:17 -to 00:00:46 -c:v libx264 -c:a aac 1Zj_jAPToxI_1.mp4
 ```
+This assumes we're in the main project directory & naively saves it there.
 
 ### Convert a longer surfing video into a sequence of ride clips
-   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `/wavescore/data/heats/123/123.mp4`
+   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `./data/heats/123/123.mp4`
    - Add a csv to the `/123` directory called `ride_times.csv` that contains the start & end timestamps for each ride to be clipped
-   - From the main `/wavescore` directory, run this command:
+   - From the main project directory, run:
 ```bash  
 python3 src/clipify.py 123 
 ```
-   - This runs a python script that outputs the desired clips to this directory: `/wavescore/data/heats/heat_123/rides/`
+   - This runs a python script that outputs the desired clips to this directory: `./data/heats/heat_123/rides/`
 
 ### Convert a sequence of ride clips into labeled sequences of frames
 This labeled sequence is intended to be fed into a model that will learn surf maneuvers from an input video.
-   - Suppose we have video `123.mp4` that has ride clips in `/data/heats/123/rides/`
-   - Ensure that each ride directory, in addition to the ride clip (e.g. `0/123_0.mp4`) has a human-labeled CSV file named `human_labels.csv` containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `data/maneuver_taxonomy.csv`)
+   - Suppose we have video `123.mp4` that has ride clips in `./data/heats/123/rides/`
+   - Ensure that each ride directory, in addition to the ride clip (e.g. `0/123_0.mp4`) has a human-labeled CSV file named `human_labels.csv` containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `./data/maneuver_taxonomy.csv`)
    - From the main /wavescore directory, run this command:
 ```bash
 python3 src/maneuver_sequencing.py 123
@@ -111,7 +114,7 @@ python3 src/maneuver_sequencing.py 123
 
 ### Time model training & inference runs for performance evaluation
 
-Run these commands from the `/src` directory:
+Run these commands from `./api/src`:
 ```bash
 { time python train.py --mode dev ; } 2> ../logs/train_time_$(date +"%Y%m%d_%H%M%S").log
 { time python inference.py --mode dev ; } 2> ../logs/inference_time_$(date +"%Y%m%d_%H%M%S").log
@@ -203,7 +206,7 @@ git branch -D heroku-main
       - Inference server: `t3.medium`
    - SSH into an EC2 instance to manage my training and/or inference servers. From root dir:
 ```bash  
-ssh -i "src/keys/aws_ec2.pem" ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com
+ssh -i "api/src/keys/aws_ec2.pem" ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com
 ```
    - From EC2 instance, make necessary project directories
 ```bash  
@@ -217,27 +220,27 @@ mkdir data logs models src
 ```bash
 mkdir data models src
 ```
-   - Training server: Zip my src/ files to scp to AWS later
+   - Training server: Zip my `src` files to scp to AWS later
 ```bash  
 zip -r src.zip augment_data.py checkpoints.py clipify.py create_maneuver_compilations.py dataset.py download_youtube.py inference.py maneuver_sequencing.py model_logging.py model.py requirements.txt train.py utils.py
 ```
-   - Training server: Transfer my src zip to fresh EC2 instance from src dir:
+   - Training server: Transfer my src zip to fresh EC2 instance from `api` dir:
 ```bash  
-scp -i keys/aws_ec2.pem -r src.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
+scp -i keys/aws_ec2.pem -r src/src.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
 ```
    - Training server: Zip my data/ files to scp to AWS later (lazy approach)
 ```bash  
 zip -r data.zip heats/ inference_vids/ class_distribution.json maneuver_taxonomy.csv
 ```
-   - Training server: Transfer my data zip to EC2 instance from data dir (lazy approach):
+   - Training server: Transfer my data zip to EC2 instance from `data` dir (lazy approach):
 ```bash  
-scp -i ../src/keys/aws_ec2.pem -r data.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
+scp -i ../api/keys/aws_ec2.pem -r data.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
 ```
-   - Inference server: Zip my src/ files to scp to AWS later
+   - Inference server: Zip my `src` files to scp to AWS later
 ```bash  
-zip -r api.zip apidata/ keys/ app.py verify_video.py modify_video.py inference.py model.py score_inference.py score_model.py score_dataset.py utils.py checkpoints.py requirements_cpu.txt
+zip -r api.zip ../apidata/ ../keys/ app.py verify_video.py modify_video.py inference.py model.py score_inference.py score_model.py score_dataset.py utils.py checkpoints.py requirements_cpu.txt
 ```
-   - Inference server: Transfer my api zip, taxonomy, and model to EC2 instance from src dir:
+   - Inference server: Transfer my api zip, taxonomy, and model to EC2 instance from `api` dir:
 ```bash  
 scp -i keys/aws_ec2.pem -r api.zip ubuntu@ec2-3-88-165-100.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
 scp -i keys/aws_ec2.pem -r ../data/maneuver_taxonomy.csv ubuntu@ec2-3-88-165-100.compute-1.amazonaws.com:/home/ubuntu/wavescore/data

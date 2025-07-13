@@ -21,6 +21,10 @@ from utils import (
     set_device
 )
 
+data_dir = "../../data"
+logs_dir = "../../logs"
+models_dir = "../../models"
+
 # Constants for model choice
 TRAIN_FROM_SCRATCH = 1
 RESUME_FROM_CHECKPOINT = 2
@@ -131,7 +135,7 @@ def main():
                 print("Please enter a valid number")
         
         # Load checkpoint data
-        checkpoint_path = os.path.join("../models", selected_cp['filename'])
+        checkpoint_path = os.path.join(models_dir, selected_cp['filename'])
         print(f"\nLoading checkpoint: {checkpoint_path}")
         try:
             model_state, optimizer_state, start_epoch, timestamp, training_config, training_history = load_checkpoint(checkpoint_path)
@@ -172,7 +176,7 @@ def main():
     # Initialize dataset and dataloader
     print('> Loading dataset...')
     dataset = ScoreDataset(
-        root_dir="../data/heats",
+        root_dir=data_dir + "/heats",
         transform=None,
         model_type=args.model_type
     )
@@ -262,7 +266,7 @@ def main():
         
         # Log training progress
         write_training_log(
-            log_filename=os.path.join('../logs', f'score_training_{timestamp}.log'),
+            log_filename=os.path.join(logs_dir, f'score_training_{timestamp}.log'),
             timestamp=timestamp,
             mode=args.mode,
             batch_size=batch_size,
@@ -313,7 +317,7 @@ def main():
     
     print('\nTraining complete!')
     print(f"> Final model saved to: {model_filename}")
-    print(f"> Training log saved to: ../logs/score_training_{timestamp}.log")
+    print(f"> Training log saved to: {logs_dir}/score_training_{timestamp}.log")
     print(f"> Total training time: {format_time(total_elapsed_time)}")
 
 if __name__ == '__main__':

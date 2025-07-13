@@ -4,9 +4,12 @@ from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 import boto3, os, csv
 from botocore.exceptions import NoCredentialsError
 
+data_dir = '../../data'
+aws_keys_path = "../keys/aws_s3_accessKeys.csv"
+
 print("video_overlay: Setting env variables...")
-if os.path.exists("../keys/aws_s3_accessKeys.csv"):
-    with open('../keys/aws_s3_accessKeys.csv', mode='r', encoding='utf-8-sig') as file:
+if os.path.exists(aws_keys_path):
+    with open(aws_keys_path, mode='r', encoding='utf-8-sig') as file:
         reader = csv.DictReader(file)
         for row in reader:
             os.environ['AWS_ACCESS_KEY_ID'] = row['Access key ID']
@@ -92,5 +95,5 @@ if __name__ == "__main__":
         {'name': 'Cutback', 'start_time': 23.0, 'end_time': 24.0}
     ]
     analysis = {'maneuvers': maneuvers, 'score': 8.5}
-    input_path = '../data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4'
+    input_path = data_dir + '/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4'
     annotate_video(input_path, analysis)

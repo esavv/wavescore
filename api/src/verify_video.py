@@ -2,9 +2,12 @@ import csv, cv2, os, random
 from google.cloud import vision
 from google.api_core.exceptions import GoogleAPICallError, PermissionDenied
 
+google_key_path = "../keys/google_cloud_account_key.json"
+vision_keyword_path = '../apidata/google_cloud_vision_keywords.csv'
+
 print("video_content: Setting env variables...")
-if os.path.exists("../keys/google_cloud_account_key.json"):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "../keys/google_cloud_account_key.json"
+if os.path.exists(google_key_path):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_key_path
 #else:
     #TODO: raise an appropriate error
     #raise EnvironmentError("Missing GOOGLE_APPLICATION_CREDENTIALS_B64 environment variable")
@@ -15,8 +18,7 @@ def is_surf_video(video_path):
         print("Extracting random frames from the video...")
         frames = extract_random_frames(video_path, num_frames=10)
 
-        keyword_path = './apidata/google_cloud_vision_keywords.csv'
-        file = csv.reader(open(keyword_path, 'r'))
+        file = csv.reader(open(vision_keyword_path, 'r'))
         keywords = set([row[0] for row in file])
 
         result = False
