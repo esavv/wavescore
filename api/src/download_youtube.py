@@ -14,10 +14,11 @@
 
 import csv, os, subprocess, sys
 
+heats_path = '../../data/heats'
+
 def create_directory_structure(video_id):
     """Create the required directory structure and CSV file."""
     # Create the heat directory
-    heats_path = '../../data/heats'
     heat_dir = os.path.join(heats_path, f'{video_id}')
     os.makedirs(heat_dir, exist_ok=True)
     

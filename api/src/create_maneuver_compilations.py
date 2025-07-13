@@ -2,7 +2,9 @@ import argparse, cv2, glob, os, re, time
 import pandas as pd
 from pathlib import Path
 
-def create_maneuver_compilations(base_data_dir, output_dir, verbose=False):
+data_dir = "../../data"
+
+def create_maneuver_compilations(output_dir, verbose=False):
     """
     Creates compilation videos for each maneuver type by stitching together
     all sequences with the same label in their original order.
@@ -22,7 +24,7 @@ def create_maneuver_compilations(base_data_dir, output_dir, verbose=False):
     sequences_by_maneuver = {}
     
     # Load the maneuver taxonomy from CSV
-    taxonomy_path = os.path.join(base_data_dir, "maneuver_taxonomy.csv")
+    taxonomy_path = os.path.join(data_dir, "maneuver_taxonomy.csv")
     maneuver_names = {}
     
     if os.path.exists(taxonomy_path):
@@ -45,11 +47,11 @@ def create_maneuver_compilations(base_data_dir, output_dir, verbose=False):
         return
     
     # Find all CSV files with sequence labels
-    label_files = glob.glob(f"{base_data_dir}/**/seq_labels.csv", recursive=True)
+    label_files = glob.glob(f"{data_dir}/**/seq_labels.csv", recursive=True)
     print(f"Found {len(label_files)} sequence label files")
     
     if len(label_files) == 0:
-        print(f"No label files found in {base_data_dir}")
+        print(f"No label files found in {data_dir}")
         return
     
     # Walk through the directory structure to find all sequence directories and their labels
@@ -267,11 +269,9 @@ def create_maneuver_compilations(base_data_dir, output_dir, verbose=False):
     print(f"Compilation complete! {len(sequences_by_maneuver)} videos created in {elapsed_time:.1f} seconds")
 
 if __name__ == "__main__":
-    data_dir = "../../data"
     output_dir = data_dir + "/sequence_vids"
     
     parser = argparse.ArgumentParser(description="Create compilation videos by maneuver type")
-    parser.add_argument("--taxonomy_file", type=str, help="Path to maneuver taxonomy CSV file")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
     
@@ -279,5 +279,5 @@ if __name__ == "__main__":
         print(f"Data directory: {data_dir}")
         print(f"Output directory: {output_dir}")
     
-    create_maneuver_compilations(data_dir, output_dir, args.verbose)
+    create_maneuver_compilations(output_dir, args.verbose)
     print(f"Videos saved to: {output_dir}") 
