@@ -235,7 +235,7 @@ scp -i ../src/keys/aws_ec2.pem -r data.zip ubuntu@ec2-44-210-82-47.compute-1.ama
 ```
    - Inference server: Zip my src/ files to scp to AWS later
 ```bash  
-zip -r api.zip apidata/ keys/ app.py verify_video.py modify_video.py inference.py model.py utils.py checkpoints.py requirements_cpu.txt
+zip -r api.zip apidata/ keys/ app.py verify_video.py modify_video.py inference.py model.py score_inference.py score_model.py score_dataset.py utils.py checkpoints.py requirements_cpu.txt
 ```
    - Inference server: Transfer my api zip, taxonomy, and model to EC2 instance from src dir:
 ```bash  
@@ -267,6 +267,64 @@ scp -i keys/aws_ec2.pem ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:'/home/u
 scp -i keys/aws_ec2.pem ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:'/home/ubuntu/wavescore/logs/training_20250518_1431.log' ../logs/
 ```
 
+### Enable HTTPS for EC2 Instance with Nginx
+
+To enable HTTPS for the Flask API running on an AWS EC2 instance:
+
+1. **Set Up a Subdomain, DNS, and Modify Security Group to**
+   - Create a subdomain (e.g., `api.wavescore.xyz`) in your DNS provider (such as Vercel) and point it to your EC2 instance's public IP using an A record.
+   - In the AWS EC2 console, add an inbound security group rule with the following settings:
+     - Type: Custom TCP
+     - Port range: 5000
+     - Source: 0.0.0.0/0
+     - Description: Flask API
+
+2. **Install Nginx and Certbot on EC2**
+   - SSH into ec2 instance and run:
+   ```bash
+   sudo apt update
+   sudo apt install nginx certbot python3-certbot-nginx -y
+   ```
+
+3. **Configure Nginx as a Reverse Proxy**
+   - Create or edit `/etc/nginx/sites-available/flask-app`; open it in an editor:
+   ```bash
+   sudo nano /etc/nginx/sites-available/flask-app
+   ```
+   - Populate this file with the config at ./api/nginx.conf
+   - Save and exit: Ctrl+O, enter, Ctrl+X
+   - Enable the config and reload Nginx:
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/flask-app /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+4. **Open Ports 80 and 443 in Security Group**
+   - In the AWS EC2 console, add these inbound security group rules:
+     - **HTTP Rule:**
+       - Type: HTTP
+       - Port range: 80
+       - Source: 0.0.0.0/0
+       - Description: Web traffic
+     - **HTTPS Rule:**
+       - Type: HTTPS
+       - Port range: 443
+       - Source: 0.0.0.0/0
+       - Description: Secure web traffic
+
+5. **Obtain and Install SSL Certificate with Certbot**
+   - Run Certbot to automatically configure SSL for your domain:
+   ```bash
+   sudo certbot --nginx -d api.wavescore.xyz
+   ```
+   - Follow the prompts to complete the certificate installation.
+
+6. **Update Your Web App Environment Variables**
+   - Set your API base URL to use HTTPS and your subdomain:
+   ```env
+   VITE_API_BASE_URL=https://api.wavescore.xyz
+   ```
 
 ## Acknowledgments
 
