@@ -1,6 +1,10 @@
 import { useRef, useState, useEffect } from "react";
 import { SixDotsRotate } from 'react-svg-spinners';
 
+// Configuration constants
+const MAX_FILE_SIZE_MB = 250;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 type AppState = 'upload' | 'interim' | 'results' | 'error';
 
 interface AnalysisResult {
@@ -41,9 +45,8 @@ export default function App() {
     }
     
     // Check file size (50MB limit)
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    if (file.size > maxSize) {
-      return 'File size must be less than 50MB';
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return `File size must be less than ${MAX_FILE_SIZE_MB}MB`;
     }
     
     return null;
@@ -339,7 +342,7 @@ export default function App() {
         {!isMobile && (
           <div className="mt-4 text-xs text-gray-500 text-center">
             <p>Supported formats: MP4, MOV, and AVI</p>
-            <p>Maximum file size: 50MB</p>
+            <p>Max file size: {MAX_FILE_SIZE_MB}MB</p>
           </div>
         )}
       </div>
