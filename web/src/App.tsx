@@ -1,5 +1,9 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { SixDotsRotate } from 'react-svg-spinners';
+
+// Configuration constants
+const MAX_FILE_SIZE_MB = 250;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 type AppState = 'upload' | 'interim' | 'results' | 'error';
 
@@ -12,6 +16,17 @@ interface AnalysisResult {
   };
 }
 
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(isMobileUA);
+  }, []);
+  
+  return isMobile;
+};
+
 export default function App() {
   const [appState, setAppState] = useState<AppState>('upload');
   const [sseMessages, setSseMessages] = useState<string[]>([]);
@@ -21,17 +36,17 @@ export default function App() {
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const validateFile = (file: File): string | null => {
     // Check file type
     if (!file.type.startsWith('video/')) {
-      return 'Please select a video file (MP4, MOV, AVI, etc.)';
+      return 'Please select a video file (MP4, MOV, AVI)';
     }
     
     // Check file size (50MB limit)
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    if (file.size > maxSize) {
-      return 'File size must be less than 50MB';
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return `File size must be less than ${MAX_FILE_SIZE_MB}MB`;
     }
     
     return null;
@@ -306,24 +321,30 @@ export default function App() {
           </svg>
           {isUploading ? 'Uploading...' : 'Select a file'}
         </button>
-        <div className="text-gray-400 font-medium mb-4">or</div>
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          className={`w-full flex flex-col items-center justify-center border-2 border-dashed rounded-lg py-8 cursor-pointer transition ${
-            isDraggingFiles 
-              ? 'border-blue-500 bg-blue-200' 
-              : 'border-blue-300 bg-blue-50'
-          }`}
-        >
-          <span className="text-blue-500 font-semibold">Drag and drop a file here</span>
-        </div>
+        {!isMobile && (
+          <>
+            <div className="text-gray-400 font-medium mb-4">or</div>
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              className={`w-full flex flex-col items-center justify-center border-2 border-dashed rounded-lg py-8 cursor-pointer transition ${
+                isDraggingFiles 
+                  ? 'border-blue-500 bg-blue-200' 
+                  : 'border-blue-300 bg-blue-50'
+              }`}
+            >
+              <span className="text-blue-500 font-semibold">Drag and drop a file here</span>
+            </div>
+          </>
+        )}
         
-        <div className="mt-4 text-xs text-gray-500 text-center">
-          <p>Supported formats: MP4, MOV, AVI, and other video files</p>
-          <p>Maximum file size: 50MB</p>
-        </div>
+        {!isMobile && (
+          <div className="mt-4 text-xs text-gray-500 text-center">
+            <p>Supported formats: MP4, MOV, and AVI</p>
+            <p>Max file size: {MAX_FILE_SIZE_MB}MB</p>
+          </div>
+        )}
       </div>
     </div>
   );
