@@ -37,7 +37,7 @@ export default function App() {
   const validateFile = (file: File): string | null => {
     // Check file type
     if (!file.type.startsWith('video/')) {
-      return 'Please select a video file (MP4, MOV, AVI, etc.)';
+      return 'Please select a video file (MP4, MOV, AVI)';
     }
     
     // Check file size (50MB limit)
@@ -338,7 +338,7 @@ export default function App() {
         
         {!isMobile && (
           <div className="mt-4 text-xs text-gray-500 text-center">
-            <p>Supported formats: MP4, MOV, AVI, and other video files</p>
+            <p>Supported formats: MP4, MOV, and AVI</p>
             <p>Maximum file size: 50MB</p>
           </div>
         )}
