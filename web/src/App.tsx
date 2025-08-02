@@ -27,6 +27,26 @@ const useIsMobile = () => {
   return isMobile;
 };
 
+const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 3000): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Server unavailable, please try again later.');
+    }
+    throw error;
+  }
+};
+
 export default function App() {
   const [appState, setAppState] = useState<AppState>('upload');
   const [sseMessages, setSseMessages] = useState<string[]>([]);
@@ -60,7 +80,7 @@ export default function App() {
     formData.append('file', file);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_ENDPOINT}`, {
+      const response = await fetchWithTimeout(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_ENDPOINT}`, {
         method: 'POST',
         body: formData,
       });
