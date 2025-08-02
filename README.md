@@ -206,7 +206,7 @@ git branch -D heroku-main
       - Inference server: `t3.medium`
    - SSH into an EC2 instance to manage my training and/or inference servers. From root dir:
 ```bash  
-ssh -i "api/src/keys/aws_ec2.pem" ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com
+ssh -i "api/keys/aws_ec2.pem" ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com
 ```
    - From EC2 instance, make necessary project directories
 ```bash  
