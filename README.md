@@ -208,7 +208,7 @@ scp -i keys/aws_ec2.pem ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:'/home/u
 To enable HTTPS for the Flask API running on an AWS EC2 instance:
 
 1. **Set Up a Subdomain, DNS, and Modify Security Group to**
-   - Create a subdomain (e.g., `api.wavescore.xyz`) in your DNS provider (such as Vercel) and point it to your EC2 instance's public IP using an A record.
+   - Create a subdomain (e.g., `api.wavescore.xyz`) in our DNS provider (Vercel) and point it to the EC2 instance's public IP using an A record.
    - In the AWS EC2 console, add an inbound security group rule with the following settings:
      - Type: Custom TCP
      - Port range: 5000
@@ -250,24 +250,24 @@ To enable HTTPS for the Flask API running on an AWS EC2 instance:
        - Description: Secure web traffic
 
 5. **Obtain and Install SSL Certificate with Certbot**
-   - Run Certbot to automatically configure SSL for your domain:
+   - Run Certbot to automatically configure SSL for the domain:
    ```bash
    sudo certbot --nginx -d api.wavescore.xyz
    ```
    - Follow the prompts to complete the certificate installation.
 
-6. **Update Your Web App Environment Variables**
-   - Set your API base URL to use HTTPS and your subdomain:
+6. **Update Web App Environment Variables**
+   - Set the API base URL to use HTTPS and the subdomain:
    ```env
    VITE_API_BASE_URL=https://api.wavescore.xyz
    ```
 
 ### Run Gunicorn Server on EC2
 
-To run the Flask API as a systemd service using Gunicorn on your EC2 instance:
+To run the Flask API as a systemd service using Gunicorn on the EC2 instance:
 
 1. **Create the Systemd Service File**
-   - SSH into your EC2 instance and create the service file:
+   - SSH into the EC2 instance and create the service file:
    ```bash
    sudo vi /etc/systemd/system/wavescore-api.service
    ```
@@ -347,7 +347,7 @@ To set up and deploy a React web app:
    ```bash
    npm install -D stylelint stylelint-config-standard stylelint-config-tailwindcss
    ```
-   - In your project root, create a `stylelint.config.cjs` file with:
+   - In the project root, create a `stylelint.config.cjs` file with:
    ```js
    module.exports = {
      extends: [
@@ -362,12 +362,12 @@ To set up and deploy a React web app:
    ```bash
    npm run dev
    ```
-   This starts the development server (usually at `http://localhost:5173`). Your app will hot-reload as you make changes.
+   This starts the development server (usually at `http://localhost:5173`). The app will hot-reload as we make changes.
 
 5. **Deploy with Vercel**
    - Go to [https://vercel.com](https://vercel.com)
    - Sign in with GitHub
-   - Import your wavescore repo
+   - Import the wavescore repo
 
    **For Monorepo Setup:**
 
@@ -377,7 +377,7 @@ To set up and deploy a React web app:
    - Set **Build Command** to `npm run build`
    - Set **Output Directory** to `dist` (Vite default)
 
-   Your project structure:
+   The project structure:
    ```
    wavescore/
      ├── api/
@@ -387,6 +387,6 @@ To set up and deploy a React web app:
      └── .git/
    ```
 
-   Vercel will only build and deploy from the `web/` folder, ignoring the rest of your monorepo.
+   Vercel will only build and deploy from the `web/` folder, ignoring the rest of the monorepo.
 
    - Click **Deploy**
