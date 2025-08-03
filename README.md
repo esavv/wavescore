@@ -49,27 +49,6 @@ Last updated: 2025/08/02
 
 ## Admin Documentation
 
-### Start & manage virtual environments when testing locally
-Create a virtual environment
-```bash
-python3 -m venv venv
-```
-
-Activate the virtual environment
-```bash
-source venv/bin/activate
-```
-
-Deactivate it when done with the current session
-```bash
-deactivate
-```
-
-If the command prompt gets messed up after deactivating
-```bash
-export PS1="\h:\W \u$ "
-```
-
 ### Download a YouTube video from command line using yt-dlp, ensure it's a mp4
 ```bash  
 yt-dlp -f "mp4" -o "%(id)s.mp4" https://www.youtube.com/watch?v=1Zj_jAPToxI
@@ -111,6 +90,21 @@ This labeled sequence is intended to be fed into a model that will learn surf ma
 python3 src/maneuver_sequencing.py 123
 ```
  - This runs a script that outputs frame sequences for each ride in, for example, `.../0/seqs` and outputs sequence labels in, for example, `.../0/seq_labels.csv`
+
+### Start & manage virtual environments when testing locally
+```bash
+# Create a virtual environment
+python3 -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+
+# Deactivate it when done with the current session
+deactivate
+
+# If the terminal prompt gets messed up after deactivating
+export PS1="\h:\W \u$ "
+```
 
 ### Time model training & inference runs for performance evaluation
 
