@@ -306,3 +306,87 @@ To run the Flask API as a systemd service using Gunicorn on your EC2 instance:
    # Follow the access log in real time
    tail -f ~/wavescore/api/src/logs/access.log
    ```
+
+### Web App Development & Deployment
+
+To set up and deploy a React web app:
+
+1. **Setup Vite & React**
+   ```bash
+   npm init vite@latest web
+   cd web
+   npm install
+   ```
+
+2. **Add Tailwind CSS**
+   ```bash
+   npm install -D tailwindcss@3 postcss autoprefixer
+   npx tailwindcss init -p
+   ```
+   - In `tailwind.config.js`, set the `content` array:
+   ```js
+   export default {
+     content: [
+       "./index.html",
+       "./src/**/*.{js,ts,jsx,tsx}",
+     ],
+     theme: {
+       extend: {},
+     },
+     plugins: [],
+   }
+   ```
+   - In `src/index.css`, replace all content with:
+   ```css
+   @tailwind base;
+   @tailwind components;
+   @tailwind utilities;
+   ```
+
+3. **Add CSS Linting with Stylelint (Tailwind Compatible)**
+   ```bash
+   npm install -D stylelint stylelint-config-standard stylelint-config-tailwindcss
+   ```
+   - In your project root, create a `stylelint.config.cjs` file with:
+   ```js
+   module.exports = {
+     extends: [
+       "stylelint-config-standard",
+       "stylelint-config-tailwindcss"
+     ],
+     rules: {}
+   }
+   ```
+
+4. **Run Locally**
+   ```bash
+   npm run dev
+   ```
+   This starts the development server (usually at `http://localhost:5173`). Your app will hot-reload as you make changes.
+
+5. **Deploy with Vercel**
+   - Go to [https://vercel.com](https://vercel.com)
+   - Sign in with GitHub
+   - Import your wavescore repo
+
+   **For Monorepo Setup:**
+
+   Since we're building this as part of a larger wavescore project, configure Vercel to deploy only the web subdirectory:
+
+   - During Vercel setup, set **Root Directory** to `web/`
+   - Set **Build Command** to `npm run build`
+   - Set **Output Directory** to `dist` (Vite default)
+
+   Your project structure:
+   ```
+   wavescore/
+     ├── api/
+     ├── data/
+     ├── web/         👈 Vercel will build from here
+     ├── README.md
+     └── .git/
+   ```
+
+   Vercel will only build and deploy from the `web/` folder, ignoring the rest of your monorepo.
+
+   - Click **Deploy**
