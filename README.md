@@ -2,7 +2,7 @@
 
 ## Overview
 
-This application will allow users to upload videos of themselves surfing and get their rides scored from 0 to 10 as if they're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]). Development is still in progress.
+This application allows users to upload videos of themselves surfing and get their rides scored from 0 to 10 as if they're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
 
 ## Demo
 
@@ -328,7 +328,3 @@ To enable HTTPS for the Flask API running on an AWS EC2 instance:
    ```env
    VITE_API_BASE_URL=https://api.wavescore.xyz
    ```
-
-## Acknowledgments
-
-TODO
