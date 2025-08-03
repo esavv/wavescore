@@ -11,11 +11,9 @@ This application allows users to upload videos of themselves surfing and get the
 ## Roadmap
 
 ### Current & Upcoming Tasks
-Last updated: 2025/07/13
+Last updated: 2025/08/02
    - [IN PROGRESS] Build web app as a client of the model inference API
-   - Cleanup: Remove ios client to focus on webapp
    - Cleanup: Organize `src` files into subdirectories
-   - Cleanup: Remove heroku references from readme
    - Cleanup: Refactor `src` to use filepaths relative to the absolute path for the main directory
    - Migrate maneuver prediction to TCN architecture to predict sequence of maneuvers from single video
    - Streamline data labeling workflow & updating maneuver taxonomy for falls / failed moves
