@@ -150,7 +150,7 @@ if model_choice == RESUME_FROM_CHECKPOINT:
         sys.exit(1)
 
 # Set device to GPU if available, otherwise use CPU
-device = set_device()
+device = set_device("train")
 
 # Data preparation
 print('>  Loading dataset...')

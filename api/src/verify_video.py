@@ -5,7 +5,7 @@ from google.api_core.exceptions import GoogleAPICallError, PermissionDenied
 google_key_path = "../keys/google_cloud_account_key.json"
 vision_keyword_path = '../apidata/google_cloud_vision_keywords.csv'
 
-print("video_content: Setting env variables...")
+print("verify_video: Setting env variables...")
 if os.path.exists(google_key_path):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_key_path
 #else:

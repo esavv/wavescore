@@ -7,13 +7,13 @@ from PIL import Image
 
 data_dir = "../../data"
 
-def set_device():
+def set_device(caller):
     """Set device to GPU if available, otherwise use CPU.
     
     Returns:
         torch.device: The selected device (mps, cuda, or cpu)
     """
-    print('>  Configuring device...')
+    print(f'{caller}: Configuring device...')
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print('  >  Using CUDA (NVIDIA GPU) acceleration')

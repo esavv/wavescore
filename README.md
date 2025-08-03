@@ -2,7 +2,7 @@
 
 ## Overview
 
-This application will allow users to upload videos of themselves surfing and get their rides scored from 0 to 10 as if they're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]). Development is still in progress.
+This application allows users to upload videos of themselves surfing and get their rides scored from 0 to 10 as if they're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
 
 ## Demo
 
@@ -206,7 +206,7 @@ git branch -D heroku-main
       - Inference server: `t3.medium`
    - SSH into an EC2 instance to manage my training and/or inference servers. From root dir:
 ```bash  
-ssh -i "api/src/keys/aws_ec2.pem" ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com
+ssh -i "api/keys/aws_ec2.pem" ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com
 ```
    - From EC2 instance, make necessary project directories
 ```bash  
@@ -329,6 +329,47 @@ To enable HTTPS for the Flask API running on an AWS EC2 instance:
    VITE_API_BASE_URL=https://api.wavescore.xyz
    ```
 
-## Acknowledgments
+### Run Gunicorn Server on EC2
 
-TODO
+To run the Flask API as a systemd service using Gunicorn on your EC2 instance:
+
+1. **Create the Systemd Service File**
+   - SSH into your EC2 instance and create the service file:
+   ```bash
+   sudo vi /etc/systemd/system/wavescore-api.service
+   ```
+   - Populate this file with the configuration from `./api/systemd/wavescore-api.service`
+   - Note: The service uses gevent to ensure Gunicorn works properly with long-lived SSE API connections
+
+2. **Set Up Logs Directory**
+   ```bash
+   mkdir -p /home/ubuntu/wavescore/api/src/logs
+   chown ubuntu:ubuntu /home/ubuntu/wavescore/api/src/logs
+   ```
+
+3. **Service Management Commands**
+   ```bash
+   # Enable service to start on boot
+   sudo systemctl enable wavescore-api
+
+   # Reload systemd if you edit the service file
+   sudo systemctl daemon-reload
+
+   # Restart the service
+   sudo systemctl restart wavescore-api
+
+   # Check service status
+   sudo systemctl status wavescore-api
+
+   # Stop the service
+   sudo systemctl stop wavescore-api
+   ```
+
+4. **Monitor Logs**
+   ```bash
+   # Follow the error log in real time
+   tail -f ~/wavescore/api/src/logs/error.log
+
+   # Follow the access log in real time
+   tail -f ~/wavescore/api/src/logs/access.log
+   ```

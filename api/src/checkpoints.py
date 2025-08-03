@@ -8,7 +8,7 @@ import os, re, torch
 from utils import set_device
 
 # Set device to GPU if available, otherwise use CPU
-device = set_device()
+device = set_device("checkpoints")
 
 checkpoint_dir = "../../models"
 

@@ -15,7 +15,7 @@ from utils import (
 )
 
 # Set device to GPU if available, otherwise use CPU
-device = set_device()
+device = set_device("inference")
 
 model_dir = "../../models"
 data_dir = "../../data"

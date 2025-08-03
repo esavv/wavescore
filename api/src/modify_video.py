@@ -7,7 +7,7 @@ from botocore.exceptions import NoCredentialsError
 data_dir = '../../data'
 aws_keys_path = "../keys/aws_s3_accessKeys.csv"
 
-print("video_overlay: Setting env variables...")
+print("modify_video: Setting env variables...")
 if os.path.exists(aws_keys_path):
     with open(aws_keys_path, mode='r', encoding='utf-8-sig') as file:
         reader = csv.DictReader(file)

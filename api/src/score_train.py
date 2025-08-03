@@ -162,7 +162,7 @@ def main():
             sys.exit(1)
     
     # Setup device
-    device = set_device()
+    device = set_device("score_train")
     
     # Initialize model
     print('> Initializing model...')

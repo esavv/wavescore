@@ -16,7 +16,7 @@ data_dir = "../../data"
 def run_inference(video_paths, model_filename, mode='dev'):
     try:
         # Set device to GPU if available, otherwise use CPU
-        device = set_device()
+        device = set_device("score_inference")
 
         # Retrieve the model from locally. TODO: Support S3 retrieval
         print('Retrieving the model...')
