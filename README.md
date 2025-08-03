@@ -2,11 +2,12 @@
 
 ## Overview
 
-This application allows users to upload videos of themselves surfing and get their rides scored from 0 to 10 as if they're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
+This application allows you to upload videos of yourself surfing and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
 
-## Demo
+## Try It!
 
-[Watch it here!](https://www.youtube.com/shorts/CNARgUQ5YtU)
+Try it here: wavescore.xyz
+... or [watch a demo](https://www.youtube.com/shorts/CNARgUQ5YtU).
 
 ## Roadmap
 
