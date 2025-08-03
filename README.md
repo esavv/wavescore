@@ -4,9 +4,10 @@
 
 This application allows you to upload videos of yourself surfing and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
 
-## Try It!
+## Check it out!
 
-Try it here: wavescore.xyz
+Try it here: [wavescore.xyz](https://www.wavescore.xyz/)
+
 ... or [watch a demo](https://www.youtube.com/shorts/CNARgUQ5YtU).
 
 ## Roadmap
@@ -23,7 +24,7 @@ Last updated: 2025/08/02
    - Generate progressive score prediction: show user how predicted score changes as video progresses
    - Migrate data from directory system to postgres + blob storage (S3)
 
-### Completed Tasks
+### Completed Milestones
    - [2025/06/02] Build score prediction model: Infer wave score from raw video
    - [2025/05/20] Model training & inference deployed on AWS, Heroku abandoned
    - [2025/05/17] Maneuver prediction model works pretty well on training data (switched to 3D CNN model, data augmentation, power75 class weight correction, pretrained model layer freezing)
