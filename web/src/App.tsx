@@ -27,7 +27,7 @@ const useIsMobile = () => {
   return isMobile;
 };
 
-const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 3000): Promise<Response> => {
+const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 10000): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
