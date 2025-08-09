@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from "react";
-import { SixDotsRotate } from 'react-svg-spinners';
 
 // Configuration constants
 const MAX_FILE_SIZE_MB = 250;
@@ -262,9 +261,8 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-200">
         <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Analyzing Video...</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Analyzing Video...</h1>
           
-          <SixDotsRotate color="#2563eb" width={48} height={48} className="mt-6 mb-6" />
           <div className="text-gray-600 text-center">
             <br />
             <div className="space-y-1">
