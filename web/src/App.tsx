@@ -267,11 +267,40 @@ export default function App() {
           <SixDotsRotate color="#2563eb" width={48} height={48} className="mt-6 mb-6" />
           <div className="text-gray-600 text-center">
             <br />
-            {sseMessages.length > 0 ? (
-              <p className="font-medium">{sseMessages[sseMessages.length - 1]}</p>
-            ) : (
-              <p>Starting analysis...</p>
-            )}
+            <div className="space-y-1">
+              {/* Show "Starting analysis..." as in-progress until first SSE message */}
+              {sseMessages.length === 0 ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 mr-2 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                  <span className="font-medium text-gray-800">Starting analysis...</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <svg className="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-400">Starting analysis...</span>
+                </div>
+              )}
+              
+              {/* Show completed steps */}
+              {sseMessages.slice(0, -1).map((message, index) => (
+                <div key={index} className="flex items-center justify-center">
+                  <svg className="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-400">{message}</span>
+                </div>
+              ))}
+              
+              {/* Show current step */}
+              {sseMessages.length > 0 && (
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 mr-2 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                  <span className="font-medium text-gray-800">{sseMessages[sseMessages.length - 1]}</span>
+                </div>
+              )}
+            </div>
           </div>
           
           {uploadedFile && (
