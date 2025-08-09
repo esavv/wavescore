@@ -54,7 +54,6 @@ export default function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [analysisStartTime, setAnalysisStartTime] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,16 +61,14 @@ export default function App() {
 
   // Timer effect for updating elapsed time
   useEffect(() => {
-    if (!analysisStartTime) return;
+    if (appState !== 'interim') return;
 
     const interval = setInterval(() => {
-      const now = new Date();
-      const elapsed = Math.floor((now.getTime() - analysisStartTime.getTime()) / 100);
-      setElapsedTime(elapsed);
+      setElapsedTime(prev => prev + 1);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [analysisStartTime]);
+  }, [appState]);
 
   // Helper function to format time
   const formatTime = (tenths: number) => {
@@ -158,6 +155,7 @@ export default function App() {
                   video_url: data.video_url,
                   analysis: data.analysis
                 });
+                // Stop the running timer
                 setAppState('results');
                 setIsUploading(false);
                 return;
@@ -205,7 +203,7 @@ export default function App() {
     setAnalysisResult(null);
     setError(null);
     setUploadedFile(file);
-    setAnalysisStartTime(new Date());
+    setElapsedTime(0); // Reset elapsed time
     
     // Start upload process
     await uploadVideo(file);
@@ -252,7 +250,6 @@ export default function App() {
     setAnalysisResult(null);
     setError(null);
     setUploadedFile(null);
-    setAnalysisStartTime(null);
     setElapsedTime(0);
   };
 
@@ -307,7 +304,7 @@ export default function App() {
             </div>
           )}
           
-          {analysisStartTime && (
+          {elapsedTime > 0 && (
             <div className="text-sm text-gray-500 font-mono">
               Time: {formatTime(elapsedTime)}
             </div>
@@ -348,6 +345,11 @@ export default function App() {
                   <source src={analysisResult.video_url} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
+                
+                <div className="text-sm text-gray-500 mb-4 font-mono text-center">
+                  Analysis time: {formatTime(elapsedTime)}
+                </div>
+                
                 <a 
                   href={analysisResult.video_url} 
                   download
@@ -384,6 +386,11 @@ export default function App() {
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Something went wrong</h1>
           <div className="text-gray-600 text-center mb-6">
             <p className="mb-4 text-lg">{error}</p>
+            {elapsedTime > 0 && (
+              <div className="text-sm text-gray-500 font-mono">
+                Analysis time: {formatTime(elapsedTime)}
+              </div>
+            )}
           </div>
           <button
             onClick={handleUploadAnother}
