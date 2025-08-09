@@ -298,13 +298,19 @@ To run the Flask API as a systemd service using Gunicorn on the EC2 instance:
    sudo systemctl stop wavescore-api
    ```
 
-4. **Monitor Logs**
+4. **Monitoring: API logs, events, and server memory**
    ```bash
    # Follow the error log in real time
    tail -f ~/wavescore/api/src/logs/error.log
 
    # Follow the access log in real time
    tail -f ~/wavescore/api/src/logs/access.log
+
+   # Follow systemd service logs (includes start/stop, restarts, oom kills)
+   journalctl -u wavescore-api -f
+
+   # Watch memory usage to catch OOM pressure early
+   watch -n1 free -h
    ```
 
 ### Web App Development & Deployment
