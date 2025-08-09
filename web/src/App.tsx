@@ -54,9 +54,43 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [analysisStartTime, setAnalysisStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
+
+  // Timer effect for updating elapsed time
+  useEffect(() => {
+    if (!analysisStartTime) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const elapsed = Math.floor((now.getTime() - analysisStartTime.getTime()) / 100);
+      setElapsedTime(elapsed);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [analysisStartTime]);
+
+  // Helper function to format time
+  const formatTime = (tenths: number) => {
+    const totalSeconds = Math.floor(tenths / 10);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    const tenthsOfSecond = tenths % 10;
+    return `${mins}:${secs.toString().padStart(2, '0')}.${tenthsOfSecond}`;
+  };
+
+  // Helper function to format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const validateFile = (file: File): string | null => {
     // Check file type
@@ -64,7 +98,6 @@ export default function App() {
       return 'Please select a video file (MP4, MOV, AVI)';
     }
     
-    // Check file size (50MB limit)
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return `File size must be less than ${MAX_FILE_SIZE_MB}MB`;
     }
@@ -172,6 +205,8 @@ export default function App() {
     setSseMessages([]);
     setAnalysisResult(null);
     setError(null);
+    setUploadedFile(file);
+    setAnalysisStartTime(new Date());
     
     // Start upload process
     await uploadVideo(file);
@@ -217,6 +252,9 @@ export default function App() {
     setSseMessages([]);
     setAnalysisResult(null);
     setError(null);
+    setUploadedFile(null);
+    setAnalysisStartTime(null);
+    setElapsedTime(0);
   };
 
   // Render different states
@@ -225,6 +263,7 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center bg-gray-200">
         <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Analyzing Video...</h1>
+          
           <SixDotsRotate color="#2563eb" width={48} height={48} className="mt-6 mb-6" />
           <div className="text-gray-600 text-center">
             <br />
@@ -234,6 +273,18 @@ export default function App() {
               <p>Starting analysis...</p>
             )}
           </div>
+          
+          {uploadedFile && (
+            <div className="text-sm text-gray-500 mt-4 font-mono">
+              File size: {formatFileSize(uploadedFile.size)}
+            </div>
+          )}
+          
+          {analysisStartTime && (
+            <div className="text-sm text-gray-500 font-mono">
+              Time: {formatTime(elapsedTime)}
+            </div>
+          )}
         </div>
       </div>
     );
