@@ -2,20 +2,20 @@
 
 ## Overview
 
-This application allows users to upload videos of themselves surfing and get their rides scored from 0 to 10 as if they're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
+This application allows you to upload surfing videos and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
 
-## Demo
+## Check it out!
 
-[Watch it here!](https://www.youtube.com/shorts/CNARgUQ5YtU)
+Try it here: [wavescore.xyz](https://www.wavescore.xyz/)
+
+... or [watch a demo](https://www.youtube.com/shorts/CNARgUQ5YtU)!
 
 ## Roadmap
 
 ### Current & Upcoming Tasks
-Last updated: 2025/07/13
+Last updated: 2025/08/02
    - [IN PROGRESS] Build web app as a client of the model inference API
-   - Cleanup: Remove ios client to focus on webapp
    - Cleanup: Organize `src` files into subdirectories
-   - Cleanup: Remove heroku references from readme
    - Cleanup: Refactor `src` to use filepaths relative to the absolute path for the main directory
    - Migrate maneuver prediction to TCN architecture to predict sequence of maneuvers from single video
    - Streamline data labeling workflow & updating maneuver taxonomy for falls / failed moves
@@ -24,7 +24,7 @@ Last updated: 2025/07/13
    - Generate progressive score prediction: show user how predicted score changes as video progresses
    - Migrate data from directory system to postgres + blob storage (S3)
 
-### Completed Tasks
+### Completed Milestones
    - [2025/06/02] Build score prediction model: Infer wave score from raw video
    - [2025/05/20] Model training & inference deployed on AWS, Heroku abandoned
    - [2025/05/17] Maneuver prediction model works pretty well on training data (switched to 3D CNN model, data augmentation, power75 class weight correction, pretrained model layer freezing)
@@ -48,27 +48,6 @@ Last updated: 2025/07/13
    - Clip full surf heats into individual rides, and process individual rides into maneuver-labeled sequences of frames that are ready to be fed into a model
 
 ## Admin Documentation
-
-### Start & manage virtual environments when testing locally
-Create a virtual environment
-```bash
-python3 -m venv venv
-```
-
-Activate the virtual environment
-```bash
-source venv/bin/activate
-```
-
-Deactivate it when done with the current session
-```bash
-deactivate
-```
-
-If the command prompt gets messed up after deactivating
-```bash
-export PS1="\h:\W \u$ "
-```
 
 ### Download a YouTube video from command line using yt-dlp, ensure it's a mp4
 ```bash  
@@ -112,6 +91,21 @@ python3 src/maneuver_sequencing.py 123
 ```
  - This runs a script that outputs frame sequences for each ride in, for example, `.../0/seqs` and outputs sequence labels in, for example, `.../0/seq_labels.csv`
 
+### Start & manage virtual environments when testing locally
+```bash
+# Create a virtual environment
+python3 -m venv venv
+
+# Activate the virtual environment
+source venv/bin/activate
+
+# Deactivate it when done with the current session
+deactivate
+
+# If the terminal prompt gets messed up after deactivating
+export PS1="\h:\W \u$ "
+```
+
 ### Time model training & inference runs for performance evaluation
 
 Run these commands from `./api/src`:
@@ -138,67 +132,6 @@ ngrok http 5000
 curl -X POST https://7c64-70-23-3-136.ngrok-free.app/upload_video -F "file=@tmp/IMG_1546.MOV"
 ```
    - If there are issues calling `localhost:5000` but not `127.0.0.1:5000`, it's because Apple AirPlay Receiver is listening on port 5000. While testing, disable it by navigating to: System Settings > General > AirDrop & Handoff > AirPlay Receiver (requires password to change)
-
-### Update & deploy Flask API to Heroku
-   - Switch to a development branch & make changes
-   - Push changes to remote origin (on GitHub); merge to main remotely
-   - Switch to main & pull from origin
-   - Create temporary branch heroku-main:
-```bash
-git checkout -b heroku-main
-```
-   - Un-ignore API files in .gitignore needed for deployment (remove these lines):
-```
-api/keys/
-api/models/
-```
-   - Add & commit the changes to the heroku-main branch
-```bash
-git add -A
-git commit -m 'Prep for Heroku deployment'
-```
-   - Use git subtrees to deploy updated API to Heroku:
-```bash
-git subtree push --prefix api heroku main
-```
-   - If there are any issues with divergent branches between local & remote, there's an ugly workaround for now: Reset the remote git repo and then try again:
-```bash
-heroku repo:reset --app surfjudge-api
-```   
-   - The better way to do this probably involves *not* creating a new heroku-main branch every time, but checking out a persistent one and some how fast-forwarding or rebasing it to the lastest commit in our main branch... to be investigated some other time
-   - If there are issues with slug size, consider clearing Heroku build cache:
-```bash
-heroku plugins:install heroku-builds
-heroku builds:cache:purge -a surfjudge-api
-```
-   - Check Heroku logs if needed:
-```bash
-heroku logs --tail --app surfjudge-api
-```
-   - Call the API from the command line to test:
-```bash
-curl -X POST https://surfjudge-api-71248b819ca4.herokuapp.com/upload_video -F "file=@data/inference_vids/1Zj_jAPToxI_6_inf/1Zj_jAPToxI_6_inf.mp4"
-```
-   - Before switching back to main locally, re-ignore unignored files:
-```bash
-git rm --cached api/keys/*
-git rm --cached api/models/*
-```
-   - Before switching back to main locally, re-add ignored files to .gitignore:
-```
-api/keys/
-api/models/
-```
-   - Add & commit the changes to the heroku-main branch
-```bash
-git add -A
-git commit -m 'Post-deployment return to main'
-```
-   - Switch back to main & delete the temp heroku branch
-```bash
-git checkout main
-git branch -D heroku-main
-```
 
 ### AWS EC2 Management - Training & Inference Servers
    - Instance choices:
@@ -275,7 +208,7 @@ scp -i keys/aws_ec2.pem ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:'/home/u
 To enable HTTPS for the Flask API running on an AWS EC2 instance:
 
 1. **Set Up a Subdomain, DNS, and Modify Security Group to**
-   - Create a subdomain (e.g., `api.wavescore.xyz`) in your DNS provider (such as Vercel) and point it to your EC2 instance's public IP using an A record.
+   - Create a subdomain (e.g., `api.wavescore.xyz`) in our DNS provider (Vercel) and point it to the EC2 instance's public IP using an A record.
    - In the AWS EC2 console, add an inbound security group rule with the following settings:
      - Type: Custom TCP
      - Port range: 5000
@@ -317,24 +250,24 @@ To enable HTTPS for the Flask API running on an AWS EC2 instance:
        - Description: Secure web traffic
 
 5. **Obtain and Install SSL Certificate with Certbot**
-   - Run Certbot to automatically configure SSL for your domain:
+   - Run Certbot to automatically configure SSL for the domain:
    ```bash
    sudo certbot --nginx -d api.wavescore.xyz
    ```
    - Follow the prompts to complete the certificate installation.
 
-6. **Update Your Web App Environment Variables**
-   - Set your API base URL to use HTTPS and your subdomain:
+6. **Update Web App Environment Variables**
+   - Set the API base URL to use HTTPS and the subdomain:
    ```env
    VITE_API_BASE_URL=https://api.wavescore.xyz
    ```
 
 ### Run Gunicorn Server on EC2
 
-To run the Flask API as a systemd service using Gunicorn on your EC2 instance:
+To run the Flask API as a systemd service using Gunicorn on the EC2 instance:
 
 1. **Create the Systemd Service File**
-   - SSH into your EC2 instance and create the service file:
+   - SSH into the EC2 instance and create the service file:
    ```bash
    sudo vi /etc/systemd/system/wavescore-api.service
    ```
@@ -373,3 +306,87 @@ To run the Flask API as a systemd service using Gunicorn on your EC2 instance:
    # Follow the access log in real time
    tail -f ~/wavescore/api/src/logs/access.log
    ```
+
+### Web App Development & Deployment
+
+To set up and deploy a React web app:
+
+1. **Setup Vite & React**
+   ```bash
+   npm init vite@latest web
+   cd web
+   npm install
+   ```
+
+2. **Add Tailwind CSS**
+   ```bash
+   npm install -D tailwindcss@3 postcss autoprefixer
+   npx tailwindcss init -p
+   ```
+   - In `tailwind.config.js`, set the `content` array:
+   ```js
+   export default {
+     content: [
+       "./index.html",
+       "./src/**/*.{js,ts,jsx,tsx}",
+     ],
+     theme: {
+       extend: {},
+     },
+     plugins: [],
+   }
+   ```
+   - In `src/index.css`, replace all content with:
+   ```css
+   @tailwind base;
+   @tailwind components;
+   @tailwind utilities;
+   ```
+
+3. **Add CSS Linting with Stylelint (Tailwind Compatible)**
+   ```bash
+   npm install -D stylelint stylelint-config-standard stylelint-config-tailwindcss
+   ```
+   - In the project root, create a `stylelint.config.cjs` file with:
+   ```js
+   module.exports = {
+     extends: [
+       "stylelint-config-standard",
+       "stylelint-config-tailwindcss"
+     ],
+     rules: {}
+   }
+   ```
+
+4. **Run Locally**
+   ```bash
+   npm run dev
+   ```
+   This starts the development server (usually at `http://localhost:5173`). The app will hot-reload as we make changes.
+
+5. **Deploy with Vercel**
+   - Go to [https://vercel.com](https://vercel.com)
+   - Sign in with GitHub
+   - Import the wavescore repo
+
+   **For Monorepo Setup:**
+
+   Since we're building this as part of a larger wavescore project, configure Vercel to deploy only the web subdirectory:
+
+   - During Vercel setup, set **Root Directory** to `web/`
+   - Set **Build Command** to `npm run build`
+   - Set **Output Directory** to `dist` (Vite default)
+
+   The project structure:
+   ```
+   wavescore/
+     ├── api/
+     ├── data/
+     ├── web/         👈 Vercel will build from here
+     ├── README.md
+     └── .git/
+   ```
+
+   Vercel will only build and deploy from the `web/` folder, ignoring the rest of the monorepo.
+
+   - Click **Deploy**
