@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from "react";
-import { SixDotsRotate } from 'react-svg-spinners';
 
 // Configuration constants
 const MAX_FILE_SIZE_MB = 250;
@@ -27,7 +26,7 @@ const useIsMobile = () => {
   return isMobile;
 };
 
-const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 10000): Promise<Response> => {
+const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 60000): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   
@@ -54,9 +53,42 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
+
+  // Timer effect for updating elapsed time
+  useEffect(() => {
+    if (appState !== 'interim') return;
+
+    const interval = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [appState]);
+
+  // Helper function to format time
+  const formatTime = (tenths: number) => {
+    const totalSeconds = Math.floor(tenths / 10);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    const tenthsOfSecond = tenths % 10;
+    return `${mins}:${secs.toString().padStart(2, '0')}.${tenthsOfSecond}`;
+  };
+
+  // Helper function to format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const UPLOADING_MESSAGE = "Uploading video...";
 
   const validateFile = (file: File): string | null => {
     // Check file type
@@ -64,7 +96,6 @@ export default function App() {
       return 'Please select a video file (MP4, MOV, AVI)';
     }
     
-    // Check file size (50MB limit)
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return `File size must be less than ${MAX_FILE_SIZE_MB}MB`;
     }
@@ -126,6 +157,7 @@ export default function App() {
                   video_url: data.video_url,
                   analysis: data.analysis
                 });
+                // Stop the running timer
                 setAppState('results');
                 setIsUploading(false);
                 return;
@@ -172,6 +204,8 @@ export default function App() {
     setSseMessages([]);
     setAnalysisResult(null);
     setError(null);
+    setUploadedFile(file);
+    setElapsedTime(0); // Reset elapsed time
     
     // Start upload process
     await uploadVideo(file);
@@ -217,6 +251,8 @@ export default function App() {
     setSseMessages([]);
     setAnalysisResult(null);
     setError(null);
+    setUploadedFile(null);
+    setElapsedTime(0);
   };
 
   // Render different states
@@ -224,16 +260,57 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-200">
         <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md flex flex-col items-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Analyzing Video...</h1>
-          <SixDotsRotate color="#2563eb" width={48} height={48} className="mt-6 mb-6" />
+          <h1 className="text-2xl font-bold text-gray-800">Analyzing Video...</h1>
+          
           <div className="text-gray-600 text-center">
             <br />
-            {sseMessages.length > 0 ? (
-              <p className="font-medium">{sseMessages[sseMessages.length - 1]}</p>
-            ) : (
-              <p>Starting analysis...</p>
-            )}
+            <div className="space-y-1">
+              {/* Show "Uploading video..." as in-progress until first SSE message */}
+              {sseMessages.length === 0 ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 mr-2 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                  <span className="font-medium text-gray-800">{UPLOADING_MESSAGE}</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <svg className="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-400">{UPLOADING_MESSAGE}</span>
+                </div>
+              )}
+              
+              {/* Show completed steps */}
+              {sseMessages.slice(0, -1).map((message, index) => (
+                <div key={index} className="flex items-center justify-center">
+                  <svg className="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-gray-400">{message}</span>
+                </div>
+              ))}
+              
+              {/* Show current step */}
+              {sseMessages.length > 0 && (
+                <div className="flex items-center justify-center">
+                  <div className="w-4 h-4 mr-2 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></div>
+                  <span className="font-medium text-gray-800">{sseMessages[sseMessages.length - 1]}</span>
+                </div>
+              )}
+            </div>
           </div>
+          
+          {uploadedFile && (
+            <div className="text-sm text-gray-500 mt-4 font-mono">
+              File size: {formatFileSize(uploadedFile.size)}
+            </div>
+          )}
+          
+          {elapsedTime > 0 && (
+            <div className="text-sm text-gray-500 font-mono">
+              Time: {formatTime(elapsedTime)}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -270,6 +347,11 @@ export default function App() {
                   <source src={analysisResult.video_url} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
+                
+                <div className="text-sm text-gray-500 mb-4 font-mono text-center">
+                  Analysis time: {formatTime(elapsedTime)}
+                </div>
+                
                 <a 
                   href={analysisResult.video_url} 
                   download
@@ -306,6 +388,11 @@ export default function App() {
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Something went wrong</h1>
           <div className="text-gray-600 text-center mb-6">
             <p className="mb-4 text-lg">{error}</p>
+            {elapsedTime > 0 && (
+              <div className="text-sm text-gray-500 font-mono">
+                Analysis time: {formatTime(elapsedTime)}
+              </div>
+            )}
           </div>
           <button
             onClick={handleUploadAnother}
