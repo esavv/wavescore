@@ -4,7 +4,7 @@
 # Usage:
 # src $ python inference.py --mode dev
 
-import argparse, csv, os, shutil, sys, torch
+import argparse, csv, gc, os, shutil, sys, torch
 from checkpoints import load_checkpoint
 from model import SurfManeuverModel
 from utils import (
@@ -102,6 +102,21 @@ def run_inference(video_path, model_filename, mode='dev'):
     except Exception as e:
         print(f"Error during inference: {str(e)}")
         raise
+    finally:
+        # Explicitly free model and cached CUDA memory if applicable
+        print("Maneuver inference: beginning cleanup...")
+        try:
+            del model
+        except Exception:
+            pass
+        gc.collect()
+        try:
+            if device.type == 'cuda':
+                print("Maneuver inference: clearing CUDA caches...")
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+        except Exception:
+            pass
 
 def infer_sequence_tensor(model, frames_tensor, mode='dev', hidden=None):
     """Run inference on a single sequence given a preprocessed frames tensor."""
