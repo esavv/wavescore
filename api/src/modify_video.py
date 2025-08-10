@@ -1,7 +1,7 @@
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.VideoClip import TextClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
-import boto3, os, csv
+import boto3, os, csv, gc
 from botocore.exceptions import NoCredentialsError
 
 data_dir = '../../data'
@@ -20,49 +20,68 @@ if os.path.exists(aws_keys_path):
     #raise EnvironmentError("Missing AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables")
 
 def annotate_video(input_path, bucket_name, analysis):
-    # Load the video
-    clip = VideoFileClip(input_path)
-
-    # Create a list of text clips to overlay on the video
+    video = None
     text_clips = []
+    video_url = None
 
-    # Overlay maneuvers
-    if os.uname().sysname == 'Darwin':
-        font='Arial'
-    else:
-        font='DejaVuSans'
-    for maneuver in analysis['maneuvers']:
-        start_time = maneuver['start_time']
-        end_time = maneuver['end_time']
-        text = maneuver['name']
-
-        # Create a TextClip for each maneuver
-        txt_clip = (TextClip(text=text, font=font, font_size=40, color='white')
-                    .with_position(('center', clip.h * 0.85))
-                    .with_duration(end_time - start_time)
-                    .with_start(start_time))
-
-        text_clips.append(txt_clip)
-
-    # Create a TextClip for the predicted score (overlay it in the last 2 seconds)
-    score_text = f"Predicted Score: {analysis['score']}"
-    score_clip = (TextClip(text=score_text, font=font, font_size=40, color='white')
-                  .with_position(('center', 50))
-                  .with_duration(2)  # Last 2 seconds of the video
-                  .with_start(clip.duration - 2))  # Start 2 seconds before the end
-
-    text_clips.append(score_clip)
-
-    # Overlay the text clips on the video
-    video = CompositeVideoClip([clip] + text_clips)
+    # Determine font based on platform
+    font = 'Arial' if os.uname().sysname == 'Darwin' else 'DejaVuSans'
 
     # Write the result to a file
     input_name = os.path.splitext(os.path.basename(input_path))[0]
     input_ext = os.path.splitext(input_path)[1]
     output_name = input_name + "_annotated" + input_ext
     output_video_path = "/tmp/" + output_name
-    print("Saving annotated video to: " + output_video_path)
-    video.write_videofile(output_video_path, codec='libx264')
+
+    try:
+        # Ensure the main clip is closed after use
+        with VideoFileClip(input_path) as clip:
+            # Build overlay clips
+            for maneuver in analysis['maneuvers']:
+                start_time = maneuver['start_time']
+                end_time = maneuver['end_time']
+                text = maneuver['name']
+
+                txt_clip = (
+                    TextClip(text=text, font=font, font_size=40, color='white')
+                    .with_position(('center', clip.h * 0.85))
+                    .with_duration(end_time - start_time)
+                    .with_start(start_time)
+                )
+                text_clips.append(txt_clip)
+
+            score_text = f"Predicted Score: {analysis['score']}"
+            score_clip = (
+                TextClip(text=score_text, font=font, font_size=40, color='white')
+                .with_position(('center', 50))
+                .with_duration(2)
+                .with_start(max(0, clip.duration - 2))
+            )
+            text_clips.append(score_clip)
+
+            # Compose and write
+            video = CompositeVideoClip([clip] + text_clips)
+            print("Saving annotated video to: " + output_video_path)
+            video.write_videofile(
+                output_video_path,
+                codec='libx264',
+                remove_temp=True,
+                threads=1
+            )
+    finally:
+        # Close composite and text clips regardless of success
+        try:
+            if video is not None:
+                video.close()
+        except Exception:
+            pass
+        for t in text_clips:
+            try:
+                t.close()
+            except Exception:
+                pass
+        # Encourage Python-side memory release for MoviePy buffers
+        gc.collect()
 
     print('Uploading video to AWS...')
     s3 = boto3.client('s3')  # Ensure AWS credentials are set in your environment or AWS credentials file

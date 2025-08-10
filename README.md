@@ -159,7 +159,7 @@ zip -r src.zip augment_data.py checkpoints.py clipify.py create_maneuver_compila
 ```
    - Training server: Transfer my src zip to fresh EC2 instance from `api` dir:
 ```bash  
-scp -i keys/aws_ec2.pem -r src/src.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
+scp -i keys/aws_ec2.pem -r src/src.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/api/src
 ```
    - Training server: Zip my data/ files to scp to AWS later (lazy approach)
 ```bash  
