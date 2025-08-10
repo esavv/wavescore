@@ -8,9 +8,8 @@ import argparse, csv, os, shutil, sys, torch
 from checkpoints import load_checkpoint
 from model import SurfManeuverModel
 from utils import (
-    load_frames_from_sequence, 
-    load_maneuver_taxonomy, 
-    sequence_video_frames, 
+    load_maneuver_taxonomy,
+    iterate_video_sequences,
     set_device
 )
 
@@ -42,18 +41,7 @@ def run_inference(video_path, model_filename, mode='dev'):
                
         model.eval()
         
-        # Extract frames from the video
-        print('Opening the video file & extracting frames...')
-        seqs_path = os.path.join(video_dir, 'seqs')
-        
-        # Use the utility function to extract frames
-        sequences_metadata = sequence_video_frames(
-            video_path=video_path,
-            output_dir=seqs_path,
-            sequence_duration=2
-        )
-
-        # Run inference on each sequence in the new video
+        # Run inference on each in-memory sequence (no disk IO)
         print('Running inference...')
         taxonomy = load_maneuver_taxonomy()
 
@@ -69,82 +57,63 @@ def run_inference(video_path, model_filename, mode='dev'):
 
         maneuvers = []
         confidence_data = []
-        sequence_duration = sequences_metadata['sequence_duration']
-        total_sequences = sequences_metadata['total_sequences']
-        
-        for sq in range(total_sequences):
-            seq_name = f'seq_{sq}'
-            seq_dir = os.path.join(seqs_path, seq_name)
-            if os.path.isdir(seq_dir):
-                # Run inference on each sequence independently
-                maneuver_id, confidence_scores = infer_sequence(model, seq_dir, mode=mode)
-                
-                start_time = sq * sequence_duration
-                end_time = start_time + sequence_duration
-                
-                # lookup manuever name
-                name = taxonomy.get(maneuver_id, 'Unknown maneuver')
-                if maneuver_id != 0:
-                    maneuvers.append({'name': name, 'start_time': start_time, 'end_time': end_time})
+        for sq, start_time, end_time, frames_tensor in iterate_video_sequences(
+            video_path=video_path, sequence_duration=2, mode=mode
+        ):
+            # Run inference on the in-memory frames
+            maneuver_id, confidence_scores = infer_sequence_tensor(model, frames_tensor, mode=mode)
 
-                # Print the confidence scores for all classes
-                print(f"\nSequence {sq} (Time: {start_time:.1f}s - {end_time:.1f}s):")
-                print(f"  Predicted maneuver: {maneuver_id} ({name})")
-                print("  Confidence scores:")
-                for class_id, score in enumerate(confidence_scores):
-                    class_name = taxonomy.get(class_id, 'Unknown')
-                    actual_label = actual_labels.get(sq, None)
-                    is_predicted = class_id == maneuver_id
-                    is_actual = actual_label is not None and class_id == actual_label
-                    
-                    # Build the indicator string
-                    indicator = ""
-                    if is_predicted and is_actual:
-                        indicator = " <-- PREDICTED & ACTUAL"
-                    elif is_predicted:
-                        indicator = " <-- PREDICTED"
-                    elif is_actual:
-                        indicator = " <-- ACTUAL"
-                    
-                    print(f"    {class_id} ({class_name}): {score:.4f}{indicator}")
-                
-                # Store confidence data for potential visualization
-                confidence_data.append({
-                    'sequence': sq,
-                    'time_range': f"{start_time:.1f}s - {end_time:.1f}s",
-                    'predicted': maneuver_id,
-                    'actual': actual_labels.get(sq, None),
-                    'scores': {class_id: float(score) for class_id, score in enumerate(confidence_scores)}
-                })
+            # lookup maneuver name
+            name = taxonomy.get(maneuver_id, 'Unknown maneuver')
+            if maneuver_id != 0:
+                maneuvers.append({'name': name, 'start_time': start_time, 'end_time': end_time})
 
-        # clean things up
-        shutil.rmtree(seqs_path)
+            # Print the confidence scores for all classes
+            print(f"\nSequence {sq} (Time: {start_time:.1f}s - {end_time:.1f}s):")
+            print(f"  Predicted maneuver: {maneuver_id} ({name})")
+            print("  Confidence scores:")
+            for class_id, score in enumerate(confidence_scores):
+                class_name = taxonomy.get(class_id, 'Unknown')
+                actual_label = actual_labels.get(sq, None)
+                is_predicted = class_id == maneuver_id
+                is_actual = actual_label is not None and class_id == actual_label
+
+                indicator = ""
+                if is_predicted and is_actual:
+                    indicator = " <-- PREDICTED & ACTUAL"
+                elif is_predicted:
+                    indicator = " <-- PREDICTED"
+                elif is_actual:
+                    indicator = " <-- ACTUAL"
+
+                print(f"    {class_id} ({class_name}): {score:.4f}{indicator}")
+
+            confidence_data.append({
+                'sequence': sq,
+                'time_range': f"{start_time:.1f}s - {end_time:.1f}s",
+                'predicted': maneuver_id,
+                'actual': actual_labels.get(sq, None),
+                'scores': {class_id: float(score) for class_id, score in enumerate(confidence_scores)}
+            })
 
         # Return the results without activation analysis
         return maneuvers, confidence_data, taxonomy
 
     except Exception as e:
-        # Clean up any temporary files
-        if 'seqs_path' in locals() and os.path.exists(seqs_path):
-            shutil.rmtree(seqs_path)
         print(f"Error during inference: {str(e)}")
         raise
 
-def infer_sequence(model, seq_dir, mode='dev', hidden=None):
-    """Run inference on a single sequence."""
-    # Use the shared function from utils.py with batch dimension already added
-    sequence = load_frames_from_sequence(seq_dir, transform=None, mode=mode, add_batch_dim=True)
-    sequence = sequence.to(device)
-    
+def infer_sequence_tensor(model, frames_tensor, mode='dev', hidden=None):
+    """Run inference on a single sequence given a preprocessed frames tensor."""
+    # Add batch dimension and move to device
+    sequence = frames_tensor.unsqueeze(0).to(device)
+
     with torch.no_grad():
-        # Forward pass (hidden parameter is ignored in the 3D CNN model)
         output, _ = model(sequence, None)
-        
-        # Apply softmax to get probabilities
         probabilities = torch.nn.functional.softmax(output, dim=1)
         confidence_scores = probabilities.squeeze().cpu().numpy()
         predicted_class = output.argmax(dim=1).item()
-        
+
     return predicted_class, confidence_scores
 
 if __name__ == "__main__":
