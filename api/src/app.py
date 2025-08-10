@@ -44,13 +44,6 @@ def process_video_stream(video_path):
     if is_surf:
         result = {
             "status": "interim",
-            "message": "Analyzing ride..."
-        }
-        yield f"data: {json.dumps(result)}\n\n"
-        time.sleep(2)
-     
-        result = {
-            "status": "interim",
             "message": "Identifying maneuvers..."
         }
         yield f"data: {json.dumps(result)}\n\n"
