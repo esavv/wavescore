@@ -530,6 +530,9 @@ To set up and deploy a React web app:
  ```bash
  # Create the systemd service file from the repo copy
  sudo cp ~/wavescore/api/systemd/wavescore-api.service /etc/systemd/system/wavescore-api.service
+
+ # If using NVMe for virtual environment, use this instead
+ sudo cp ~/wavescore/api/systemd/wavescore-api.service.nvme /etc/systemd/system/wavescore-api.service
  
  # Set up logs directory and permissions
  mkdir -p ~/wavescore/api/src/logs

@@ -1,0 +1,20 @@
+[Unit]
+Description=WaveScore API (Gunicorn)
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/wavescore/api/src
+ExecStart=/opt/dlami/nvme/venvs/wavescore/bin/gunicorn -w 1 -k sync -b 127.0.0.1:5000 app:app \
+  --timeout 600 \
+  --capture-output \
+  --max-requests 20 \
+  --access-logfile logs/access.log \
+  --error-logfile logs/error.log
+Environment="PYTHONUNBUFFERED=1"
+Restart=always
+RestartSec=5
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target
