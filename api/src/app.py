@@ -1,5 +1,5 @@
-import os, json, gc, ctypes
-import verify_video, modify_video, inference, score_inference
+import ctypes, gc, json, os
+import inference, modify_video, score_inference, verify_video
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 
@@ -24,6 +24,48 @@ def upload_video_sse():
 
 def process_video_stream(video_path):
     try:
+        # Probe media info
+        try:
+            info = modify_video.get_media_info(video_path)
+            print(
+                f"Upload info: size={info['size_bytes']/1_000_000:.2f} MB, "
+                f"resolution={info['width']}x{info['height']}, fps={info['fps']:.2f}, "
+                f"duration={info['duration']:.2f}s, est_avg_bitrate={info['est_avg_bitrate_mbps']:.2f} Mbps"
+            )
+        except Exception as e:
+            print(f"Failed to read media info: {e}")
+            info = {'width': 0, 'height': 0, 'fps': 0.0, 'duration': 0.0, 'est_avg_bitrate_mbps': 0.0, 'size_bytes': 0}
+
+        # Decide whether to normalize
+        needs_norm = (
+            info['width'] > 1280 or info['height'] > 720 or (info['fps'] and info['fps'] > 30.0) or info['size_bytes'] > 100 * 1024 * 1024 or info['est_avg_bitrate_mbps'] > 10.0
+        )
+        if needs_norm:
+            # Notify client
+            result = {
+                "status": "interim",
+                "message": "Normalizing video..."
+            }
+            yield f"data: {json.dumps(result)}\n\n"
+
+            # Normalize to 640x360 @ 30fps
+            try:
+                norm_path = modify_video.normalize_video(video_path, target_width=640, target_fps=30)
+                # Log post-normalization info
+                try:
+                    nfo = modify_video.get_media_info(norm_path)
+                    print(
+                        f"Normalized info: size={nfo['size_bytes']/1_000_000:.2f} MB, "
+                        f"resolution={nfo['width']}x{nfo['height']}, fps={nfo['fps']:.2f}, "
+                        f"duration={nfo['duration']:.2f}s, est_avg_bitrate={nfo['est_avg_bitrate_mbps']:.2f} Mbps"
+                    )
+                except Exception as e:
+                    print(f"Failed to read normalized media info: {e}")
+                video_path = norm_path
+            except Exception as e:
+                print(f"Normalization failed: {e}")
+                # Proceed with original
+
         print("Checking whether this is a surf video...")
         result = {
             "status": "interim",

@@ -1,8 +1,9 @@
+import boto3, csv, cv2, gc, os, subprocess
+from botocore.exceptions import NoCredentialsError
+from imageio_ffmpeg import get_ffmpeg_exe
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.VideoClip import TextClip
-from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
-import boto3, os, csv, gc
-from botocore.exceptions import NoCredentialsError
 
 data_dir = '../../data'
 aws_keys_path = "../keys/aws_s3_accessKeys.csv"
@@ -102,6 +103,65 @@ def annotate_video(input_path, bucket_name, analysis):
         print(f"An error occurred: {e}")
 
     return video_url
+
+def get_media_info(video_path):
+    """Return basic media info for a given video path."""
+    try:
+        size_bytes = os.path.getsize(video_path)
+    except Exception:
+        size_bytes = 0
+    width = height = total_frames = 0
+    fps = 0.0
+    duration = 0.0
+    try:
+        cap = cv2.VideoCapture(video_path)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = cap.get(cv2.CAP_PROP_FPS) or 0.0
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
+        duration = (total_frames / fps) if fps and total_frames > 0 else 0.0
+    except Exception:
+        pass
+    est_avg_bitrate_mbps = ((size_bytes * 8) / 1e6 / duration) if duration > 0 else 0.0
+    return {
+        'size_bytes': size_bytes,
+        'width': width,
+        'height': height,
+        'fps': fps,
+        'total_frames': total_frames,
+        'duration': duration,
+        'est_avg_bitrate_mbps': est_avg_bitrate_mbps,
+    }
+
+def normalize_video(video_path, target_width=640, target_fps=30):
+    """
+    Normalize a video to target resolution (keeping aspect) and fps.
+    Returns the path to the normalized video. Deletes the original on success.
+    """
+    base, ext = os.path.splitext(video_path)
+    norm_path = f"{base}_norm{ext}"
+    vf = f"scale='min({target_width},iw)':'-2':flags=bicubic,fps={target_fps}"
+    ffmpeg_path = get_ffmpeg_exe()
+    cmd = [
+        ffmpeg_path, '-y', '-i', video_path,
+        '-loglevel', 'error',
+        '-vf', vf,
+        '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p',
+        '-c:a', 'aac', '-b:a', '128k',
+        '-movflags', '+faststart',
+        '-threads', '1',
+        norm_path
+    ]
+    print("Starting normalization with ffmpeg...")
+    subprocess.run(cmd, check=True)
+    # Delete original to reclaim space
+    try:
+        os.remove(video_path)
+        print(f"Deleted original heavy video: {video_path}")
+    except Exception as e:
+        print(f"Failed to delete original video: {e}")
+    return norm_path
 
 if __name__ == "__main__":
     maneuvers = [
