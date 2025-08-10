@@ -4,12 +4,13 @@ import torch.nn.functional as F
 from transformers import CLIPVisionModel, ViTModel
 
 class VideoScorePredictor(nn.Module):
-    def __init__(self, model_type='clip', variant='base', freeze_backbone=True, dropout_rate=0.5, pooling_type='attention'):
+    def __init__(self, model_type='clip', variant='base', freeze_backbone=True, dropout_rate=0.5, pooling_type='attention', encode_chunk_size: int = 32):
         super(VideoScorePredictor, self).__init__()
         self.model_type = model_type
         self.variant = variant
         self.freeze_backbone = freeze_backbone
         self.pooling_type = pooling_type
+        self.encode_chunk_size = max(1, int(encode_chunk_size))
         
         # Initialize the image encoder
         self._initialize_encoder()
@@ -138,16 +139,28 @@ class VideoScorePredictor(nn.Module):
             scores: Predicted scores tensor of shape [batch_size] with values in range [0.0, 10.0]
         """
         batch_size, num_frames = frames.shape[:2]
-        
-        # Reshape to process all frames at once
-        frames = frames.view(-1, *frames.shape[2:])  # [batch_size * num_frames, channels, height, width]
-        
-        # Get frame embeddings
-        encoder_output = self.encoder(frames)
-        frame_embeddings = encoder_output.pooler_output if hasattr(encoder_output, 'pooler_output') else encoder_output.last_hidden_state[:, 0, :]
-        
-        # Reshape back to separate frames
-        frame_embeddings = frame_embeddings.view(batch_size, num_frames, -1)  # [batch_size, num_frames, hidden_size]
+        hidden_size = self.hidden_size
+
+        # Encode frames in temporal chunks to reduce peak memory
+        embeddings_per_chunk = []
+        chunk_size = self.encode_chunk_size
+        for start in range(0, num_frames, chunk_size):
+            end = min(start + chunk_size, num_frames)
+            # [B, chunk, C, H, W] -> [B*chunk, C, H, W]
+            chunk = frames[:, start:end].contiguous().view(-1, *frames.shape[2:])
+            encoder_output = self.encoder(chunk)
+            chunk_embed = (
+                encoder_output.pooler_output
+                if hasattr(encoder_output, 'pooler_output') and encoder_output.pooler_output is not None
+                else encoder_output.last_hidden_state[:, 0, :]
+            )  # [B*chunk, hidden]
+            # [B*chunk, hidden] -> [B, chunk, hidden]
+            chunk_frames = end - start
+            chunk_embed = chunk_embed.view(batch_size, chunk_frames, hidden_size)
+            embeddings_per_chunk.append(chunk_embed)
+
+        # Concatenate across chunks to recover full [B, T, hidden]
+        frame_embeddings = torch.cat(embeddings_per_chunk, dim=1)
         
         # Apply temporal pooling
         pooled_embeddings = self._apply_temporal_pooling(frame_embeddings)
