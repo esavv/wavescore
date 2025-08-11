@@ -459,24 +459,24 @@ To set up and deploy a React web app:
   df -h
 
   # If main volume doesn't have enough space for dependencies, use NVMe:
-  # 3) Remove old venv and pip caches on root to reclaim space
+  #   Remove old venv and pip caches on root to reclaim space
   rm -rf /home/ubuntu/wavescore/api/venv
   pip cache purge || true
   rm -rf ~/.cache/pip
   sudo rm -rf /tmp/pip-* /tmp/tmp.* 2>/dev/null || true
 
-  # 4) Prepare NVMe dirs and permissions
+  #   Prepare NVMe dirs and permissions
   sudo mkdir -p /opt/dlami/nvme/{venvs,pip-cache,tmp}
   sudo chown -R ubuntu:ubuntu /opt/dlami/nvme
 
-  # 5) Create new venv on NVMe and install requirements using NVMe cache/tmp
+  #   Create new venv on NVMe and install requirements using NVMe cache/tmp
   python3 -m venv /opt/dlami/nvme/venvs/wavescore
   source /opt/dlami/nvme/venvs/wavescore/bin/activate
   pip install -U pip
   PIP_CACHE_DIR=/opt/dlami/nvme/pip-cache TMPDIR=/opt/dlami/nvme/tmp \
   pip install --no-cache-dir -r /home/ubuntu/wavescore/api/requirements.txt
 
-  # 6) Ensure the gunicorn log directory exists relative to WorkingDirectory
+  #   Ensure the gunicorn log directory exists relative to WorkingDirectory
   mkdir -p /home/ubuntu/wavescore/api/src/logs
  ```
 
