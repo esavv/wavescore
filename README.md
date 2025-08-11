@@ -61,7 +61,7 @@ yt-dlp -f "mp4" -o "%(id)s.mp4" --download-sections "*00:30:00-01:00:00" https:/
 # From the ./api/src directory, run:
 python3 download_youtube.py <video_id>
 ```
-This script downloads the video (full or partial) and creates the required directory structure in `./data/heats/heat_<video_id>/` with the video file and a CSV template for ride times.
+   - The previous script downloads the video (full or partial) and creates the required directory structure in `./data/heats/heat_<video_id>/` with the video file and a CSV template for ride times.
 
 ```bash  
 # Clip a shorter video from a longer video and save it
@@ -360,11 +360,10 @@ To set up and deploy a React web app:
    }
    ```
 
-4. **Run Locally**
+4. **Run develoment server locally**
    ```bash
    npm run dev
    ```
-   This starts the development server (usually at `http://localhost:5173`). The app will hot-reload as we make changes.
 
 5. **Deploy with Vercel**
    - Go to [https://vercel.com](https://vercel.com)
@@ -396,15 +395,15 @@ To set up and deploy a React web app:
 ### Launch a New Inference Server
 
 1. Launch EC2 instance
- - AWS Console > EC2 > Instances > Launch instances
- - Name convention: wavescore-api-{instance_type} (e.g. wavescore-api-t3medium)
- - OS: Ubuntu
- - AMI: Deep Learning OSS Nvidia Driver AMI GPU PyTorch (2.6, 2.7)
- - Select an instance type (e.g. t3.medium, g5.xlarge)
- - Key pair: esavage_ec2
- - Create default security group
- - Allow SSH traffic from anywhere
- - Default storage option
+   - AWS Console > EC2 > Instances > Launch instances
+   - Name convention: wavescore-api-{instance_type} (e.g. wavescore-api-t3medium)
+   - OS: Ubuntu
+   - AMI: Deep Learning OSS Nvidia Driver AMI GPU PyTorch (2.6, 2.7)
+   - Select an instance type (e.g. t3.medium, g5.xlarge)
+   - Key pair: esavage_ec2
+   - Create default security group
+   - Allow SSH traffic from anywhere
+   - Default storage option
 
 2. Load & install application 
  ```bash
