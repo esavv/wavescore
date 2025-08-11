@@ -2,7 +2,7 @@
 
 ## Overview
 
-This application allows you to upload surfing videos and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging).
+This application allows you to upload surfing videos and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[28]).
 
 ## Check it out!
 
