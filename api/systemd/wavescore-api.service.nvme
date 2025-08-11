@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=ubuntu
 WorkingDirectory=/home/ubuntu/wavescore/api/src
-ExecStart=/home/ubuntu/wavescore/api/venv/bin/gunicorn -w 1 -k sync -b 127.0.0.1:5000 app:app \
+ExecStart=/opt/dlami/nvme/venvs/wavescore/bin/gunicorn -w 1 -k sync -b 127.0.0.1:5000 app:app \
   --timeout 600 \
   --capture-output \
   --max-requests 20 \

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This application allows you to upload surfing videos and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
+This application allows you to upload surfing videos and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging).
 
 ## Check it out!
 
@@ -49,47 +49,43 @@ Last updated: 2025/08/02
 
 ## Admin Documentation
 
-### Download a YouTube video from command line using yt-dlp, ensure it's a mp4
+### Download and manipulate YouTube videos
 ```bash  
+# Download a YouTube video from command line using yt-dlp, ensure it's a mp4
 yt-dlp -f "mp4" -o "%(id)s.mp4" https://www.youtube.com/watch?v=1Zj_jAPToxI
-```
 
-### Download only specific subset of a longer YouTube video (from 30:00 to 1:00:00 in this example)
-```bash  
+# Download only specific subset of a longer YouTube video (from 30:00 to 1:00:00 in this example)
 yt-dlp -f "mp4" -o "%(id)s.mp4" --download-sections "*00:30:00-01:00:00" https://www.youtube.com/watch?v=1Zj_jAPToxI
-```
 
-### Download a YouTube video with script
-From the `./api/src` directory, run:
-```bash
+# Download a YouTube video with script
+# From the ./api/src directory, run:
 python3 download_youtube.py <video_id>
 ```
 This script downloads the video (full or partial) and creates the required directory structure in `./data/heats/heat_<video_id>/` with the video file and a CSV template for ride times.
 
-### Clip a shorter video from a longer video and save it
 ```bash  
+# Clip a shorter video from a longer video and save it
+# This assumes we're in the main project directory & naively saves it there.
 ffmpeg -i data/heats/heat_1Zj_jAPToxI/1Zj_jAPToxI.mp4 -ss 00:00:17 -to 00:00:46 -c:v libx264 -c:a aac 1Zj_jAPToxI_1.mp4
 ```
-This assumes we're in the main project directory & naively saves it there.
 
-### Convert a longer surfing video into a sequence of ride clips
-   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `./data/heats/123/123.mp4`
-   - Add a csv to the `/123` directory called `ride_times.csv` that contains the start & end timestamps for each ride to be clipped
-   - From the `api` directory, run:
+   - Convert a longer surfing video into a sequence of ride clips
+     - Suppose we have video `123.mp4`. First, ensure it exists at this path: `./data/heats/123/123.mp4`
+     - Add a csv to the `/123` directory called `ride_times.csv` that contains the start & end timestamps for each ride to be clipped
 ```bash  
+# From the `api` directory, run:
 python3 clipify.py 123 
 ```
-   - This runs a python script that outputs the desired clips to this directory: `./data/heats/heat_123/rides/`
+     - This runs a python script that outputs the desired clips to this directory: `./data/heats/heat_123/rides/`
 
-### Convert a sequence of ride clips into labeled sequences of frames
-This labeled sequence is intended to be fed into a model that will learn surf maneuvers from an input video.
-   - Suppose we have video `123.mp4` that has ride clips in `./data/heats/123/rides/`
-   - Ensure that each ride directory, in addition to the ride clip (e.g. `0/123_0.mp4`) has a human-labeled CSV file named `human_labels.csv` containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `./data/maneuver_taxonomy.csv`)
-   - From the main /wavescore directory, run this command:
+   - Convert a sequence of ride clips into labeled sequences of frames
+     - Suppose we have video `123.mp4` that has ride clips in `./data/heats/123/rides/`
+     - Ensure that each ride directory, in addition to the ride clip (e.g. `0/123_0.mp4`) has a human-labeled CSV file named `human_labels.csv` containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `./data/maneuver_taxonomy.csv`)
 ```bash
+# From the main /wavescore directory, run this command:
 python3 src/maneuver_sequencing.py 123
 ```
- - This runs a script that outputs frame sequences for each ride in, for example, `.../0/seqs` and outputs sequence labels in, for example, `.../0/seq_labels.csv`
+   - This runs a script that outputs frame sequences for each ride in, for example, `.../0/seqs` and outputs sequence labels in, for example, `.../0/seq_labels.csv`
 
 ### Start & manage virtual environments when testing locally
 ```bash
@@ -159,7 +155,7 @@ zip -r src.zip augment_data.py checkpoints.py clipify.py create_maneuver_compila
 ```
    - Training server: Transfer my src zip to fresh EC2 instance from `api` dir:
 ```bash  
-scp -i keys/aws_ec2.pem -r src/src.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/src
+scp -i keys/aws_ec2.pem -r src/src.zip ubuntu@ec2-44-210-82-47.compute-1.amazonaws.com:/home/ubuntu/wavescore/api/src
 ```
    - Training server: Zip my data/ files to scp to AWS later (lazy approach)
 ```bash  
@@ -317,7 +313,7 @@ To run the Flask API as a systemd service using Gunicorn on the EC2 instance:
 
 To set up and deploy a React web app:
 
-1. **Setup Vite & React**
+1. **Set up Vite & React**
    ```bash
    npm init vite@latest web
    cd web
@@ -377,7 +373,7 @@ To set up and deploy a React web app:
 
    **For Monorepo Setup:**
 
-   Since we're building this as part of a larger wavescore project, configure Vercel to deploy only the web subdirectory:
+   In the current project structure the web app is just one component, so configure Vercel to deploy only the web subdirectory:
 
    - During Vercel setup, set **Root Directory** to `web/`
    - Set **Build Command** to `npm run build`
@@ -388,7 +384,7 @@ To set up and deploy a React web app:
    wavescore/
      ├── api/
      ├── data/
-     ├── web/         👈 Vercel will build from here
+     ├── web/         <-- Vercel will build from here
      ├── README.md
      └── .git/
    ```
@@ -396,3 +392,154 @@ To set up and deploy a React web app:
    Vercel will only build and deploy from the `web/` folder, ignoring the rest of the monorepo.
 
    - Click **Deploy**
+
+### Launch a New Inference Server
+
+1. Launch EC2 instance
+ - AWS Console > EC2 > Instances > Launch instances
+ - Name convention: wavescore-api-{instance_type} (e.g. wavescore-api-t3medium)
+ - OS: Ubuntu
+ - AMI: Deep Learning OSS Nvidia Driver AMI GPU PyTorch (2.6, 2.7)
+ - Select an instance type (e.g. t3.medium, g5.xlarge)
+ - Key pair: esavage_ec2
+ - Create default security group
+ - Allow SSH traffic from anywhere
+ - Default storage option
+
+2. Load & install application 
+ ```bash
+ # Zip API files locally (run from the repo's ./api directory)
+ # Create deploy bundle with API source, service files, nginx config, and CPU requirements
+ zip -r api.zip \
+   apidata/ \
+   keys/ \
+   nginx.conf \
+   requirements.txt \
+   requirements_cpu.txt \
+   src/ \
+   systemd/ 
+
+  # Create remote directory structure to receive application files
+  ssh -i keys/aws_ec2.pem ubuntu@ec2-XX-XX-XX-XX.compute-1.amazonaws.com 'mkdir -p ~/wavescore/api ~/wavescore/data ~/wavescore/models' 
+
+  # Transfer bundle, taxonomy, and model artifact(s) to the EC2 instance
+  scp -i keys/aws_ec2.pem api.zip ubuntu@ec2-XX-XX-XX-XX.compute-1.amazonaws.com:/home/ubuntu/wavescore/api
+  scp -i keys/aws_ec2.pem ../data/maneuver_taxonomy.csv ubuntu@ec2-XX-XX-XX-XX.compute-1.amazonaws.com:/home/ubuntu/wavescore/data
+ 
+ # Replace the model filename(s) below with your actual filenames
+  scp -i keys/aws_ec2.pem ../models/surf_maneuver_model_20250518_2118.pth ubuntu@ec2-XX-XX-XX-XX.compute-1.amazonaws.com:/home/ubuntu/wavescore/models
+  scp -i keys/aws_ec2.pem ../models/score_model_20250602_1643.pth ubuntu@ec2-XX-XX-XX-XX.compute-1.amazonaws.com:/home/ubuntu/wavescore/models
+ 
+  # SSH into EC2
+  ssh -i keys/aws_ec2.pem ubuntu@ec2-XX-XX-XX-XX.compute-1.amazonaws.com
+  ```
+
+  ```bash
+  # Unzip and organize API files
+  cd ~/wavescore/api
+  unzip api.zip
+
+  # If necessary, install python
+  sudo apt install python3.10-venv
+
+  # Create and activate a virtual environment
+  python3 -m venv venv
+  source venv/bin/activate
+
+  # Install dependencies
+  # If this is a CPU instance:
+  pip install -r requirements_cpu.txt --index-url https://pypi.org/simple --extra-index-url https://download.pytorch.org/whl/cpu
+
+  # If this is a GPU instance:
+  pip install -r requirements.txt
+
+  # Deactivate virtual environment when done with installation
+  deactivate
+
+  # (Optional) Check disk space
+  df -h
+
+  # If main volume doesn't have enough space for dependencies, use NVMe:
+  # 3) Remove old venv and pip caches on root to reclaim space
+  rm -rf /home/ubuntu/wavescore/api/venv
+  pip cache purge || true
+  rm -rf ~/.cache/pip
+  sudo rm -rf /tmp/pip-* /tmp/tmp.* 2>/dev/null || true
+
+  # 4) Prepare NVMe dirs and permissions
+  sudo mkdir -p /opt/dlami/nvme/{venvs,pip-cache,tmp}
+  sudo chown -R ubuntu:ubuntu /opt/dlami/nvme
+
+  # 5) Create new venv on NVMe and install requirements using NVMe cache/tmp
+  python3 -m venv /opt/dlami/nvme/venvs/wavescore
+  source /opt/dlami/nvme/venvs/wavescore/bin/activate
+  pip install -U pip
+  PIP_CACHE_DIR=/opt/dlami/nvme/pip-cache TMPDIR=/opt/dlami/nvme/tmp \
+  pip install --no-cache-dir -r /home/ubuntu/wavescore/api/requirements.txt
+
+  # 6) Ensure the gunicorn log directory exists relative to WorkingDirectory
+  mkdir -p /home/ubuntu/wavescore/api/src/logs
+ ```
+
+3. Configure networking
+ - Set up inbound security group rules
+ - In EC2 > Instances > {your instance} > Security > Open security group
+   - **HTTP**
+     - Type: HTTP
+     - Port range: 80
+     - Source: 0.0.0.0/0
+     - Description: Allow HTTP
+   - **HTTPS**
+     - Type: HTTPS
+     - Port range: 443
+     - Source: 0.0.0.0/0
+     - Description: Allow HTTPS
+ - Point API endpoint to new instance
+ - In Vercel > project > Settings > Domains > api.wavescore.xyz > View DNS Records
+   - Edit Value for Name `api` and set to new instance public IP address
+ 
+ ```bash
+ # Validate that domain now points to instance IP address
+ dig +short api.wavescore.xyz
+
+ # Install nginx and certbot
+ sudo apt update
+ sudo apt install -y nginx certbot python3-certbot-nginx
+ 
+ # Obtain and install SSL certificate
+ sudo certbot --nginx -d api.wavescore.xyz --agree-tos -m <YOUR_EMAIL_HERE> --non-interactive --redirect
+ 
+ # Configure nginx as a reverse proxy
+ # Copy the provided nginx config from the repo and enable it
+ sudo cp ~/wavescore/api/nginx.conf /etc/nginx/sites-available/flask-app
+ sudo ln -sf /etc/nginx/sites-available/flask-app /etc/nginx/sites-enabled/
+ sudo nginx -t && sudo systemctl reload nginx
+
+ # If any conflicting server names, check server names
+ sudo ls -l /etc/nginx/sites-enabled
+
+ # Remove any that aren't flask-app
+ sudo rm -f /etc/nginx/sites-enabled/default
+ ```
+
+4. Launch API service
+ ```bash
+ # Create the systemd service file from the repo copy
+ sudo cp ~/wavescore/api/systemd/wavescore-api.service /etc/systemd/system/wavescore-api.service
+
+ # If using NVMe for virtual environment, use this instead
+ sudo cp ~/wavescore/api/systemd/wavescore-api.service.nvme /etc/systemd/system/wavescore-api.service
+ 
+ # Set up logs directory and permissions
+ mkdir -p ~/wavescore/api/src/logs
+ sudo chown ubuntu:ubuntu ~/wavescore/api/src/logs
+ 
+ # Enable on boot, reload daemon, and start the service
+ sudo systemctl daemon-reload
+ sudo systemctl enable wavescore-api
+ sudo systemctl restart wavescore-api
+ 
+ # Verify status and follow logs
+ sudo systemctl status wavescore-api
+ tail -f ~/wavescore/api/src/logs/error.log
+ ```

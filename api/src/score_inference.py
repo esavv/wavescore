@@ -4,7 +4,7 @@
 # Usage:
 # src $ python score_inference.py --mode dev
 
-import argparse, os, sys, torch
+import argparse, gc, os, sys, torch
 from checkpoints import load_checkpoint
 from score_dataset import load_video_for_inference
 from score_model import VideoScorePredictor
@@ -73,6 +73,21 @@ def run_inference(video_paths, model_filename, mode='dev'):
     except Exception as e:
         print(f"Error during inference: {str(e)}")
         raise
+    finally:
+        # Explicitly free model and cached CUDA memory if applicable
+        print("Score inference: beginning cleanup...")
+        try:
+            del model, video_tensor
+        except Exception:
+            pass
+        gc.collect()
+        try:
+            if device.type == 'cuda':
+                print("Score inference: clearing CUDA caches...")
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+        except Exception:
+            pass
 
 def infer_video_score(model, video_tensor):
     """Run inference on a single video."""

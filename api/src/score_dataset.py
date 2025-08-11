@@ -1,9 +1,7 @@
-import os
+import cv2, os, torch
 import pandas as pd
-import torch
-import cv2
-from torch.utils.data import Dataset
 from PIL import Image
+from torch.utils.data import Dataset
 import torchvision.transforms.functional as F
 
 class ScoreDataset(Dataset):
@@ -221,6 +219,42 @@ class ScoreDataset(Dataset):
         video_tensor = torch.stack(processed_frames)
         
         return video_tensor
+
+    def _stream_preprocessed_frames(self, video_path):
+        """
+        Stream frames with OpenCV and preprocess inline to 224x224 tensors.
+        Returns a tensor of shape [num_frames, channels, 224, 224].
+        """
+        frame_interval = max(1, int(1.0 / self.sample_rate))
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise ValueError(f"Could not open video: {video_path}")
+
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        print(f"score_inference(stream): fps={fps:.2f} total_frames={total_frames} sample_rate={self.sample_rate} interval={frame_interval}")
+
+        frames = []
+        kept = 0
+        frame_idx = 0
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            if frame_idx % frame_interval == 0:
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                pil_image = Image.fromarray(frame_rgb)
+                processed = self._preserve_aspect_ratio_resize(pil_image, self.frame_size)
+                frames.append(processed)
+                kept += 1
+            frame_idx += 1
+
+        cap.release()
+        if len(frames) == 0:
+            raise ValueError(f"No frames extracted from video: {video_path}")
+
+        print(f"score_inference(stream): kept_frames={kept}")
+        return torch.stack(frames)
     
     def _preserve_aspect_ratio_resize(self, image, target_size):
         """Resize image while preserving aspect ratio, then pad to square."""
@@ -254,11 +288,15 @@ class ScoreDataset(Dataset):
         """Get a video-score pair or just video for unlabeled data."""
         sample = self.samples[idx]
         
-        # Sample frames from video
-        frames = self._sample_frames_from_video(sample['video_path'])
-        
-        # Preprocess frames
-        video_tensor = self._preprocess_frames(frames)
+        # For unlabeled (inference) loads, stream and preprocess inline
+        if not self.labeled:
+            print(f"score_inference(stream): starting streaming decode for {sample['video_path']}")
+            video_tensor = self._stream_preprocessed_frames(sample['video_path'])
+            print(f"score_inference(stream): final tensor shape={tuple(video_tensor.shape)}")
+        else:
+            # Sample frames from video then preprocess
+            frames = self._sample_frames_from_video(sample['video_path'])
+            video_tensor = self._preprocess_frames(frames)
         
         if self.labeled:
             # Convert score to float32 tensor

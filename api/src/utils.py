@@ -107,6 +107,70 @@ def sequence_video_frames(video_path, output_dir, sequence_duration=2):
         'sequence_paths': sequence_paths
     }
 
+def iterate_video_sequences(video_path, sequence_duration=2, mode='dev'):
+    """
+    Iterate over a video and yield preprocessed frame tensors for each sequence window
+    without writing frames to disk.
+
+    Yields: (sequence_index, start_time, end_time, frames_tensor)
+      - frames_tensor shape: [MAX_LENGTH, channels, 224, 224]
+    """
+    # Mode-dependent sampling and color settings
+    skip_freq = 10
+    color_mode = "L"
+    if mode == 'prod':
+        skip_freq = 2
+        color_mode = "RGB"
+    max_length = 60 // skip_freq
+
+    cap = cv2.VideoCapture(video_path)
+    try:
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        frames_per_sequence = int(sequence_duration * fps) if fps > 0 else int(sequence_duration * 30)
+        if frames_per_sequence <= 0:
+            frames_per_sequence = 1
+
+        sequence_index = 0
+        frames_read = 0
+
+        while frames_read < total_frames:
+            # Collect frames for this sequence
+            raw_frames_in_seq = 0
+            processed_frames = []
+
+            while frames_read < total_frames and raw_frames_in_seq < frames_per_sequence:
+                ret, frame_bgr = cap.read()
+                if not ret:
+                    break
+                # Keep every skip_freq-th frame
+                if raw_frames_in_seq % skip_freq == 0:
+                    # Convert BGR to RGB and then to PIL with desired color
+                    frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+                    pil_img = Image.fromarray(frame_rgb).convert(color_mode)
+                    tensor_img = preserve_aspect_ratio_transform(pil_img, target_size=224)
+                    processed_frames.append(tensor_img)
+
+                raw_frames_in_seq += 1
+                frames_read += 1
+
+            if len(processed_frames) == 0:
+                # No frames collected; stop iterating
+                break
+
+            # Pad or truncate to fixed length
+            frames_tensor = pad_sequence(processed_frames, max_length)
+
+            start_time = sequence_index * sequence_duration
+            # Use actual frames collected to compute end time more precisely
+            approx_frames_this_seq = min(frames_per_sequence, total_frames - sequence_index * frames_per_sequence)
+            end_time = start_time + (approx_frames_this_seq / fps if fps > 0 else sequence_duration)
+
+            yield sequence_index, start_time, end_time, frames_tensor
+            sequence_index += 1
+    finally:
+        cap.release()
+
 def timestamp_to_seconds(timestamp):
     """Convert 'MM:SS' to seconds."""
     minutes, seconds = map(int, timestamp.split(':'))
