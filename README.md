@@ -2,7 +2,7 @@
 
 ## Overview
 
-This application allows you to upload surfing videos and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging[27]).
+This application allows you to upload surfing videos and get your ride scored from 0 to 10 as if you're in a [surf competition](https://en.wikipedia.org/wiki/World_Surf_League#Judging).
 
 ## Check it out!
 
@@ -49,47 +49,43 @@ Last updated: 2025/08/02
 
 ## Admin Documentation
 
-### Download a YouTube video from command line using yt-dlp, ensure it's a mp4
+### Download and manipulate YouTube videos
 ```bash  
+# Download a YouTube video from command line using yt-dlp, ensure it's a mp4
 yt-dlp -f "mp4" -o "%(id)s.mp4" https://www.youtube.com/watch?v=1Zj_jAPToxI
-```
 
-### Download only specific subset of a longer YouTube video (from 30:00 to 1:00:00 in this example)
-```bash  
+# Download only specific subset of a longer YouTube video (from 30:00 to 1:00:00 in this example)
 yt-dlp -f "mp4" -o "%(id)s.mp4" --download-sections "*00:30:00-01:00:00" https://www.youtube.com/watch?v=1Zj_jAPToxI
-```
 
-### Download a YouTube video with script
-From the `./api/src` directory, run:
-```bash
+# Download a YouTube video with script
+# From the ./api/src directory, run:
 python3 download_youtube.py <video_id>
 ```
 This script downloads the video (full or partial) and creates the required directory structure in `./data/heats/heat_<video_id>/` with the video file and a CSV template for ride times.
 
-### Clip a shorter video from a longer video and save it
 ```bash  
+# Clip a shorter video from a longer video and save it
+# This assumes we're in the main project directory & naively saves it there.
 ffmpeg -i data/heats/heat_1Zj_jAPToxI/1Zj_jAPToxI.mp4 -ss 00:00:17 -to 00:00:46 -c:v libx264 -c:a aac 1Zj_jAPToxI_1.mp4
 ```
-This assumes we're in the main project directory & naively saves it there.
 
-### Convert a longer surfing video into a sequence of ride clips
-   - Suppose we have video `123.mp4`. First, ensure it exists at this path: `./data/heats/123/123.mp4`
-   - Add a csv to the `/123` directory called `ride_times.csv` that contains the start & end timestamps for each ride to be clipped
-   - From the `api` directory, run:
+   - Convert a longer surfing video into a sequence of ride clips
+     - Suppose we have video `123.mp4`. First, ensure it exists at this path: `./data/heats/123/123.mp4`
+     - Add a csv to the `/123` directory called `ride_times.csv` that contains the start & end timestamps for each ride to be clipped
 ```bash  
+# From the `api` directory, run:
 python3 clipify.py 123 
 ```
-   - This runs a python script that outputs the desired clips to this directory: `./data/heats/heat_123/rides/`
+     - This runs a python script that outputs the desired clips to this directory: `./data/heats/heat_123/rides/`
 
-### Convert a sequence of ride clips into labeled sequences of frames
-This labeled sequence is intended to be fed into a model that will learn surf maneuvers from an input video.
-   - Suppose we have video `123.mp4` that has ride clips in `./data/heats/123/rides/`
-   - Ensure that each ride directory, in addition to the ride clip (e.g. `0/123_0.mp4`) has a human-labeled CSV file named `human_labels.csv` containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `./data/maneuver_taxonomy.csv`)
-   - From the main /wavescore directory, run this command:
+   - Convert a sequence of ride clips into labeled sequences of frames
+     - Suppose we have video `123.mp4` that has ride clips in `./data/heats/123/rides/`
+     - Ensure that each ride directory, in addition to the ride clip (e.g. `0/123_0.mp4`) has a human-labeled CSV file named `human_labels.csv` containing the start & end times of each maneuver performed in the ride, as well as the corresponding maneuver ID (see `./data/maneuver_taxonomy.csv`)
 ```bash
+# From the main /wavescore directory, run this command:
 python3 src/maneuver_sequencing.py 123
 ```
- - This runs a script that outputs frame sequences for each ride in, for example, `.../0/seqs` and outputs sequence labels in, for example, `.../0/seq_labels.csv`
+   - This runs a script that outputs frame sequences for each ride in, for example, `.../0/seqs` and outputs sequence labels in, for example, `.../0/seq_labels.csv`
 
 ### Start & manage virtual environments when testing locally
 ```bash
@@ -317,7 +313,7 @@ To run the Flask API as a systemd service using Gunicorn on the EC2 instance:
 
 To set up and deploy a React web app:
 
-1. **Setup Vite & React**
+1. **Set up Vite & React**
    ```bash
    npm init vite@latest web
    cd web
@@ -377,7 +373,7 @@ To set up and deploy a React web app:
 
    **For Monorepo Setup:**
 
-   Since we're building this as part of a larger wavescore project, configure Vercel to deploy only the web subdirectory:
+   In the current project structure the web app is just one component, so configure Vercel to deploy only the web subdirectory:
 
    - During Vercel setup, set **Root Directory** to `web/`
    - Set **Build Command** to `npm run build`
@@ -388,7 +384,7 @@ To set up and deploy a React web app:
    wavescore/
      ├── api/
      ├── data/
-     ├── web/         👈 Vercel will build from here
+     ├── web/         <-- Vercel will build from here
      ├── README.md
      └── .git/
    ```
