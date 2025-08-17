@@ -27,7 +27,7 @@ def get_available_checkpoints():
     for filename in os.listdir(checkpoint_dir):
         if filename.endswith('.pth') and 'checkpoint' in filename:
             # Extract timestamp and epoch from filename
-            match = re.match(r'surf_maneuver_model_(\d{8}_\d{4})_checkpoint_epoch_(\d+)\.pth', filename)
+            match = re.match(r'maneuver_model_(\d{8}_\d{4})_checkpoint_epoch_(\d+)\.pth', filename)
             if match:
                 timestamp, epoch = match.groups()
                 checkpoints.append({
@@ -102,7 +102,7 @@ def load_checkpoint(checkpoint_path):
         optimizer_state = None
         
         # Extract timestamp and epoch from filename
-        match = re.match(r'surf_maneuver_model_(\d{8}_\d{4})_checkpoint_epoch_(\d+)\.pth', os.path.basename(checkpoint_path))
+        match = re.match(r'maneuver_model_(\d{8}_\d{4})_checkpoint_epoch_(\d+)\.pth', os.path.basename(checkpoint_path))
         if match:
             timestamp, epoch = match.groups()
             epoch = int(epoch)  # Convert to integer

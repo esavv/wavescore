@@ -94,8 +94,8 @@ def process_video_stream(video_path):
 
             # Run inference
             s3_bucket_name = "wavescorevideos"
-            # maneuver_model_url = "https://wavescorevideos.s3.us-east-1.amazonaws.com/surf_maneuver_model_20250518_2118.pth"
-            maneuver_model = "surf_maneuver_model_20250518_2118.pth"
+            # maneuver_model_url = "https://wavescorevideos.s3.us-east-1.amazonaws.com/maneuver_model_20250518_2118.pth"
+            maneuver_model = "maneuver_model_20250518_2118.pth"
             print(f"Starting maneuver inference with model: {maneuver_model}")
             try:
                 maneuvers, _, _ = maneuver_inference.run_inference(video_path, maneuver_model, mode='prod')
