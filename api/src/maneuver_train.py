@@ -21,8 +21,8 @@ from datetime import datetime
 from collections import Counter
 
 from checkpoints import get_available_checkpoints, load_checkpoint, save_checkpoint
-from dataset import SurfManeuverDataset
-from model import SurfManeuverModel
+from maneuver_dataset import SurfManeuverDataset
+from maneuver_model import SurfManeuverModel
 from model_logging import write_training_log
 from utils import (
     distribution_outdated, 

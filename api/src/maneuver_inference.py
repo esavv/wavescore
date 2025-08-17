@@ -6,7 +6,7 @@
 
 import argparse, csv, gc, os, shutil, sys, torch
 from checkpoints import load_checkpoint
-from model import SurfManeuverModel
+from maneuver_model import SurfManeuverModel
 from utils import (
     load_maneuver_taxonomy,
     iterate_video_sequences,

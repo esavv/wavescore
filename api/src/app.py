@@ -1,5 +1,5 @@
 import ctypes, gc, json, os
-import inference, modify_video, score_inference, verify_video
+import maneuver_inference, modify_video, score_inference, verify_video
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 
@@ -98,7 +98,7 @@ def process_video_stream(video_path):
             maneuver_model = "surf_maneuver_model_20250518_2118.pth"
             print(f"Starting maneuver inference with model: {maneuver_model}")
             try:
-                maneuvers, _, _ = inference.run_inference(video_path, maneuver_model, mode='prod')
+                maneuvers, _, _ = maneuver_inference.run_inference(video_path, maneuver_model, mode='prod')
             except Exception as e:
                 print(f"Error during maneuver inference: {str(e)}")
                 result = {
