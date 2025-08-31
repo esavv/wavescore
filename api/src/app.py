@@ -44,7 +44,7 @@ def process_video_stream(video_path):
             # Notify client
             result = {
                 "status": "interim",
-                "message": "Normalizing video..."
+                "message": "Compressing video..."
             }
             yield f"data: {json.dumps(result)}\n\n"
 
@@ -69,7 +69,7 @@ def process_video_stream(video_path):
         print("Checking whether this is a surf video...")
         result = {
             "status": "interim",
-            "message": "Checking if video is a surf video..."
+            "message": "Checking for surf content..."
         }
         yield f"data: {json.dumps(result)}\n\n"
 
@@ -135,7 +135,7 @@ def process_video_stream(video_path):
 
             result = {
                 "status": "interim",
-                "message": "Annotating video with analysis..."
+                "message": "Processing results..."
             }
             yield f"data: {json.dumps(result)}\n\n"
             print("Starting video annotation and upload to S3...")
