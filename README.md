@@ -10,7 +10,7 @@ Try it here: [wavescore.xyz](https://www.wavescore.xyz/)
 
 ## Roadmap
 
-### Current & Upcoming Tasks
+### Current & Upcoming
    - Web app optimization & bugfixes
    - Cleanup: Organize `src` files into subdirectories
    - Cleanup: Refactor `src` to use filepaths relative to the absolute path for the main directory
@@ -21,7 +21,7 @@ Try it here: [wavescore.xyz](https://www.wavescore.xyz/)
    - Generate progressive score prediction: show user how predicted score changes as video progresses
    - Migrate data from directory system to postgres + blob storage (S3)
 
-### Completed Milestones
+### Completed
    - *Aug 2025:* Replaced iOS app with web app at [wavescore.xyz](https://www.wavescore.xyz/)
    - *Jun 2025:* Trained score prediction model (architecture: transformer-based vision encoder with temporal pooling)
    - *May 2025:* Switched maneuver model architecture to 3D CNN and deploy to API to AWS
