@@ -17,7 +17,7 @@ Try it here: [wavescore.xyz](https://www.wavescore.xyz/)
    - Migrate maneuver prediction to TCN architecture to predict sequence of maneuvers from single video
    - Streamline data labeling workflow & updating maneuver taxonomy for falls / failed moves
    - Scale training data to improve predictions
-   - Scale API servers to allow concurrent users
+   - Scale backend infra to enable concurrency
    - Generate progressive score prediction: show user how predicted score changes as video progresses
    - Migrate data from directory system to postgres + blob storage (S3)
 
@@ -28,4 +28,4 @@ Try it here: [wavescore.xyz](https://www.wavescore.xyz/)
    - *Apr 2025:* Convert API to SSE to display upload progress to user
    - *Dec 2024:* Basic iOS app connected to maneuver inference API
    - *Nov 2024:* Trained maneuver prediction model and initial maneuver inference API (architecture: CNN + LSTM)
-   - *Oct 2024:* Initial data pipeline and source sample training videos
+   - *Oct 2024:* Initial data pipeline and sourced sample training videos
